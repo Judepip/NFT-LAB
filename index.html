@@ -6,9 +6,12 @@
     <title>LAB NFT · Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* ... (весь CSS из предыдущей версии, без изменений) ... */
-        /* Для краткости я не копирую весь CSS, но вы можете взять его из моего предыдущего ответа */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И СБРОС ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         :root {
             --bg-primary: #0a0e1a;
             --bg-secondary: #12182b;
@@ -20,70 +23,486 @@
             --text-secondary: #8899bb;
             --font-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
         }
-        html, body { height: 100%; overflow: hidden; font-family: var(--font-mono); background: var(--bg-primary); color: var(--text-primary); user-select: none; }
-        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(circle at 20% 30%, rgba(0, 255, 136, 0.03) 0%, transparent 60%), radial-gradient(circle at 80% 70%, rgba(0, 212, 255, 0.03) 0%, transparent 60%), repeating-linear-gradient(60deg, transparent, transparent 40px, rgba(0,255,136,0.02) 40px, rgba(0,255,136,0.02) 41px), repeating-linear-gradient(-60deg, transparent, transparent 40px, rgba(0,212,255,0.02) 40px, rgba(0,212,255,0.02) 41px); pointer-events: none; z-index: 0; }
-        #app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; max-height: 100vh; padding: 8px 12px 8px 12px; backdrop-filter: blur(2px); }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 6px 14px 6px; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; }
-        .header h1 { font-size: 18px; font-weight: 600; letter-spacing: 1px; background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 20px rgba(0,255,136,0.2); }
-        .balance { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 30px; padding: 6px 16px; font-size: 14px; font-weight: 500; color: var(--neon-green); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 6px; }
-        .balance span { color: var(--text-secondary); font-weight: 400; }
-        .content { flex: 1; overflow-y: auto; overflow-x: hidden; margin: 10px 0 10px 0; padding: 4px 2px; scrollbar-width: thin; scrollbar-color: var(--neon-green) transparent; min-height: 0; }
-        .content::-webkit-scrollbar { width: 3px; }
-        .content::-webkit-scrollbar-track { background: transparent; }
-        .content::-webkit-scrollbar-thumb { background: var(--neon-green); border-radius: 10px; }
-        .screen { display: none; animation: fadeSlide 0.25s ease-out; }
-        .screen.active { display: block; }
-        @keyframes fadeSlide { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
-        .glass-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 18px 16px; margin-bottom: 12px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-        .nft-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-        .nft-item { aspect-ratio: 1/1; background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428); border: 1px solid rgba(0,255,136,0.3); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: var(--text-secondary); transition: all 0.2s; box-shadow: 0 0 15px rgba(0,255,136,0.05); position: relative; overflow: hidden; cursor: pointer; padding: 4px; }
-        .nft-item::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, transparent, rgba(0,255,136,0.05), transparent, rgba(0,212,255,0.05), transparent); animation: rotateGlow 6s linear infinite; }
-        @keyframes rotateGlow { 100% { transform: rotate(360deg); } }
-        .nft-item .nft-icon { font-size: 36px; z-index: 1; filter: drop-shadow(0 0 8px rgba(0,255,136,0.4)); }
-        .nft-item .nft-image { width: 64px; height: 64px; object-fit: contain; z-index: 1; filter: drop-shadow(0 0 8px rgba(0,255,136,0.3)); }
-        .nft-item .nft-name { z-index: 1; margin-top: 4px; font-weight: 500; color: var(--text-primary); font-size: 10px; text-align: center; }
-        .nft-item .nft-rarity { z-index: 1; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; padding: 2px 8px; border-radius: 20px; background: rgba(0,255,136,0.15); color: var(--neon-green); margin-top: 2px; }
-        .empty-inventory { color: var(--text-secondary); text-align: center; padding: 30px 0; font-size: 14px; }
-        .roulette-container { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
-        .roulette-track { position: relative; width: 100%; overflow: hidden; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass-bg); padding: 8px 0; }
-        .roulette-slider { display: flex; gap: 8px; transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.15, 1); padding: 0 8px; will-change: transform; }
-        .roulette-cell { flex: 0 0 calc(20% - 8px); min-width: 60px; aspect-ratio: 3/4; background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428); border: 1px solid rgba(0,255,136,0.2); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px; transition: all 0.3s; box-shadow: 0 0 15px rgba(0,255,136,0.03); }
-        .roulette-cell img { width: 48px; height: 48px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(0,255,136,0.2)); margin-bottom: 4px; }
-        .roulette-cell .cell-name { font-size: 9px; font-weight: 500; text-align: center; color: var(--text-primary); line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .roulette-cell .cell-rarity { font-size: 7px; text-transform: uppercase; letter-spacing: 0.5px; padding: 1px 6px; border-radius: 10px; background: rgba(0,255,136,0.1); color: var(--neon-green); margin-top: 2px; }
-        .roulette-cell.empty { opacity: 0.5; border-color: rgba(255,255,255,0.1); }
-        .roulette-cell.highlight { border-color: var(--neon-green); box-shadow: 0 0 30px rgba(0,255,136,0.3); transform: scale(1.02); }
-        .roulette-indicator { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); width: 4px; height: calc(100% + 4px); background: var(--neon-green); box-shadow: 0 0 20px var(--neon-green); border-radius: 2px; z-index: 5; pointer-events: none; }
-        .roulette-btn { background: var(--neon-green); color: #0a0e1a; border: none; border-radius: 30px; padding: 14px 32px; font-weight: 700; font-size: 18px; font-family: var(--font-mono); width: 100%; max-width: 280px; box-shadow: 0 0 30px rgba(0,255,136,0.3); transition: 0.15s; cursor: pointer; margin-top: 4px; }
-        .roulette-btn:active { transform: scale(0.96); opacity: 0.8; }
-        .roulette-btn:disabled { opacity: 0.4; transform: scale(1); pointer-events: none; }
-        .roulette-result { text-align: center; font-size: 14px; min-height: 24px; color: var(--neon-cyan); margin-top: 2px; }
-        .roulette-hint { font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 0; }
-        .upgrade-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-mono);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(0, 255, 136, 0.03) 0%, transparent 60%),
+                radial-gradient(circle at 80% 70%, rgba(0, 212, 255, 0.03) 0%, transparent 60%),
+                repeating-linear-gradient(60deg, transparent, transparent 40px, rgba(0,255,136,0.02) 40px, rgba(0,255,136,0.02) 41px),
+                repeating-linear-gradient(-60deg, transparent, transparent 40px, rgba(0,212,255,0.02) 40px, rgba(0,212,255,0.02) 41px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #app {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-height: 100vh;
+            padding: 8px 12px 8px 12px;
+            backdrop-filter: blur(2px);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 6px 14px 6px;
+            border-bottom: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0,255,136,0.2);
+        }
+        .balance {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 6px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--neon-green);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .balance span {
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            margin: 10px 0 10px 0;
+            padding: 4px 2px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--neon-green) transparent;
+            min-height: 0;
+        }
+        .content::-webkit-scrollbar {
+            width: 3px;
+        }
+        .content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .content::-webkit-scrollbar-thumb {
+            background: var(--neon-green);
+            border-radius: 10px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeSlide 0.25s ease-out;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeSlide {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 18px 16px;
+            margin-bottom: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        /* ----- ИНВЕНТАРЬ ----- */
+        .nft-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .nft-item {
+            aspect-ratio: 1/1;
+            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
+            border: 1px solid rgba(0,255,136,0.3);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(0,255,136,0.05);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .nft-item::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0,255,136,0.05), transparent, rgba(0,212,255,0.05), transparent);
+            animation: rotateGlow 6s linear infinite;
+        }
+        @keyframes rotateGlow {
+            100% { transform: rotate(360deg); }
+        }
+        .nft-item .nft-icon {
+            font-size: 36px;
+            z-index: 1;
+            filter: drop-shadow(0 0 8px rgba(0,255,136,0.4));
+        }
+        .nft-item .nft-image {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            z-index: 1;
+            filter: drop-shadow(0 0 8px rgba(0,255,136,0.3));
+        }
+        .nft-item .nft-name {
+            z-index: 1;
+            margin-top: 4px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 10px;
+            text-align: center;
+        }
+        .nft-item .nft-rarity {
+            z-index: 1;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(0,255,136,0.15);
+            color: var(--neon-green);
+            margin-top: 2px;
+        }
+        .empty-inventory {
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 30px 0;
+            font-size: 14px;
+        }
+
+        /* ----- РУЛЕТКА (ГОРИЗОНТАЛЬНАЯ) ----- */
+        .roulette-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .roulette-track {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            padding: 8px 0;
+        }
+
+        .roulette-slider {
+            display: flex;
+            gap: 8px;
+            transition: transform 10s cubic-bezier(0.1, 0.7, 0.3, 1);
+            padding: 0 8px;
+            will-change: transform;
+        }
+
+        .roulette-cell {
+            flex: 0 0 calc(20% - 8px);
+            min-width: 60px;
+            aspect-ratio: 3/4;
+            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
+            border: 1px solid rgba(0,255,136,0.2);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0,255,136,0.03);
+        }
+
+        .roulette-cell img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(0,255,136,0.2));
+            margin-bottom: 4px;
+        }
+
+        .roulette-cell .cell-name {
+            font-size: 9px;
+            font-weight: 500;
+            text-align: center;
+            color: var(--text-primary);
+            line-height: 1.2;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .roulette-cell .cell-rarity {
+            font-size: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background: rgba(0,255,136,0.1);
+            color: var(--neon-green);
+            margin-top: 2px;
+        }
+
+        .roulette-cell.highlight {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 30px rgba(0,255,136,0.3);
+            transform: scale(1.02);
+        }
+
+        .roulette-indicator {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: calc(100% + 4px);
+            background: var(--neon-green);
+            box-shadow: 0 0 20px var(--neon-green);
+            border-radius: 2px;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .roulette-btn {
+            background: var(--neon-green);
+            color: #0a0e1a;
+            border: none;
+            border-radius: 30px;
+            padding: 14px 32px;
+            font-weight: 700;
+            font-size: 18px;
+            font-family: var(--font-mono);
+            width: 100%;
+            max-width: 280px;
+            box-shadow: 0 0 30px rgba(0,255,136,0.3);
+            transition: 0.15s;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+        .roulette-btn:active {
+            transform: scale(0.96);
+            opacity: 0.8;
+        }
+        .roulette-btn:disabled {
+            opacity: 0.4;
+            transform: scale(1);
+            pointer-events: none;
+        }
+
+        .roulette-result {
+            text-align: center;
+            font-size: 14px;
+            min-height: 24px;
+            color: var(--neon-cyan);
+            margin-top: 2px;
+        }
+
+        .roulette-hint {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 0;
+        }
+
+        /* ----- АПГРЕЙД ----- */
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
         .upgrade-item:last-child { border-bottom: none; }
-        .upgrade-info { display: flex; flex-direction: column; gap: 2px; }
-        .upgrade-info .title { font-weight: 500; }
-        .upgrade-info .desc { font-size: 12px; color: var(--text-secondary); }
-        .upgrade-level { font-size: 13px; color: var(--neon-cyan); background: rgba(0,212,255,0.1); padding: 2px 12px; border-radius: 20px; border: 1px solid rgba(0,212,255,0.2); }
-        .upgrade-cost { font-size: 12px; color: var(--neon-green); margin-right: 12px; }
-        .upgrade-btn { background: rgba(0,255,136,0.12); border: 1px solid var(--neon-green); color: var(--neon-green); padding: 6px 18px; border-radius: 20px; font-family: var(--font-mono); font-size: 13px; cursor: pointer; transition: 0.15s; }
+        .upgrade-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .upgrade-info .title {
+            font-weight: 500;
+        }
+        .upgrade-info .desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .upgrade-level {
+            font-size: 13px;
+            color: var(--neon-cyan);
+            background: rgba(0,212,255,0.1);
+            padding: 2px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(0,212,255,0.2);
+        }
+        .upgrade-cost {
+            font-size: 12px;
+            color: var(--neon-green);
+            margin-right: 12px;
+        }
+        .upgrade-btn {
+            background: rgba(0,255,136,0.12);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.15s;
+        }
         .upgrade-btn:active { transform: scale(0.94); }
-        .upgrade-btn:disabled { opacity: 0.3; pointer-events: none; }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan)); display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 12px auto; box-shadow: 0 0 40px rgba(0,255,136,0.2); }
-        .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-        .stat-box { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; text-align: center; }
-        .stat-box .value { font-size: 22px; font-weight: 600; color: var(--neon-green); }
-        .stat-box .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        .nav-center { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex-shrink: 0; padding: 6px 0 4px 0; }
-        .nav-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0; padding: 4px 0 8px 0; }
-        .nav-btn { background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px 4px; color: var(--text-secondary); font-family: var(--font-mono); font-size: 13px; font-weight: 500; text-align: center; transition: 0.15s; cursor: pointer; letter-spacing: 0.3px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .nav-btn .icon { font-size: 20px; line-height: 1; }
+        .upgrade-btn:disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* ----- ПРОФИЛЬ ----- */
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto 12px auto;
+            box-shadow: 0 0 40px rgba(0,255,136,0.2);
+        }
+        .profile-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .stat-box {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-box .value {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--neon-green);
+        }
+        .stat-box .label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ----- НАВИГАЦИЯ ----- */
+        .nav-center {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            flex-shrink: 0;
+            padding: 6px 0 4px 0;
+        }
+        .nav-bottom {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            flex-shrink: 0;
+            padding: 4px 0 8px 0;
+        }
+        .nav-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 4px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            transition: 0.15s;
+            cursor: pointer;
+            letter-spacing: 0.3px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .nav-btn .icon {
+            font-size: 20px;
+            line-height: 1;
+        }
         .nav-btn:active { transform: scale(0.94); }
-        .nav-btn.active { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 25px rgba(0,255,136,0.08); background: rgba(0,255,136,0.05); }
-        @media (max-width: 380px) { .header h1 { font-size: 15px; } .balance { font-size: 12px; padding: 4px 12px; } .nav-btn { font-size: 11px; padding: 10px 2px; } .nav-btn .icon { font-size: 17px; } .roulette-cell { flex: 0 0 calc(25% - 8px); min-width: 50px; } .roulette-cell img { width: 36px; height: 36px; } .roulette-cell .cell-name { font-size: 8px; } }
-        @media (min-width: 600px) { .roulette-cell { flex: 0 0 calc(16.66% - 8px); } }
-        @media (min-width: 900px) { .roulette-cell { flex: 0 0 calc(12.5% - 8px); } }
-        .nft-item .glow-pulse { position: absolute; inset: 0; border-radius: 12px; background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,255,136,0.1), transparent 70%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .nav-btn.active {
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+            box-shadow: 0 0 25px rgba(0,255,136,0.08);
+            background: rgba(0,255,136,0.05);
+        }
+
+        @media (max-width: 380px) {
+            .header h1 { font-size: 15px; }
+            .balance { font-size: 12px; padding: 4px 12px; }
+            .nav-btn { font-size: 11px; padding: 10px 2px; }
+            .nav-btn .icon { font-size: 17px; }
+            .roulette-cell { flex: 0 0 calc(25% - 8px); min-width: 50px; }
+            .roulette-cell img { width: 36px; height: 36px; }
+            .roulette-cell .cell-name { font-size: 8px; }
+        }
+
+        @media (min-width: 600px) {
+            .roulette-cell { flex: 0 0 calc(16.66% - 8px); }
+        }
+        @media (min-width: 900px) {
+            .roulette-cell { flex: 0 0 calc(12.5% - 8px); }
+        }
+
+        .nft-item .glow-pulse {
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,255,136,0.1), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
         .nft-item:hover .glow-pulse { opacity: 1; }
     </style>
 </head>
@@ -204,7 +623,7 @@
         // ---------- 2. ПОЛУЧЕНИЕ USER_ID ----------
         const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-        // ---------- 3. СПИСОК ПОДАРКОВ ----------
+        // ---------- 3. СПИСОК ПОДАРКОВ (10 ШТУК, БЕЗ ПУСТЫХ) ----------
         const GIFTS = [
             { name: 'Bow Tie', rarity: 'редкий', image: '/images/BowTie.png' },
             { name: 'Chill Flame', rarity: 'эпик', image: '/images/ChillFlame.png' },
@@ -258,7 +677,6 @@
                 render();
             } catch (error) {
                 console.error('Ошибка загрузки данных:', error);
-                // Если бэкенд недоступен, используем localStorage как запасной вариант
                 loadFromLocalStorage();
             }
         }
@@ -294,35 +712,21 @@
             }
         }
 
-        // ---------- 8. РЕНДЕР ЯЧЕЕК РУЛЕТКИ ----------
+        // ---------- 8. РЕНДЕР ЯЧЕЕК РУЛЕТКИ (ТОЛЬКО 10 ПОДАРКОВ, БЕЗ ПУСТЫХ) ----------
         function renderRouletteCells(highlightIndex = -1) {
-            const cells = [];
-            for (let i = 0; i < 2; i++) {
-                cells.push({ name: '❌ Пусто', rarity: '', image: '', empty: true });
-            }
-            GIFTS.forEach(g => {
-                cells.push({ ...g, empty: false });
-            });
-            for (let i = 0; i < 2; i++) {
-                cells.push({ name: '❌ Пусто', rarity: '', image: '', empty: true });
-            }
+            // Создаём массив только из 10 подарков
+            const cells = GIFTS.map(g => ({ ...g, empty: false }));
 
             rouletteSlider.innerHTML = cells.map((cell, index) => {
                 const isHighlight = (index === highlightIndex);
-                const emptyClass = cell.empty ? ' empty' : '';
                 const highlightClass = isHighlight ? ' highlight' : '';
                 
                 let content = '';
-                if (cell.image && !cell.empty) {
+                if (cell.image) {
                     content = `
                         <img src="${cell.image}" alt="${cell.name}" loading="lazy">
                         <div class="cell-name">${cell.name}</div>
                         <div class="cell-rarity">${cell.rarity}</div>
-                    `;
-                } else if (cell.empty) {
-                    content = `
-                        <div style="font-size:24px; opacity:0.3;">❌</div>
-                        <div class="cell-name" style="opacity:0.3;">Пусто</div>
                     `;
                 } else {
                     content = `
@@ -332,7 +736,7 @@
                     `;
                 }
                 
-                return `<div class="roulette-cell${emptyClass}${highlightClass}">${content}</div>`;
+                return `<div class="roulette-cell${highlightClass}">${content}</div>`;
             }).join('');
         }
 
@@ -398,7 +802,6 @@
             statSpins.textContent = state.spins;
             statUpgrades.textContent = state.upgrades.filter(u => u.level > 0).length;
 
-            // Сохраняем в localStorage как резерв
             saveToLocalStorage();
         }
 
@@ -434,7 +837,7 @@
             }
         }
 
-        // ---------- 12. РУЛЕТКА (С ОТПРАВКОЙ НА БЭКЕНД) ----------
+        // ---------- 12. РУЛЕТКА (10 СЕКУНД КРУЧЕНИЯ) ----------
         spinBtn.addEventListener('click', async function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -445,7 +848,8 @@
 
             state.isSpinning = true;
             spinBtn.disabled = true;
-            
+            rouletteResult.textContent = '🌀 Крутим... 10 секунд!';
+
             // Выбираем случайный подарок
             const winIndex = Math.floor(Math.random() * GIFTS.length);
             const prize = GIFTS[winIndex];
@@ -487,24 +891,40 @@
                 tg.showAlert('⚠️ Бэкенд недоступен, данные сохранены локально');
             }
 
-            // Анимация рулетки
-            const cellIndex = winIndex + 2;
-            const visibleCells = 5;
-            const offset = (cellIndex - Math.floor(visibleCells / 2)) * (100 / visibleCells);
-            rouletteSlider.style.transform = `translateX(-${offset}%)`;
+            // --- АНИМАЦИЯ РУЛЕТКИ (10 СЕКУНД) ---
 
+            // Делаем несколько полных оборотов + доворот до нужной ячейки
+            // Всего ячеек = 10. Чтобы ячейка оказалась по центру, сдвигаем на её индекс.
+            // Добавляем 3 полных оборота (10 * 3 = 30 ячеек) + доворот до winIndex
+            const totalCells = GIFTS.length;
+            const extraSpins = 3; // 3 полных оборота
+            const targetIndex = winIndex; // индекс выигрышной ячейки (0..9)
+            
+            // Сдвиг в процентах: каждая ячейка занимает ~20% ширины (100/5=20% на ячейку)
+            // Чтобы центр ячейки оказался под индикатором, нужно сдвинуть на (индекс * 20)%
+            // + добавляем полные обороты
+            const cellWidthPercent = 20; // 100% / 5 видимых ячеек
+            const offsetPercent = (totalCells * extraSpins + targetIndex) * cellWidthPercent;
+            
+            rouletteSlider.style.transition = 'transform 10s cubic-bezier(0.1, 0.7, 0.3, 1)';
+            rouletteSlider.style.transform = `translateX(-${offsetPercent}%)`;
+
+            // Подсветка выигрышной ячейки через 9.5 секунд (почти в конце)
             setTimeout(() => {
-                renderRouletteCells(cellIndex);
-            }, 100);
+                renderRouletteCells(winIndex);
+            }, 9500);
 
+            // Вибрация в начале и в конце
             if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
+            // Через 10.5 секунд завершаем
             setTimeout(() => {
                 state.isSpinning = false;
                 spinBtn.disabled = false;
                 rouletteResult.textContent = `🎉 Вы выиграли: ${prize.name}! (${prize.rarity})`;
                 tg.showAlert(`🎉 Поздравляем! Вы выиграли ${prize.name}!`);
                 
+                // Снимаем подсветку через 2 секунды
                 setTimeout(() => {
                     renderRouletteCells();
                 }, 2000);
@@ -514,19 +934,19 @@
                     action: 'roulette_spin',
                     payload: { prize: prize.name, rarity: prize.rarity, balance: state.balance }
                 });
-            }, 900);
+            }, 10500); // 10 секунд кручения + 0.5 сек на завершение
         });
 
-        // Двойной тап для быстрого кручения
+        // Двойной тап для быстрого кручения (тоже 10 секунд, но с ускоренной анимацией)
         spinBtn.addEventListener('dblclick', function(e) {
             e.preventDefault();
             if (!state.isSpinning) {
                 spinBtn.click();
-                tg.showAlert('⚡ БЫСТРОЕ КРУЧЕНИЕ!');
+                tg.showAlert('⚡ БЫСТРОЕ КРУЧЕНИЕ! (всё равно 10 секунд)');
             }
         });
 
-        // ---------- 13. АПГРЕЙДЫ (С ОТПРАВКОЙ НА БЭКЕНД) ----------
+        // ---------- 13. АПГРЕЙДЫ ----------
         upgradeList.addEventListener('click', async function(e) {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn || btn.disabled) return;
@@ -546,7 +966,6 @@
 
                 const result = await response.json();
                 state.balance = result.new_balance;
-                // Обновляем уровень апгрейда
                 const upgrade = state.upgrades.find(u => u.id === id);
                 if (upgrade) {
                     upgrade.level = result.upgrade.level;
