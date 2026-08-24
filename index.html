@@ -103,7 +103,7 @@
             padding: 4px 2px;
             scrollbar-width: thin;
             scrollbar-color: var(--neon-green) transparent;
-            min-height: 0; /* для flex */
+            min-height: 0;
         }
         .content::-webkit-scrollbar {
             width: 3px;
@@ -448,7 +448,7 @@
             <div class="glass-card">
                 <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
                     <span style="font-weight:500;">📦 NFT-подарки</span>
-                    <span style="color:var(--text-secondary);font-size:12px;">6 шт.</span>
+                    <span style="color:var(--text-secondary);font-size:12px;" id="nftCount">6 шт.</span>
                 </div>
                 <div class="nft-grid" id="inventoryGrid">
                     <!-- заполняется JS -->
@@ -535,43 +535,107 @@
     (function() {
         'use strict';
 
-        // ---------- 1. TELEGRAM SDK ----------
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        // ---------- 1. TELEGRAM SDK (БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ) ----------
+        let tg = null;
+        let isTelegram = false;
 
-        // ---------- 2. СОСТОЯНИЕ ПРИЛОЖЕНИЯ (SINGLE SOURCE OF TRUTH) ----------
-        const state = {
-            balance: 1247.5,
-            user: tg.initDataUnsafe?.user || { id: 0, first_name: 'Аноним' },
-            inventory: [
-                { id: 'nft1', name: 'Кристалл Омега', rarity: 'легенд', icon: '💎' },
-                { id: 'nft2', name: 'Теневой чип', rarity: 'эпик', icon: '🖲️' },
-                { id: 'nft3', name: 'Голограмма X', rarity: 'редкий', icon: '🌀' },
-                { id: 'nft4', name: 'Нейро-куб', rarity: 'обычный', icon: '🧊' },
-                { id: 'nft5', name: 'Плазменный шар', rarity: 'эпик', icon: '⚡' },
-                { id: 'nft6', name: 'Квантовый глаз', rarity: 'легенд', icon: '👁️' },
-            ],
-            upgrades: [
-                { id: 'up1', name: 'Генератор GIFT', desc: '+5 GIFT/час', level: 2, cost: 150, maxLvl: 5 },
-                { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', level: 1, cost: 200, maxLvl: 4 },
-                { id: 'up3', name: 'Ускоритель спина', desc: 'Спин стоит -2 GIFT', level: 0, cost: 100, maxLvl: 6 },
-            ],
-            games: [
-                { id: 'g1', name: 'Мем-арена', desc: 'Сражайся мемами', icon: '🐸' },
-                { id: 'g2', name: 'Кликер GIFT', desc: 'Тапай для токенов', icon: '🖱️' },
-                { id: 'g3', name: 'Угадай хеш', desc: 'Угадай SHA-256', icon: '🔐' },
-            ],
-            spins: 42,
-            level: 3,
-            upgradeCount: 5,
-            rouletteAngle: 0,
-            isSpinning: false,
-        };
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                isTelegram = true;
+            } else {
+                console.warn('Telegram WebApp не обнаружен. Работа в режиме эмуляции.');
+                // Эмуляция для браузера
+                tg = {
+                    ready: () => {},
+                    expand: () => {},
+                    showAlert: (msg) => alert(msg),
+                    sendData: (data) => console.log('Telegram sendData:', data),
+                    initDataUnsafe: { user: { id: 12345, first_name: 'Тестер' } }
+                };
+            }
+        } catch (e) {
+            console.error('Ошибка инициализации Telegram:', e);
+            // Фолбэк
+            tg = {
+                ready: () => {},
+                expand: () => {},
+                showAlert: (msg) => alert(msg),
+                sendData: (data) => console.log('Telegram sendData:', data),
+                initDataUnsafe: { user: { id: 12345, first_name: 'Тестер' } }
+            };
+        }
+
+        // ---------- 2. СОСТОЯНИЕ ПРИЛОЖЕНИЯ (С СОХРАНЕНИЕМ В localStorage) ----------
+        const STORAGE_KEY = 'lab_nft_state';
+
+        function getDefaultState() {
+            return {
+                balance: 1247.5,
+                user: tg.initDataUnsafe?.user || { id: 0, first_name: 'Аноним' },
+                inventory: [
+                    { id: 'nft1', name: 'Кристалл Омега', rarity: 'легенд', icon: '💎' },
+                    { id: 'nft2', name: 'Теневой чип', rarity: 'эпик', icon: '🖲️' },
+                    { id: 'nft3', name: 'Голограмма X', rarity: 'редкий', icon: '🌀' },
+                    { id: 'nft4', name: 'Нейро-куб', rarity: 'обычный', icon: '🧊' },
+                    { id: 'nft5', name: 'Плазменный шар', rarity: 'эпик', icon: '⚡' },
+                    { id: 'nft6', name: 'Квантовый глаз', rarity: 'легенд', icon: '👁️' },
+                ],
+                upgrades: [
+                    { id: 'up1', name: 'Генератор GIFT', desc: '+5 GIFT/час', level: 2, cost: 150, maxLvl: 5 },
+                    { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', level: 1, cost: 200, maxLvl: 4 },
+                    { id: 'up3', name: 'Ускоритель спина', desc: 'Спин стоит -2 GIFT', level: 0, cost: 100, maxLvl: 6 },
+                ],
+                games: [
+                    { id: 'g1', name: 'Мем-арена', desc: 'Сражайся мемами', icon: '🐸' },
+                    { id: 'g2', name: 'Кликер GIFT', desc: 'Тапай для токенов', icon: '🖱️' },
+                    { id: 'g3', name: 'Угадай хеш', desc: 'Угадай SHA-256', icon: '🔐' },
+                ],
+                spins: 42,
+                level: 3,
+                upgradeCount: 5,
+                rouletteAngle: 0,
+                isSpinning: false,
+            };
+        }
+
+        let state;
+
+        // Загрузка состояния из localStorage или создание нового
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                state = parsed;
+                // Перезаписываем user из Telegram (чтобы всегда был актуальный)
+                if (tg.initDataUnsafe?.user) {
+                    state.user = tg.initDataUnsafe.user;
+                }
+                console.log('Состояние загружено из localStorage');
+            } else {
+                state = getDefaultState();
+                console.log('Создано новое состояние');
+            }
+        } catch (e) {
+            console.warn('Ошибка загрузки состояния:', e);
+            state = getDefaultState();
+        }
+
+        // Функция сохранения состояния
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.warn('Ошибка сохранения состояния:', e);
+            }
+        }
 
         // ---------- 3. DOM-ССЫЛКИ ----------
         const $ = (id) => document.getElementById(id);
         const balanceDisplay = $('balanceDisplay');
+        const nftCount = $('nftCount');
         const screens = document.querySelectorAll('.screen');
         const navBtns = document.querySelectorAll('.nav-btn');
         const inventoryGrid = $('inventoryGrid');
@@ -593,6 +657,9 @@
         function render() {
             // Баланс
             balanceDisplay.textContent = state.balance.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+            // Количество NFT в заголовке
+            nftCount.textContent = state.inventory.length + ' шт.';
 
             // ИНВЕНТАРЬ
             if (state.inventory.length === 0) {
@@ -647,16 +714,16 @@
             statLevel.textContent = state.level;
             statSpins.textContent = state.spins;
             statUpgrades.textContent = state.upgradeCount;
+
+            // Сохраняем состояние после каждого рендера
+            saveState();
         }
 
         // ---------- 5. НАВИГАЦИЯ (ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ) ----------
         function switchScreen(screenId) {
-            // Скрыть все
             screens.forEach(s => s.classList.remove('active'));
-            // Показать нужный
             const target = document.getElementById(screenId);
             if (target) target.classList.add('active');
-            // Обновить активные кнопки
             navBtns.forEach(btn => {
                 const scr = btn.dataset.screen;
                 btn.classList.toggle('active', scr === screenId);
@@ -667,14 +734,12 @@
             btn.addEventListener('click', function(e) {
                 const screenId = this.dataset.screen;
                 if (screenId) switchScreen(screenId);
-                // Вибрация (если поддерживается)
                 if (navigator.vibrate) navigator.vibrate(10);
             });
         });
 
         // ---------- 6. РУЛЕТКА (ЛОГИКА) ----------
         const prizes = ['💎 Кристалл', '🖲️ Чип', '🌀 Голограмма', '🧊 Куб', '⚡ Шар', '👁️ Глаз', '❌ Пусто', '❌ Пусто'];
-        const prizeColors = ['#00ff88', '#00d4ff', '#7b2ffc', '#ff2d75', '#ffaa00', '#00ff88', '#444', '#444'];
 
         spinBtn.addEventListener('click', function() {
             if (state.isSpinning) return;
@@ -688,23 +753,20 @@
             spinBtn.disabled = true;
             state.balance -= 25;
             state.spins += 1;
-            render(); // обновляем баланс
+            render();
 
             const winIndex = Math.floor(Math.random() * prizes.length);
             const prize = prizes[winIndex];
-            // Угол поворота: минимум 5 полных оборотов + доворот до сектора
             const extraDeg = 360 / prizes.length;
             const targetDeg = 360 * 6 + (winIndex * extraDeg) + (extraDeg / 2);
             state.rouletteAngle += targetDeg;
             rouletteWheel.style.transform = `rotate(${state.rouletteAngle}deg)`;
 
-            // Звуковой эффект (имитация)
             if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
             setTimeout(() => {
                 state.isSpinning = false;
                 spinBtn.disabled = false;
-                // Если выиграли не "Пусто" — добавляем NFT
                 if (prize !== '❌ Пусто') {
                     const newNft = {
                         id: 'nft_' + Date.now(),
@@ -719,15 +781,14 @@
                     rouletteResult.textContent = '😞 Пусто. Попробуйте ещё!';
                 }
                 render();
-                // Отправка данных боту (опционально)
                 sendToBot({
                     action: 'roulette_spin',
                     payload: { prize: prize, balance: state.balance }
                 });
-            }, 4500); // время анимации
+            }, 4500);
         });
 
-        // ---------- 7. ОБРАБОТЧИКИ ДЛЯ АПГРЕЙДОВ (DELEGATION) ----------
+        // ---------- 7. ОБРАБОТЧИКИ ДЛЯ АПГРЕЙДОВ ----------
         upgradeList.addEventListener('click', function(e) {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn) return;
@@ -740,10 +801,9 @@
                 tg.showAlert('Недостаточно GIFT для апгрейда!');
                 return;
             }
-            // Применяем
             state.balance -= upgrade.cost;
             upgrade.level += 1;
-            upgrade.cost = Math.floor(upgrade.cost * 1.4); // рост цены
+            upgrade.cost = Math.floor(upgrade.cost * 1.4);
             state.upgradeCount += 1;
             render();
             sendToBot({
@@ -753,7 +813,7 @@
             if (navigator.vibrate) navigator.vibrate(20);
         });
 
-        // ---------- 8. ОБРАБОТЧИКИ ДЛЯ ИГР (DELEGATION) ----------
+        // ---------- 8. ОБРАБОТЧИКИ ДЛЯ ИГР ----------
         gamesList.addEventListener('click', function(e) {
             const card = e.target.closest('.game-card');
             if (!card) return;
@@ -768,7 +828,7 @@
             if (navigator.vibrate) navigator.vibrate(15);
         });
 
-        // ---------- 9. КЛИК ПО NFT (ДЕЙСТВИЕ) ----------
+        // ---------- 9. КЛИК ПО NFT ----------
         inventoryGrid.addEventListener('click', function(e) {
             const item = e.target.closest('.nft-item');
             if (!item) return;
@@ -786,7 +846,11 @@
         // ---------- 10. ОТПРАВКА ДАННЫХ В БОТА ----------
         function sendToBot(data) {
             try {
-                tg.sendData(JSON.stringify(data));
+                if (isTelegram && tg && typeof tg.sendData === 'function') {
+                    tg.sendData(JSON.stringify(data));
+                } else {
+                    console.log('Emulated sendData:', JSON.stringify(data));
+                }
             } catch (e) {
                 console.warn('sendData error:', e);
             }
@@ -794,16 +858,15 @@
 
         // ---------- 11. ИНИЦИАЛИЗАЦИЯ ----------
         render();
-        // Устанавливаем начальную позицию рулетки
         rouletteWheel.style.transform = `rotate(0deg)`;
 
-        // Отправляем событие открытия
         sendToBot({
             action: 'app_open',
             payload: { user_id: state.user.id, timestamp: Date.now() }
         });
 
         console.log('[LAB NFT] Mini App полностью загружен. Состояние:', state);
+        console.log('[LAB NFT] Режим Telegram:', isTelegram);
     })();
 </script>
 </body>
