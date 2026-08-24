@@ -208,95 +208,131 @@
             font-size: 14px;
         }
 
-        /* ----- НОВАЯ РУЛЕТКА (КАК НА СКРИНШОТЕ) ----- */
+        /* ----- НОВАЯ ГОРИЗОНТАЛЬНАЯ РУЛЕТКА (10 ЯЧЕЕК) ----- */
         .roulette-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 16px;
-        }
-
-        .roulette-chip {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            flex-wrap: wrap;
             width: 100%;
         }
-        .chip-btn {
-            background: var(--glass-bg);
+
+        .roulette-track {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 16px;
             border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 12px 20px;
-            font-family: var(--font-mono);
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: 0.2s;
-            min-width: 60px;
-            text-align: center;
-        }
-        .chip-btn.active {
-            border-color: var(--neon-green);
-            color: var(--neon-green);
-            box-shadow: 0 0 20px rgba(0,255,136,0.15);
-            background: rgba(0,255,136,0.05);
-        }
-        .chip-btn:active {
-            transform: scale(0.94);
+            background: var(--glass-bg);
+            padding: 8px 0;
         }
 
-        .spin-main-btn {
+        .roulette-slider {
+            display: flex;
+            gap: 8px;
+            transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.15, 1);
+            padding: 0 8px;
+            will-change: transform;
+        }
+
+        .roulette-cell {
+            flex: 0 0 calc(20% - 8px); /* 5 ячеек видно на экране, 10 всего */
+            min-width: 60px;
+            aspect-ratio: 3/4;
+            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
+            border: 1px solid rgba(0,255,136,0.2);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0,255,136,0.03);
+        }
+
+        .roulette-cell img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(0,255,136,0.2));
+            margin-bottom: 4px;
+        }
+
+        .roulette-cell .cell-name {
+            font-size: 9px;
+            font-weight: 500;
+            text-align: center;
+            color: var(--text-primary);
+            line-height: 1.2;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .roulette-cell .cell-rarity {
+            font-size: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background: rgba(0,255,136,0.1);
+            color: var(--neon-green);
+            margin-top: 2px;
+        }
+
+        .roulette-cell.empty {
+            opacity: 0.5;
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .roulette-cell.highlight {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 30px rgba(0,255,136,0.3);
+            transform: scale(1.02);
+        }
+
+        .roulette-indicator {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: calc(100% + 4px);
+            background: var(--neon-green);
+            box-shadow: 0 0 20px var(--neon-green);
+            border-radius: 2px;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .roulette-btn {
             background: var(--neon-green);
             color: #0a0e1a;
             border: none;
             border-radius: 30px;
             padding: 14px 32px;
             font-weight: 700;
-            font-size: 20px;
+            font-size: 18px;
             font-family: var(--font-mono);
             width: 100%;
-            max-width: 300px;
+            max-width: 280px;
             box-shadow: 0 0 30px rgba(0,255,136,0.3);
             transition: 0.15s;
             cursor: pointer;
+            margin-top: 8px;
         }
-        .spin-main-btn:active {
+        .roulette-btn:active {
             transform: scale(0.96);
             opacity: 0.8;
         }
-        .spin-main-btn:disabled {
+        .roulette-btn:disabled {
             opacity: 0.4;
             transform: scale(1);
             pointer-events: none;
         }
 
-        .roulette-wheel {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 1/1;
-            max-width: 320px;
-            margin: 0 auto;
-            border-radius: 50%;
-            background: conic-gradient(
-                from 0deg, #00ff88, #00d4ff, #7b2ffc, #ff2d75, #ffaa00, #00ff88
-            );
-            box-shadow: 0 0 60px rgba(0,255,136,0.2), inset 0 0 60px rgba(0,0,0,0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
-            margin-bottom: 8px;
-        }
-        .roulette-wheel .center-dot {
-            width: 20%;
-            aspect-ratio: 1/1;
-            background: var(--bg-primary);
-            border-radius: 50%;
-            border: 3px solid var(--neon-green);
-            box-shadow: 0 0 30px var(--neon-green);
-        }
         .roulette-result {
             text-align: center;
             font-size: 14px;
@@ -304,11 +340,12 @@
             color: var(--neon-cyan);
             margin-top: 4px;
         }
+
         .roulette-hint {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-secondary);
             text-align: center;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         /* ----- АПГРЕЙД ----- */
@@ -450,11 +487,16 @@
             .balance { font-size: 12px; padding: 4px 12px; }
             .nav-btn { font-size: 11px; padding: 10px 2px; }
             .nav-btn .icon { font-size: 17px; }
-            .chip-btn { font-size: 15px; padding: 10px 14px; min-width: 50px; }
-            .spin-main-btn { font-size: 17px; padding: 12px 20px; }
+            .roulette-cell { flex: 0 0 calc(25% - 8px); min-width: 50px; }
+            .roulette-cell img { width: 36px; height: 36px; }
+            .roulette-cell .cell-name { font-size: 8px; }
         }
-        @media (min-height: 800px) {
-            .content { margin: 16px 0; }
+
+        @media (min-width: 600px) {
+            .roulette-cell { flex: 0 0 calc(16.66% - 8px); }
+        }
+        @media (min-width: 900px) {
+            .roulette-cell { flex: 0 0 calc(12.5% - 8px); }
         }
 
         .nft-item .glow-pulse {
@@ -483,7 +525,7 @@
     <!-- ЦЕНТРАЛЬНЫЙ КОНТЕНТ -->
     <div class="content" id="contentArea">
 
-        <!-- ЭКРАН: ИНВЕНТАРЬ (ПУСТОЙ ИЗНАЧАЛЬНО) -->
+        <!-- ЭКРАН: ИНВЕНТАРЬ -->
         <div class="screen active" id="screenInventory">
             <div class="glass-card">
                 <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
@@ -491,34 +533,31 @@
                     <span style="color:var(--text-secondary);font-size:12px;" id="nftCount">0 шт.</span>
                 </div>
                 <div class="nft-grid" id="inventoryGrid">
-                    <!-- заполняется JS, изначально пусто -->
+                    <!-- заполняется JS -->
                 </div>
             </div>
         </div>
 
-        <!-- ЭКРАН: РУЛЕТКА (НОВЫЙ ДИЗАЙН) -->
+        <!-- ЭКРАН: РУЛЕТКА (ГОРИЗОНТАЛЬНАЯ) -->
         <div class="screen" id="screenRoulette">
             <div class="glass-card">
                 <div class="roulette-container">
-                    <!-- Колесо -->
-                    <div class="roulette-wheel" id="rouletteWheel">
-                        <div class="center-dot"></div>
+                    <!-- Трек с ячейками -->
+                    <div class="roulette-track">
+                        <div class="roulette-indicator"></div>
+                        <div class="roulette-slider" id="rouletteSlider">
+                            <!-- Ячейки заполняются из JS -->
+                        </div>
                     </div>
+
                     <!-- Результат -->
                     <div id="rouletteResult" class="roulette-result">Нажмите "РАСКРУТИТЬ"</div>
                     
-                    <!-- Чип-кнопки ставок (1X, 10X, 100X) -->
-                    <div class="roulette-chip">
-                        <div class="chip-btn active" data-multiplier="1">1X</div>
-                        <div class="chip-btn" data-multiplier="10">10X</div>
-                        <div class="chip-btn" data-multiplier="100">100X</div>
-                    </div>
-                    
-                    <!-- Главная кнопка запуска -->
-                    <button class="spin-main-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150</button>
+                    <!-- Кнопка запуска (фиксированная цена 150) -->
+                    <button class="roulette-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150</button>
                     
                     <!-- Подсказка -->
-                    <div class="roulette-hint">ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
+                    <div class="roulette-hint">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
                 </div>
             </div>
         </div>
@@ -607,40 +646,28 @@
             };
         }
 
-        // ---------- 2. НОВЫЙ СПИСОК ВСЕХ ВОЗМОЖНЫХ ПОДАРКОВ (ТЕЛЕГРАМ) ----------
-        const GIFT_POOL = [
-            { name: 'Bow Tie', rarity: 'редкий', icon: '🎀', image: 'images/BowTie.png' },
-            { name: 'Chill Flame', rarity: 'эпик', icon: '🔥', image: 'images/ChillFlame.png' },
-            { name: 'Big Year', rarity: 'легенд', icon: '🎉', image: 'images/BigYear.png' },
-            { name: 'Snake Box', rarity: 'обычный', icon: '🐍', image: 'images/SnakeBox.png' },
-            { name: 'Liberty Figure', rarity: 'легенд', icon: '🗽', image: 'images/LibertyFigure.png' },
-            { name: 'Light Sword', rarity: 'эпик', icon: '⚔️', image: 'images/LightSword.png' },
-            { name: 'Star Notepad', rarity: 'редкий', icon: '⭐', image: 'images/StarNotepad.png' },
-            { name: 'Кубок', rarity: 'легенд', icon: '🏆', image: 'images/Кубок.png' },
-            { name: 'Кольцо', rarity: 'эпик', icon: '💍', image: 'images/Кольцо.png' },
-            { name: 'Мишка', rarity: 'обычный', icon: '🧸', image: 'images/Мишка.png' },
+        // ---------- 2. СПИСОК ПОДАРКОВ (10 ШТУК) ----------
+        const GIFTS = [
+            { name: 'Bow Tie', rarity: 'редкий', image: 'images/BowTie.png' },
+            { name: 'Chill Flame', rarity: 'эпик', image: 'images/ChillFlame.png' },
+            { name: 'Big Year', rarity: 'легенд', image: 'images/BigYear.png' },
+            { name: 'Snake Box', rarity: 'обычный', image: 'images/SnakeBox.png' },
+            { name: 'Liberty Figure', rarity: 'легенд', image: 'images/LibertyFigure.png' },
+            { name: 'Light Sword', rarity: 'эпик', image: 'images/LightSword.png' },
+            { name: 'Star Notepad', rarity: 'редкий', image: 'images/StarNotepad.png' },
+            { name: 'Кубок', rarity: 'легенд', image: 'images/Кубок.png' },
+            { name: 'Кольцо', rarity: 'эпик', image: 'images/Кольцо.png' },
+            { name: 'Мишка', rarity: 'обычный', image: 'images/Мишка.png' },
         ];
 
-        // Добавим несколько "пустых" секторов для рулетки (чтобы не всегда выигрывать)
-        const EMPTY_SECTORS = 3; 
-
-        // Формируем массив для рулетки: повторяем GIFT_POOL + добавляем пустые
-        let roulettePrizes = [];
-        for (let i = 0; i < 3; i++) { 
-            GIFT_POOL.forEach(g => roulettePrizes.push(g));
-        }
-        for (let i = 0; i < EMPTY_SECTORS; i++) {
-            roulettePrizes.push({ name: '❌ Пусто', rarity: '', icon: '❌', image: '' });
-        }
-
-        // ---------- 3. СОСТОЯНИЕ ПРИЛОЖЕНИЯ (ПУСТОЙ ИНВЕНТАРЬ) ----------
+        // ---------- 3. СОСТОЯНИЕ ПРИЛОЖЕНИЯ ----------
         const STORAGE_KEY = 'lab_nft_state';
 
         function getDefaultState() {
             return {
-                balance: 1000.0, // стартовый баланс
+                balance: 1000.0,
                 user: tg.initDataUnsafe?.user || { id: 0, first_name: 'Аноним' },
-                inventory: [], // ИЗНАЧАЛЬНО ПУСТОЙ
+                inventory: [],
                 upgrades: [
                     { id: 'up1', name: 'Генератор GIFT', desc: '+5 GIFT/час', level: 0, cost: 150, maxLvl: 5 },
                     { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', level: 0, cost: 200, maxLvl: 4 },
@@ -649,9 +676,7 @@
                 spins: 0,
                 level: 1,
                 upgradeCount: 0,
-                rouletteAngle: 0,
                 isSpinning: false,
-                multiplier: 1, // 1X, 10X, 100X
             };
         }
 
@@ -691,7 +716,7 @@
         const navBtns = document.querySelectorAll('.nav-btn');
         const inventoryGrid = $('inventoryGrid');
         const upgradeList = $('upgradeList');
-        const rouletteWheel = $('rouletteWheel');
+        const rouletteSlider = $('rouletteSlider');
         const spinBtn = $('spinBtn');
         const rouletteResult = $('rouletteResult');
 
@@ -702,10 +727,57 @@
         const statSpins = $('statSpins');
         const statUpgrades = $('statUpgrades');
 
-        // Чип-кнопки
-        const chipBtns = document.querySelectorAll('.chip-btn');
+        // ---------- 5. ФУНКЦИЯ СОЗДАНИЯ ЯЧЕЕК РУЛЕТКИ ----------
+        function renderRouletteCells(highlightIndex = -1) {
+            // Создаём массив ячеек: 10 подарков + 2 пустых для объёма
+            const cells = [];
+            
+            // Добавляем 2 пустых ячейки в начало
+            for (let i = 0; i < 2; i++) {
+                cells.push({ name: '❌ Пусто', rarity: '', image: '', empty: true });
+            }
+            
+            // Добавляем все подарки
+            GIFTS.forEach(g => {
+                cells.push({ ...g, empty: false });
+            });
+            
+            // Добавляем 2 пустых ячейки в конец
+            for (let i = 0; i < 2; i++) {
+                cells.push({ name: '❌ Пусто', rarity: '', image: '', empty: true });
+            }
 
-        // ---------- 5. ФУНКЦИЯ ОБНОВЛЕНИЯ UI ----------
+            // Рендерим ячейки
+            rouletteSlider.innerHTML = cells.map((cell, index) => {
+                const isHighlight = (index === highlightIndex);
+                const emptyClass = cell.empty ? ' empty' : '';
+                const highlightClass = isHighlight ? ' highlight' : '';
+                
+                let content = '';
+                if (cell.image && !cell.empty) {
+                    content = `
+                        <img src="${cell.image}" alt="${cell.name}" loading="lazy">
+                        <div class="cell-name">${cell.name}</div>
+                        <div class="cell-rarity">${cell.rarity}</div>
+                    `;
+                } else if (cell.empty) {
+                    content = `
+                        <div style="font-size:24px; opacity:0.3;">❌</div>
+                        <div class="cell-name" style="opacity:0.3;">Пусто</div>
+                    `;
+                } else {
+                    content = `
+                        <div style="font-size:28px;">🎁</div>
+                        <div class="cell-name">${cell.name}</div>
+                        <div class="cell-rarity">${cell.rarity}</div>
+                    `;
+                }
+                
+                return `<div class="roulette-cell${emptyClass}${highlightClass}">${content}</div>`;
+            }).join('');
+        }
+
+        // ---------- 6. ФУНКЦИЯ ОБНОВЛЕНИЯ UI ----------
         function render() {
             balanceDisplay.textContent = state.balance.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             nftCount.textContent = state.inventory.length + ' шт.';
@@ -717,7 +789,7 @@
                 inventoryGrid.innerHTML = state.inventory.map(item => {
                     const iconHtml = item.image 
                         ? `<img class="nft-image" src="${item.image}" alt="${item.name}">` 
-                        : `<div class="nft-icon">${item.icon || '🎁'}</div>`;
+                        : `<div class="nft-icon">🎁</div>`;
                     return `
                         <div class="nft-item" data-id="${item.id}">
                             <div class="glow-pulse"></div>
@@ -758,178 +830,11 @@
             statSpins.textContent = state.spins;
             statUpgrades.textContent = state.upgradeCount;
 
-            // Обновляем кнопку рулетки с учётом множителя
-            const baseCost = 150;
-            const totalCost = baseCost * state.multiplier;
-            spinBtn.textContent = `РАСКРУТИТЬ ЗА ${totalCost}`;
+            // Рендерим ячейки рулетки (без подсветки)
+            renderRouletteCells();
 
             saveState();
         }
 
-        // ---------- 6. НАВИГАЦИЯ ----------
-        function switchScreen(screenId) {
-            screens.forEach(s => s.classList.remove('active'));
-            const target = document.getElementById(screenId);
-            if (target) target.classList.add('active');
-            navBtns.forEach(btn => {
-                const scr = btn.dataset.screen;
-                btn.classList.toggle('active', scr === screenId);
-            });
-        }
-
-        navBtns.forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                const screenId = this.dataset.screen;
-                if (screenId) switchScreen(screenId);
-                if (navigator.vibrate) navigator.vibrate(10);
-            });
-        });
-
-        // ---------- 7. НОВАЯ РУЛЕТКА (С МНОЖИТЕЛЯМИ) ----------
-        // Обработка чип-кнопок (1X, 10X, 100X)
-        chipBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                chipBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                state.multiplier = parseInt(this.dataset.multiplier, 10);
-                render();
-                if (navigator.vibrate) navigator.vibrate(10);
-            });
-        });
-
-        spinBtn.addEventListener('click', function() {
-            if (state.isSpinning) return;
-
-            const baseCost = 150;
-            const totalCost = baseCost * state.multiplier;
-
-            if (state.balance < totalCost) {
-                rouletteResult.textContent = `❌ Недостаточно GIFT (нужно ${totalCost})`;
-                tg.showAlert(`Недостаточно GIFT! Нужно ${totalCost}`);
-                return;
-            }
-
-            state.isSpinning = true;
-            spinBtn.disabled = true;
-            state.balance -= totalCost;
-            state.spins += 1;
-            render();
-
-            const winIndex = Math.floor(Math.random() * roulettePrizes.length);
-            const prize = roulettePrizes[winIndex];
-            const extraDeg = 360 / roulettePrizes.length;
-            const targetDeg = 360 * 6 + (winIndex * extraDeg) + (extraDeg / 2);
-            state.rouletteAngle += targetDeg;
-            rouletteWheel.style.transform = `rotate(${state.rouletteAngle}deg)`;
-
-            if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
-
-            setTimeout(() => {
-                state.isSpinning = false;
-                spinBtn.disabled = false;
-
-                if (prize.name !== '❌ Пусто') {
-                    const newGift = {
-                        id: 'gift_' + Date.now(),
-                        name: prize.name,
-                        rarity: prize.rarity || 'обычный',
-                        icon: prize.icon || '🎁',
-                        image: prize.image || '',
-                    };
-                    state.inventory.push(newGift);
-                    rouletteResult.textContent = `🎉 Вы выиграли: ${prize.name}! (${prize.rarity})`;
-                    tg.showAlert(`🎉 Поздравляем! Вы выиграли ${prize.name}!`);
-                } else {
-                    rouletteResult.textContent = '😞 Пусто. Попробуйте ещё!';
-                }
-                render();
-                sendToBot({
-                    action: 'roulette_spin',
-                    payload: { 
-                        prize: prize.name, 
-                        rarity: prize.rarity || 'обычный',
-                        multiplier: state.multiplier,
-                        balance: state.balance 
-                    }
-                });
-            }, 4500);
-        });
-
-        // Двойной тап для быстрого кручения (эмуляция)
-        let lastTap = 0;
-        spinBtn.addEventListener('dblclick', function(e) {
-            e.preventDefault();
-            if (!state.isSpinning) {
-                spinBtn.click();
-                tg.showAlert('⚡ БЫСТРОЕ КРУЧЕНИЕ!');
-            }
-        });
-
-        // ---------- 8. ОБРАБОТЧИКИ ДЛЯ АПГРЕЙДОВ ----------
-        upgradeList.addEventListener('click', function(e) {
-            const btn = e.target.closest('.upgrade-btn');
-            if (!btn) return;
-            if (btn.disabled) return;
-            const id = btn.dataset.id;
-            const upgrade = state.upgrades.find(u => u.id === id);
-            if (!upgrade) return;
-            if (upgrade.level >= upgrade.maxLvl) return;
-            if (state.balance < upgrade.cost) {
-                tg.showAlert('Недостаточно GIFT для апгрейда!');
-                return;
-            }
-            state.balance -= upgrade.cost;
-            upgrade.level += 1;
-            upgrade.cost = Math.floor(upgrade.cost * 1.4);
-            state.upgradeCount += 1;
-            render();
-            sendToBot({
-                action: 'upgrade',
-                payload: { id: upgrade.id, newLevel: upgrade.level }
-            });
-            if (navigator.vibrate) navigator.vibrate(20);
-        });
-
-        // ---------- 9. КЛИК ПО NFT ----------
-        inventoryGrid.addEventListener('click', function(e) {
-            const item = e.target.closest('.nft-item');
-            if (!item) return;
-            const id = item.dataset.id;
-            const gift = state.inventory.find(n => n.id === id);
-            if (gift) {
-                tg.showAlert(`📦 ${gift.name}\nРедкость: ${gift.rarity}\nID: ${gift.id}`);
-                sendToBot({
-                    action: 'view_nft',
-                    payload: { nftId: gift.id, name: gift.name }
-                });
-            }
-        });
-
-        // ---------- 10. ОТПРАВКА ДАННЫХ В БОТА ----------
-        function sendToBot(data) {
-            try {
-                if (isTelegram && tg && typeof tg.sendData === 'function') {
-                    tg.sendData(JSON.stringify(data));
-                } else {
-                    console.log('Emulated sendData:', JSON.stringify(data));
-                }
-            } catch (e) {
-                console.warn('sendData error:', e);
-            }
-        }
-
-        // ---------- 11. ИНИЦИАЛИЗАЦИЯ ----------
-        render();
-        rouletteWheel.style.transform = `rotate(0deg)`;
-
-        sendToBot({
-            action: 'app_open',
-            payload: { user_id: state.user.id, timestamp: Date.now() }
-        });
-
-        console.log('[LAB NFT] Mini App загружен. Подарков в рулетке:', roulettePrizes.length);
-        console.log('[LAB NFT] Режим Telegram:', isTelegram);
-    })();
-</script>
-</body>
-</html>
+        // ---------- 7. НАВИГАЦИЯ ----------
+       
