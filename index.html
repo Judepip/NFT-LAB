@@ -135,7 +135,7 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         }
 
-        /* ----- ИНВЕНТАРЬ (NFT-подарки) ----- */
+        /* ----- ИНВЕНТАРЬ ----- */
         .nft-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -208,12 +208,12 @@
             font-size: 14px;
         }
 
-        /* ----- НОВАЯ ГОРИЗОНТАЛЬНАЯ РУЛЕТКА (10 ЯЧЕЕК) ----- */
+        /* ----- ГОРИЗОНТАЛЬНАЯ РУЛЕТКА ----- */
         .roulette-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             width: 100%;
         }
 
@@ -236,7 +236,7 @@
         }
 
         .roulette-cell {
-            flex: 0 0 calc(20% - 8px); /* 5 ячеек видно на экране, 10 всего */
+            flex: 0 0 calc(20% - 8px);
             min-width: 60px;
             aspect-ratio: 3/4;
             background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
@@ -321,7 +321,7 @@
             box-shadow: 0 0 30px rgba(0,255,136,0.3);
             transition: 0.15s;
             cursor: pointer;
-            margin-top: 8px;
+            margin-top: 4px;
         }
         .roulette-btn:active {
             transform: scale(0.96);
@@ -338,14 +338,14 @@
             font-size: 14px;
             min-height: 24px;
             color: var(--neon-cyan);
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .roulette-hint {
             font-size: 11px;
             color: var(--text-secondary);
             text-align: center;
-            margin-top: 2px;
+            margin-top: 0;
         }
 
         /* ----- АПГРЕЙД ----- */
@@ -538,25 +538,18 @@
             </div>
         </div>
 
-        <!-- ЭКРАН: РУЛЕТКА (ГОРИЗОНТАЛЬНАЯ) -->
+        <!-- ЭКРАН: РУЛЕТКА -->
         <div class="screen" id="screenRoulette">
             <div class="glass-card">
                 <div class="roulette-container">
-                    <!-- Трек с ячейками -->
                     <div class="roulette-track">
                         <div class="roulette-indicator"></div>
                         <div class="roulette-slider" id="rouletteSlider">
-                            <!-- Ячейки заполняются из JS -->
+                            <!-- заполняется из JS -->
                         </div>
                     </div>
-
-                    <!-- Результат -->
                     <div id="rouletteResult" class="roulette-result">Нажмите "РАСКРУТИТЬ"</div>
-                    
-                    <!-- Кнопка запуска (фиксированная цена 150) -->
                     <button class="roulette-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150</button>
-                    
-                    <!-- Подсказка -->
                     <div class="roulette-hint">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
                 </div>
             </div>
@@ -615,7 +608,7 @@
     (function() {
         'use strict';
 
-        // ---------- 1. TELEGRAM SDK (БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ) ----------
+        // ---------- 1. TELEGRAM SDK ----------
         let tg = null;
         let isTelegram = false;
 
@@ -727,57 +720,7 @@
         const statSpins = $('statSpins');
         const statUpgrades = $('statUpgrades');
 
-        // ---------- 5. ФУНКЦИЯ СОЗДАНИЯ ЯЧЕЕК РУЛЕТКИ ----------
-        function renderRouletteCells(highlightIndex = -1) {
-            // Создаём массив ячеек: 10 подарков + 2 пустых для объёма
-            const cells = [];
-            
-            // Добавляем 2 пустых ячейки в начало
-            for (let i = 0; i < 2; i++) {
-                cells.push({ name: '❌ Пусто', rarity: '', image: '', empty: true });
-            }
-            
-            // Добавляем все подарки
-            GIFTS.forEach(g => {
-                cells.push({ ...g, empty: false });
-            });
-            
-            // Добавляем 2 пустых ячейки в конец
-            for (let i = 0; i < 2; i++) {
-                cells.push({ name: '❌ Пусто', rarity: '', image: '', empty: true });
-            }
-
-            // Рендерим ячейки
-            rouletteSlider.innerHTML = cells.map((cell, index) => {
-                const isHighlight = (index === highlightIndex);
-                const emptyClass = cell.empty ? ' empty' : '';
-                const highlightClass = isHighlight ? ' highlight' : '';
-                
-                let content = '';
-                if (cell.image && !cell.empty) {
-                    content = `
-                        <img src="${cell.image}" alt="${cell.name}" loading="lazy">
-                        <div class="cell-name">${cell.name}</div>
-                        <div class="cell-rarity">${cell.rarity}</div>
-                    `;
-                } else if (cell.empty) {
-                    content = `
-                        <div style="font-size:24px; opacity:0.3;">❌</div>
-                        <div class="cell-name" style="opacity:0.3;">Пусто</div>
-                    `;
-                } else {
-                    content = `
-                        <div style="font-size:28px;">🎁</div>
-                        <div class="cell-name">${cell.name}</div>
-                        <div class="cell-rarity">${cell.rarity}</div>
-                    `;
-                }
-                
-                return `<div class="roulette-cell${emptyClass}${highlightClass}">${content}</div>`;
-            }).join('');
-        }
-
-        // ---------- 6. ФУНКЦИЯ ОБНОВЛЕНИЯ UI ----------
+        // ---------- 5. ФУНКЦИЯ ОБНОВЛЕНИЯ UI ----------
         function render() {
             balanceDisplay.textContent = state.balance.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             nftCount.textContent = state.inventory.length + ' шт.';
@@ -836,5 +779,218 @@
             saveState();
         }
 
+        // ---------- 6. РЕНДЕР ЯЧЕЕК РУЛЕТКИ ----------
+        function renderRouletteCells(highlightIndex = -1) {
+            // Создаём массив ячеек: 2 пустых + 10 подарков + 2 пустых
+            const cells = [];
+            
+            // 2 пустых в начале
+            for (let i = 0; i < 2; i++) {
+                cells.push({ name: '❌ Пусто', rarity: '', image: '', empty: true });
+            }
+            
+            // 10 подарков
+            GIFTS.forEach(g => {
+                cells.push({ ...g, empty: false });
+            });
+            
+            // 2 пустых в конце
+            for (let i = 0; i < 2; i++) {
+                cells.push({ name: '❌ Пусто', rarity: '', image: '', empty: true });
+            }
+
+            // Рендерим HTML
+            rouletteSlider.innerHTML = cells.map((cell, index) => {
+                const isHighlight = (index === highlightIndex);
+                const emptyClass = cell.empty ? ' empty' : '';
+                const highlightClass = isHighlight ? ' highlight' : '';
+                
+                let content = '';
+                if (cell.image && !cell.empty) {
+                    content = `
+                        <img src="${cell.image}" alt="${cell.name}" loading="lazy">
+                        <div class="cell-name">${cell.name}</div>
+                        <div class="cell-rarity">${cell.rarity}</div>
+                    `;
+                } else if (cell.empty) {
+                    content = `
+                        <div style="font-size:24px; opacity:0.3;">❌</div>
+                        <div class="cell-name" style="opacity:0.3;">Пусто</div>
+                    `;
+                } else {
+                    content = `
+                        <div style="font-size:28px;">🎁</div>
+                        <div class="cell-name">${cell.name}</div>
+                        <div class="cell-rarity">${cell.rarity}</div>
+                    `;
+                }
+                
+                return `<div class="roulette-cell${emptyClass}${highlightClass}">${content}</div>`;
+            }).join('');
+        }
+
         // ---------- 7. НАВИГАЦИЯ ----------
-       
+        function switchScreen(screenId) {
+            screens.forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) target.classList.add('active');
+            navBtns.forEach(btn => {
+                const scr = btn.dataset.screen;
+                btn.classList.toggle('active', scr === screenId);
+            });
+        }
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const screenId = this.dataset.screen;
+                if (screenId) switchScreen(screenId);
+                if (navigator.vibrate) navigator.vibrate(10);
+            });
+        });
+
+        // ---------- 8. ЛОГИКА РУЛЕТКИ ----------
+        spinBtn.addEventListener('click', function() {
+            if (state.isSpinning) return;
+            if (state.balance < 150) {
+                rouletteResult.textContent = '❌ Недостаточно GIFT (нужно 150)';
+                tg.showAlert('Недостаточно GIFT! Нужно 150');
+                return;
+            }
+
+            state.isSpinning = true;
+            spinBtn.disabled = true;
+            state.balance -= 150;
+            state.spins += 1;
+            render();
+
+            // Выбираем случайный подарок из GIFTS (индекс от 0 до 9)
+            const winIndex = Math.floor(Math.random() * GIFTS.length);
+            const prize = GIFTS[winIndex];
+
+            // Сдвигаем слайдер так, чтобы выигрышная ячейка оказалась по центру
+            // Всего ячеек: 2 пустых + 10 подарков + 2 пустых = 14
+            // Индекс выигрышной ячейки в слайдере = winIndex + 2 (потому что 2 пустых в начале)
+            const cellIndex = winIndex + 2;
+            const totalCells = 14;
+            // Ширина ячейки + отступ = примерно 20% экрана, но считаем через translate
+            // Сдвигаем так, чтобы ячейка оказалась в центре (3-я позиция из 5 видимых)
+            const visibleCells = 5; // сколько видно на экране
+            const offset = (cellIndex - Math.floor(visibleCells / 2)) * (100 / visibleCells);
+            rouletteSlider.style.transform = `translateX(-${offset}%)`;
+
+            // Подсветка выигрышной ячейки
+            setTimeout(() => {
+                renderRouletteCells(cellIndex);
+            }, 100);
+
+            if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
+
+            setTimeout(() => {
+                state.isSpinning = false;
+                spinBtn.disabled = false;
+                
+                // Добавляем выигрыш в инвентарь
+                const newGift = {
+                    id: 'gift_' + Date.now(),
+                    name: prize.name,
+                    rarity: prize.rarity || 'обычный',
+                    image: prize.image || '',
+                };
+                state.inventory.push(newGift);
+                rouletteResult.textContent = `🎉 Вы выиграли: ${prize.name}! (${prize.rarity})`;
+                tg.showAlert(`🎉 Поздравляем! Вы выиграли ${prize.name}!`);
+                
+                // Снимаем подсветку через 2 секунды
+                setTimeout(() => {
+                    renderRouletteCells();
+                }, 2000);
+                
+                render();
+                sendToBot({
+                    action: 'roulette_spin',
+                    payload: { 
+                        prize: prize.name, 
+                        rarity: prize.rarity,
+                        balance: state.balance 
+                    }
+                });
+            }, 900);
+        });
+
+        // Двойной тап для быстрого кручения
+        spinBtn.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+            if (!state.isSpinning) {
+                spinBtn.click();
+                tg.showAlert('⚡ БЫСТРОЕ КРУЧЕНИЕ!');
+            }
+        });
+
+        // ---------- 9. ОБРАБОТЧИКИ ДЛЯ АПГРЕЙДОВ ----------
+        upgradeList.addEventListener('click', function(e) {
+            const btn = e.target.closest('.upgrade-btn');
+            if (!btn) return;
+            if (btn.disabled) return;
+            const id = btn.dataset.id;
+            const upgrade = state.upgrades.find(u => u.id === id);
+            if (!upgrade) return;
+            if (upgrade.level >= upgrade.maxLvl) return;
+            if (state.balance < upgrade.cost) {
+                tg.showAlert('Недостаточно GIFT для апгрейда!');
+                return;
+            }
+            state.balance -= upgrade.cost;
+            upgrade.level += 1;
+            upgrade.cost = Math.floor(upgrade.cost * 1.4);
+            state.upgradeCount += 1;
+            render();
+            sendToBot({
+                action: 'upgrade',
+                payload: { id: upgrade.id, newLevel: upgrade.level }
+            });
+            if (navigator.vibrate) navigator.vibrate(20);
+        });
+
+        // ---------- 10. КЛИК ПО NFT ----------
+        inventoryGrid.addEventListener('click', function(e) {
+            const item = e.target.closest('.nft-item');
+            if (!item) return;
+            const id = item.dataset.id;
+            const gift = state.inventory.find(n => n.id === id);
+            if (gift) {
+                tg.showAlert(`📦 ${gift.name}\nРедкость: ${gift.rarity}\nID: ${gift.id}`);
+                sendToBot({
+                    action: 'view_nft',
+                    payload: { nftId: gift.id, name: gift.name }
+                });
+            }
+        });
+
+        // ---------- 11. ОТПРАВКА ДАННЫХ В БОТА ----------
+        function sendToBot(data) {
+            try {
+                if (isTelegram && tg && typeof tg.sendData === 'function') {
+                    tg.sendData(JSON.stringify(data));
+                } else {
+                    console.log('Emulated sendData:', JSON.stringify(data));
+                }
+            } catch (e) {
+                console.warn('sendData error:', e);
+            }
+        }
+
+        // ---------- 12. ИНИЦИАЛИЗАЦИЯ ----------
+        render();
+        rouletteSlider.style.transform = 'translateX(0%)';
+
+        sendToBot({
+            action: 'app_open',
+            payload: { user_id: state.user.id, timestamp: Date.now() }
+        });
+
+        console.log('[LAB NFT] Mini App загружен. Подарков:', GIFTS.length);
+        console.log('[LAB NFT] Режим Telegram:', isTelegram);
+    })();
+</script>
+</body>
+</html>
