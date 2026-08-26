@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LAB NFT · Mini App</title>
-    <!-- Эмуляция Telegram WebApp, если SDK не загрузился -->
     <script>
         if (!window.Telegram) {
             window.Telegram = {
@@ -229,7 +228,7 @@
             font-size: 14px;
         }
 
-        /* ----- РУЛЕТКА ----- */
+        /* ----- РУЛЕТКА (С НАСТОЯЩЕЙ АНИМАЦИЕЙ) ----- */
         .roulette-container {
             display: flex;
             flex-direction: column;
@@ -255,7 +254,7 @@
             gap: 8px;
             padding: 0 8px;
             will-change: transform;
-            transition: transform 5s cubic-bezier(0.1, 0.7, 0.3, 1);
+            /* transition задаётся через JS для полного контроля */
         }
 
         .roulette-cell {
@@ -697,13 +696,13 @@
             { name: 'Мишка', rarity: 'обычный', image: BASE_URL + '/images/Мишка.gif' },
         ];
 
-        // ---------- 4. СОСТОЯНИЕ (С ПРИНУДИТЕЛЬНЫМ СБРОСОМ СТАРЫХ ДАННЫХ) ----------
+        // ---------- 4. СОСТОЯНИЕ ----------
         const STORAGE_KEY = 'lab_nft_state';
         const VERSION_KEY = 'lab_nft_version';
 
         function getDefaultState() {
             return {
-                inventory: [], // ← ПУСТОЙ ИНВЕНТАРЬ
+                inventory: [],
                 balance: 1000.0,
                 spins: 0,
                 upgrades: [
@@ -716,15 +715,12 @@
         }
 
         let state;
-
-        // Проверяем версию — если обновился код, сбрасываем старые данные
-        const currentVersion = '2.0';
+        const currentVersion = '2.1';
         const savedVersion = localStorage.getItem(VERSION_KEY);
 
         try {
             if (savedVersion !== currentVersion) {
-                // Новая версия — сбрасываем всё
-                console.log('Обнаружена новая версия приложения. Сброс старых данных...');
+                console.log('Обнаружена новая версия. Сброс старых данных...');
                 localStorage.removeItem(STORAGE_KEY);
                 localStorage.setItem(VERSION_KEY, currentVersion);
                 state = getDefaultState();
@@ -732,15 +728,12 @@
                 const saved = localStorage.getItem(STORAGE_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    // Проверяем, что инвентарь не содержит старых подарков
                     if (parsed.inventory && parsed.inventory.length > 0) {
-                        // Если есть подарки — проверяем, не старые ли они
                         const firstItem = parsed.inventory[0];
                         if (firstItem && firstItem.name && 
                             (firstItem.name.includes('Кристалл') || 
                              firstItem.name.includes('Теневой') ||
                              firstItem.name.includes('Голограмма'))) {
-                            // Это старые данные — сбрасываем
                             console.log('Обнаружены старые подарки. Сброс инвентаря...');
                             parsed.inventory = [];
                         }
@@ -757,9 +750,7 @@
             state = getDefaultState();
         }
 
-        // Принудительно очищаем инвентарь, если он не пустой (на всякий случай)
         if (state.inventory && state.inventory.length > 0) {
-            // Проверяем, есть ли подарки из старого списка
             const hasOldGifts = state.inventory.some(item => 
                 item.name && (
                     item.name.includes('Кристалл') ||
@@ -808,12 +799,10 @@
             balanceDisplay.textContent = state.balance.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             nftCount.textContent = state.inventory.length + ' шт.';
 
-            // ИНВЕНТАРЬ С GIF
             if (state.inventory.length === 0) {
                 inventoryGrid.innerHTML = `<div class="empty-inventory">🧪 Нет подарков. Крутите рулетку!</div>`;
             } else {
                 inventoryGrid.innerHTML = state.inventory.map(item => {
-                    // Используем GIF, если есть, иначе эмодзи
                     const iconHtml = item.image 
                         ? `<img class="nft-image" src="${item.image}" alt="${item.name}" loading="lazy" 
                              onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
@@ -830,7 +819,6 @@
                 }).join('');
             }
 
-            // Апгрейды
             const upgradeDefs = [
                 { id: 'up1', name: 'Генератор GIFT', desc: '+5 GIFT/час', maxLvl: 5, baseCost: 150 },
                 { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', maxLvl: 4, baseCost: 200 },
@@ -860,7 +848,6 @@
                 `;
             }).join('');
 
-            // Профиль
             profileName.textContent = tg.initDataUnsafe?.user?.first_name || 'Аноним';
             profileId.textContent = `ID: ${USER_ID}`;
             statNFT.textContent = state.inventory.length;
@@ -877,8 +864,7 @@
                 return `
                     <div class="roulette-cell" data-index="${index}">
                         <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
-                             onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
-                             onload="console.log('GIF загружен:', this.src)">
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                         <div style="font-size:28px; display:none;">🎁</div>
                         <div class="cell-name">${cell.name}</div>
                         <div class="cell-rarity">${cell.rarity}</div>
@@ -891,8 +877,6 @@
             rouletteSlider.style.transform = 'translateX(0%)';
             void rouletteSlider.offsetWidth;
             rouletteSlider.style.transition = '';
-
-            console.log('Ячейки рулетки созданы, количество:', document.querySelectorAll('.roulette-cell').length);
         }
 
         // ---------- 8. НАВИГАЦИЯ ----------
@@ -941,7 +925,7 @@
             });
         }
 
-        // ---------- 11. РУЛЕТКА ----------
+        // ---------- 11. РУЛЕТКА (С НАСТОЯЩИМ ВРАЩЕНИЕМ) ----------
         spinBtn.addEventListener('click', function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -954,9 +938,11 @@
             spinBtn.disabled = true;
             rouletteResult.textContent = '🌀 Крутим...';
 
+            // Выбираем случайный подарок
             const winIndex = Math.floor(Math.random() * GIFTS.length);
             const prize = GIFTS[winIndex];
 
+            // Списываем баланс и добавляем выигрыш
             state.balance -= 150;
             state.spins += 1;
             const newGift = {
@@ -967,26 +953,36 @@
             };
             state.inventory.push(newGift);
 
+            // --- АНИМАЦИЯ ВРАЩЕНИЯ ---
             clearHighlight();
-            
+
+            // Общее количество ячеек
             const totalCells = GIFTS.length;
-            const extraSpins = 3;
-            const cellWidthPercent = 20;
-            const offsetPercent = (totalCells * extraSpins + winIndex) * cellWidthPercent;
+            // Делаем 8 полных оборотов (80 ячеек) + доворот до выигрышной
+            const fullSpins = 8;
+            const cellWidthPercent = 20; // каждая ячейка занимает 20% ширины
             
+            // Сдвиг: (всего ячеек * количество оборотов + индекс выигрыша) * ширина ячейки
+            const offsetPercent = (totalCells * fullSpins + winIndex) * cellWidthPercent;
+            
+            // Принудительно сбрасываем позицию без анимации
             rouletteSlider.style.transition = 'none';
             rouletteSlider.style.transform = 'translateX(0%)';
-            void rouletteSlider.offsetWidth;
+            void rouletteSlider.offsetWidth; // принудительный пересчёт
             
-            rouletteSlider.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.3, 1)';
+            // Запускаем анимацию с замедлением в конце
+            rouletteSlider.style.transition = 'transform 6s cubic-bezier(0.1, 0.6, 0.2, 1)';
             rouletteSlider.style.transform = `translateX(-${offsetPercent}%)`;
 
+            // Вибрация
             if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
+            // Подсветка выигрышной ячейки за 0.5 сек до остановки
             setTimeout(() => {
                 highlightCell(winIndex);
-            }, 4800);
+            }, 5500);
 
+            // Завершение через 6.5 секунд
             setTimeout(() => {
                 state.isSpinning = false;
                 spinBtn.disabled = false;
@@ -998,7 +994,7 @@
                     action: 'roulette_spin',
                     payload: { prize: prize.name, rarity: prize.rarity, balance: state.balance }
                 });
-            }, 5500);
+            }, 6500);
         });
 
         // Двойной тап
