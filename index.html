@@ -147,7 +147,6 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         }
 
-        /* ----- ИНВЕНТАРЬ ----- */
         .nft-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -228,7 +227,7 @@
             font-size: 14px;
         }
 
-        /* ----- РУЛЕТКА (С НАСТОЯЩЕЙ АНИМАЦИЕЙ) ----- */
+        /* ----- РУЛЕТКА (БЕСКОНЕЧНАЯ ЛЕНТА) ----- */
         .roulette-container {
             display: flex;
             flex-direction: column;
@@ -254,7 +253,6 @@
             gap: 8px;
             padding: 0 8px;
             will-change: transform;
-            /* transition задаётся через JS для полного контроля */
         }
 
         .roulette-cell {
@@ -399,7 +397,6 @@
             margin-top: 0;
         }
 
-        /* ----- АПГРЕЙД ----- */
         .upgrade-item {
             display: flex;
             justify-content: space-between;
@@ -450,7 +447,6 @@
             pointer-events: none;
         }
 
-        /* ----- ПРОФИЛЬ ----- */
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -487,7 +483,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* ----- НАВИГАЦИЯ ----- */
         .nav-center {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -715,7 +710,7 @@
         }
 
         let state;
-        const currentVersion = '2.1';
+        const currentVersion = '2.2';
         const savedVersion = localStorage.getItem(VERSION_KEY);
 
         try {
@@ -858,23 +853,31 @@
             saveState();
         }
 
-        // ---------- 7. СОЗДАНИЕ ЯЧЕЕК РУЛЕТКИ ----------
+        // ---------- 7. СОЗДАНИЕ БЕСКОНЕЧНОЙ ЛЕНТЫ РУЛЕТКИ ----------
         function createRouletteCells() {
-            const cellsHtml = GIFTS.map((cell, index) => {
-                return `
-                    <div class="roulette-cell" data-index="${index}">
-                        <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
-                             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-                        <div style="font-size:28px; display:none;">🎁</div>
-                        <div class="cell-name">${cell.name}</div>
-                        <div class="cell-rarity">${cell.rarity}</div>
-                    </div>
-                `;
-            }).join('');
+            // Дублируем ячейки 10 раз, чтобы создать бесконечную ленту
+            const REPEAT_COUNT = 10;
+            let cellsHtml = '';
+            for (let rep = 0; rep < REPEAT_COUNT; rep++) {
+                GIFTS.forEach((cell, index) => {
+                    const actualIndex = rep * GIFTS.length + index;
+                    cellsHtml += `
+                        <div class="roulette-cell" data-index="${actualIndex}" data-gift-index="${index}">
+                            <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                            <div style="font-size:28px; display:none;">🎁</div>
+                            <div class="cell-name">${cell.name}</div>
+                            <div class="cell-rarity">${cell.rarity}</div>
+                        </div>
+                    `;
+                });
+            }
             
             rouletteSlider.innerHTML = cellsHtml;
+            // Начальная позиция — центр ленты
+            const initialOffset = (GIFTS.length * 5) * 20; // 50 ячеек * 20%
             rouletteSlider.style.transition = 'none';
-            rouletteSlider.style.transform = 'translateX(0%)';
+            rouletteSlider.style.transform = `translateX(-${initialOffset}%)`;
             void rouletteSlider.offsetWidth;
             rouletteSlider.style.transition = '';
         }
@@ -912,11 +915,25 @@
         }
 
         // ---------- 10. ПОДСВЕТКА ВЫИГРЫШНОЙ ЯЧЕЙКИ ----------
-        function highlightCell(index) {
-            const cells = document.querySelectorAll('.roulette-cell');
-            cells.forEach((cell, i) => {
-                cell.classList.toggle('highlight', i === index);
+        function highlightCell(giftIndex) {
+            // Находим все ячейки с данным gift-index
+            const cells = document.querySelectorAll(`.roulette-cell[data-gift-index="${giftIndex}"]`);
+            // Подсвечиваем только те, которые в центре видимой области
+            const sliderRect = rouletteSlider.getBoundingClientRect();
+            let closestCell = null;
+            let closestDist = Infinity;
+            cells.forEach(cell => {
+                const rect = cell.getBoundingClientRect();
+                const center = rect.left + rect.width / 2;
+                const dist = Math.abs(center - window.innerWidth / 2);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestCell = cell;
+                }
             });
+            if (closestCell) {
+                closestCell.classList.add('highlight');
+            }
         }
 
         function clearHighlight() {
@@ -925,7 +942,7 @@
             });
         }
 
-        // ---------- 11. РУЛЕТКА (С НАСТОЯЩИМ ВРАЩЕНИЕМ) ----------
+        // ---------- 11. РУЛЕТКА (БЕСКОНЕЧНОЕ ВРАЩЕНИЕ) ----------
         spinBtn.addEventListener('click', function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -938,9 +955,9 @@
             spinBtn.disabled = true;
             rouletteResult.textContent = '🌀 Крутим...';
 
-            // Выбираем случайный подарок
-            const winIndex = Math.floor(Math.random() * GIFTS.length);
-            const prize = GIFTS[winIndex];
+            // Выбираем случайный подарок (индекс в GIFTS)
+            const winGiftIndex = Math.floor(Math.random() * GIFTS.length);
+            const prize = GIFTS[winGiftIndex];
 
             // Списываем баланс и добавляем выигрыш
             state.balance -= 150;
@@ -953,24 +970,32 @@
             };
             state.inventory.push(newGift);
 
-            // --- АНИМАЦИЯ ВРАЩЕНИЯ ---
+            // --- БЕСКОНЕЧНОЕ ВРАЩЕНИЕ ---
             clearHighlight();
 
-            // Общее количество ячеек
-            const totalCells = GIFTS.length;
-            // Делаем 8 полных оборотов (80 ячеек) + доворот до выигрышной
-            const fullSpins = 8;
-            const cellWidthPercent = 20; // каждая ячейка занимает 20% ширины
+            // Общее количество уникальных ячеек
+            const totalUnique = GIFTS.length;
+            // Количество повторений в ленте (10 раз)
+            const repeats = 10;
+            // Индекс выигрышной ячейки в общей ленте
+            // Выбираем повторение в середине ленты (например, 5-е повторение)
+            const middleRepeat = 5;
+            const targetCellIndex = middleRepeat * totalUnique + winGiftIndex;
             
-            // Сдвиг: (всего ячеек * количество оборотов + индекс выигрыша) * ширина ячейки
-            const offsetPercent = (totalCells * fullSpins + winIndex) * cellWidthPercent;
-            
-            // Принудительно сбрасываем позицию без анимации
+            // Ширина одной ячейки в процентах
+            const cellWidthPercent = 20;
+            // Сдвиг, чтобы целевая ячейка оказалась по центру
+            // Центр — это примерно 3-я ячейка из 5 видимых
+            const visibleOffset = 2.5; // смещение на 2.5 ячейки, чтобы ячейка была строго по центру
+            const offsetPercent = targetCellIndex * cellWidthPercent - visibleOffset * cellWidthPercent;
+
+            // Сбрасываем позицию без анимации
             rouletteSlider.style.transition = 'none';
-            rouletteSlider.style.transform = 'translateX(0%)';
-            void rouletteSlider.offsetWidth; // принудительный пересчёт
+            // Устанавливаем текущую позицию (чтобы не было рывка)
+            const currentTransform = rouletteSlider.style.transform;
+            void rouletteSlider.offsetWidth;
             
-            // Запускаем анимацию с замедлением в конце
+            // Запускаем анимацию
             rouletteSlider.style.transition = 'transform 6s cubic-bezier(0.1, 0.6, 0.2, 1)';
             rouletteSlider.style.transform = `translateX(-${offsetPercent}%)`;
 
@@ -979,7 +1004,7 @@
 
             // Подсветка выигрышной ячейки за 0.5 сек до остановки
             setTimeout(() => {
-                highlightCell(winIndex);
+                highlightCell(winGiftIndex);
             }, 5500);
 
             // Завершение через 6.5 секунд
