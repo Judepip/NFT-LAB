@@ -538,6 +538,8 @@
             .roulette-cell .cell-name { font-size: 7px; }
             .nft-item .nft-image { width: 48px; height: 48px; }
             .modal-content img { width: 100px; height: 100px; }
+            .modal-actions { flex-direction: column; gap: 8px; }
+            .modal-actions .modal-btn { max-width: 100%; }
         }
 
         @media (min-width: 600px) {
@@ -558,7 +560,7 @@
         }
         .nft-item:hover .glow-pulse { opacity: 1; }
 
-        /* ---------- КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВЫИГРЫША ---------- */
+        /* ---------- КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ДЛЯ NFT ---------- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -585,7 +587,7 @@
             border: 2px solid var(--neon-green);
             border-radius: 24px;
             padding: 30px 24px 24px 24px;
-            max-width: 340px;
+            max-width: 360px;
             width: 100%;
             text-align: center;
             box-shadow: 0 0 60px rgba(0, 255, 136, 0.15);
@@ -622,37 +624,69 @@
             margin-bottom: 4px;
         }
 
-        .modal-content .modal-rarity {
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--neon-green);
+        .modal-content .modal-price {
+            font-size: 18px;
+            color: #ffd700;
             position: relative;
             z-index: 1;
             margin-bottom: 16px;
+            letter-spacing: 1px;
         }
 
-        .modal-content .modal-close-btn {
-            background: var(--neon-green);
-            color: #0a0e1a;
-            border: none;
+        .modal-content .modal-price .stars {
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .modal-actions .modal-btn {
+            padding: 12px 20px;
             border-radius: 30px;
-            padding: 12px 32px;
+            border: none;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 14px;
             font-family: var(--font-mono);
             cursor: pointer;
             transition: 0.15s;
-            position: relative;
-            z-index: 1;
-            box-shadow: 0 0 30px rgba(0,255,136,0.2);
-            width: 100%;
-            max-width: 200px;
+            flex: 1;
+            min-width: 80px;
+            max-width: 140px;
         }
 
-        .modal-content .modal-close-btn:active {
-            transform: scale(0.96);
+        .modal-actions .modal-btn:active {
+            transform: scale(0.94);
             opacity: 0.8;
+        }
+
+        .modal-actions .btn-sell {
+            background: #ffd700;
+            color: #0a0e1a;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .modal-actions .btn-withdraw {
+            background: var(--neon-cyan);
+            color: #0a0e1a;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .modal-actions .btn-close {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            border: 1px solid var(--glass-border);
+        }
+
+        .modal-actions .modal-btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -774,19 +808,19 @@
         // ---------- 2. ПОЛУЧЕНИЕ USER_ID ----------
         const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-        // ---------- 3. СПИСОК ПОДАРКОВ (GIF) ----------
+        // ---------- 3. СПИСОК ПОДАРКОВ (GIF + ЦЕНА В ЗВЁЗДАХ) ----------
         const BASE_URL = 'https://judepip.github.io/NFT-LAB';
         const GIFTS = [
-            { name: 'Bow Tie', rarity: 'редкий', image: BASE_URL + '/images/BowTie.gif' },
-            { name: 'Chill Flame', rarity: 'эпик', image: BASE_URL + '/images/ChillFlame.gif' },
-            { name: 'Big Year', rarity: 'легенд', image: BASE_URL + '/images/BigYear.gif' },
-            { name: 'JACK IN THE BOX', rarity: 'обычный', image: BASE_URL + '/images/JackInTheBox.gif' },
-            { name: 'Liberty Figure', rarity: 'легенд', image: BASE_URL + '/images/LibertyFigure.gif' },
-            { name: 'Light Sword', rarity: 'эпик', image: BASE_URL + '/images/LightSword.gif' },
-            { name: 'Star Notepad', rarity: 'редкий', image: BASE_URL + '/images/StarNotepad.gif' },
-            { name: 'Кубок', rarity: 'легенд', image: BASE_URL + '/images/Кубок.gif' },
-            { name: 'Кольцо', rarity: 'эпик', image: BASE_URL + '/images/Кольцо.gif' },
-            { name: 'Мишка', rarity: 'обычный', image: BASE_URL + '/images/Мишка.gif' },
+            { name: 'Bow Tie', rarity: 'редкий', price: 150, image: BASE_URL + '/images/BowTie.gif' },
+            { name: 'Chill Flame', rarity: 'эпик', price: 300, image: BASE_URL + '/images/ChillFlame.gif' },
+            { name: 'Big Year', rarity: 'легенд', price: 500, image: BASE_URL + '/images/BigYear.gif' },
+            { name: 'JACK IN THE BOX', rarity: 'обычный', price: 100, image: BASE_URL + '/images/JackInTheBox.gif' },
+            { name: 'Liberty Figure', rarity: 'легенд', price: 550, image: BASE_URL + '/images/LibertyFigure.gif' },
+            { name: 'Light Sword', rarity: 'эпик', price: 280, image: BASE_URL + '/images/LightSword.gif' },
+            { name: 'Star Notepad', rarity: 'редкий', price: 180, image: BASE_URL + '/images/StarNotepad.gif' },
+            { name: 'Кубок', rarity: 'легенд', price: 600, image: BASE_URL + '/images/Кубок.gif' },
+            { name: 'Кольцо', rarity: 'эпик', price: 350, image: BASE_URL + '/images/Кольцо.gif' },
+            { name: 'Мишка', rarity: 'обычный', price: 120, image: BASE_URL + '/images/Мишка.gif' },
         ];
 
         // ---------- 4. СОСТОЯНИЕ ----------
@@ -808,7 +842,7 @@
         }
 
         let state;
-        const currentVersion = '2.6';
+        const currentVersion = '2.7';
         const savedVersion = localStorage.getItem(VERSION_KEY);
 
         try {
@@ -1063,11 +1097,14 @@
             return 0;
         }
 
-        // ---------- 12. КАСТОМНОЕ МОДАЛЬНОЕ ОКНО С GIF ----------
-        function showWinModal(gift) {
-            // Удаляем старый модал, если есть
+        // ---------- 12. КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ДЛЯ NFT (С КНОПКАМИ) ----------
+        function showNftModal(gift, isWin = false) {
             const oldModal = document.querySelector('.modal-overlay');
             if (oldModal) oldModal.remove();
+
+            // Находим актуальную цену из GIFTS (если там есть price)
+            const giftData = GIFTS.find(g => g.name === gift.name);
+            const price = giftData ? giftData.price : 100;
 
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay';
@@ -1075,28 +1112,66 @@
                 <div class="modal-content">
                     <img class="modal-gif" src="${gift.image}" alt="${gift.name}" loading="lazy">
                     <div class="modal-title">${gift.name}</div>
-                    <div class="modal-rarity">${gift.rarity || 'обычный'}</div>
-                    <button class="modal-close-btn">Закрыть</button>
+                    <div class="modal-price">
+                        <span class="stars">⭐</span> ${price}
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn btn-withdraw" data-action="withdraw">ВЫВЕСТИ</button>
+                        <button class="modal-btn btn-sell" data-action="sell">ПРОДАТЬ</button>
+                        <button class="modal-btn btn-close" data-action="close">ЗАКРЫТЬ</button>
+                    </div>
                 </div>
             `;
 
             document.body.appendChild(overlay);
 
-            // Закрытие по кнопке
-            const closeBtn = overlay.querySelector('.modal-close-btn');
+            // Обработчики кнопок
+            const closeBtn = overlay.querySelector('[data-action="close"]');
+            const sellBtn = overlay.querySelector('[data-action="sell"]');
+            const withdrawBtn = overlay.querySelector('[data-action="withdraw"]');
+
+            // Закрытие
             closeBtn.addEventListener('click', function() {
                 overlay.remove();
             });
 
-            // Закрытие по клику на фон
             overlay.addEventListener('click', function(e) {
                 if (e.target === overlay) {
                     overlay.remove();
                 }
             });
+
+            // Продажа
+            sellBtn.addEventListener('click', function() {
+                // Находим NFT в инвентаре
+                const itemIndex = state.inventory.findIndex(item => item.id === gift.id);
+                if (itemIndex === -1) {
+                    tg.showAlert('❌ Этот подарок уже продан!');
+                    overlay.remove();
+                    return;
+                }
+
+                // Удаляем из инвентаря
+                state.inventory.splice(itemIndex, 1);
+                // Добавляем звёзды на баланс
+                state.balance += price;
+                render();
+                overlay.remove();
+                tg.showAlert(`✅ Вы продали ${gift.name} за ⭐${price}!`);
+                sendToBot({
+                    action: 'sell_nft',
+                    payload: { name: gift.name, price: price, balance: state.balance }
+                });
+            });
+
+            // Вывод (заглушка)
+            withdrawBtn.addEventListener('click', function() {
+                tg.showAlert(`🔜 Функция вывода "${gift.name}" в разработке!`);
+                overlay.remove();
+            });
         }
 
-        // ---------- 13. РУЛЕТКА (С КАСТОМНЫМ МОДАЛОМ) ----------
+        // ---------- 13. РУЛЕТКА ----------
         spinBtn.addEventListener('click', function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -1109,11 +1184,9 @@
             spinBtn.disabled = true;
             rouletteResult.textContent = '🌀 Крутим...';
 
-            // Выбираем случайный подарок
             const winGiftIndex = Math.floor(Math.random() * GIFTS.length);
             const prize = GIFTS[winGiftIndex];
 
-            // ---------- РАСЧЁТ СДВИГА ----------
             clearHighlight();
 
             const totalUnique = GIFTS.length;
@@ -1134,7 +1207,6 @@
 
             if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
-            // Через 4.5 секунды определяем выигрыш и показываем модал
             setTimeout(() => {
                 const actualWinIndex = getGiftUnderIndicator();
                 const actualPrize = GIFTS[actualWinIndex];
@@ -1152,8 +1224,8 @@
                 highlightCell(actualWinIndex);
                 rouletteResult.textContent = `🎉 Вы выиграли: ${actualPrize.name}! (${actualPrize.rarity})`;
                 
-                // КАСТОМНОЕ ОКНО С GIF
-                showWinModal(actualPrize);
+                // Показываем модал с GIF и кнопками
+                showNftModal(newGift, true);
                 
                 render();
                 sendToBot({
@@ -1214,15 +1286,14 @@
             });
         });
 
-        // ---------- 15. КЛИК ПО NFT ----------
+        // ---------- 15. КЛИК ПО NFT (ПОКАЗЫВАЕМ МОДАЛ) ----------
         inventoryGrid.addEventListener('click', function(e) {
             const item = e.target.closest('.nft-item');
             if (!item) return;
             const id = item.dataset.id;
             const gift = state.inventory.find(n => n.id === id);
             if (gift) {
-                // Показываем тот же модал при клике на NFT в инвентаре
-                showWinModal(gift);
+                showNftModal(gift);
                 sendToBot({
                     action: 'view_nft',
                     payload: { nftId: gift.id, name: gift.name }
