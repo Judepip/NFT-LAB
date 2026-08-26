@@ -6,7 +6,6 @@
     <title>LAB NFT · Mini App</title>
     <!-- Эмуляция Telegram WebApp, если SDK не загрузился -->
     <script>
-        // Если Telegram SDK не загрузился — создаём эмуляцию
         if (!window.Telegram) {
             window.Telegram = {
                 WebApp: {
@@ -21,7 +20,6 @@
     </script>
     <script src="https://telegram.org/js/telegram-web-app.js" onerror="console.warn('Telegram SDK не загрузился, используется эмуляция')"></script>
     <style>
-        /* ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И СБРОС ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -593,9 +591,7 @@
                 <div class="roulette-container">
                     <div class="roulette-track">
                         <div class="roulette-indicator"></div>
-                        <div class="roulette-slider" id="rouletteSlider">
-                            <!-- Ячейки создаются из JS -->
-                        </div>
+                        <div class="roulette-slider" id="rouletteSlider"></div>
                     </div>
                     <div id="rouletteResult" class="roulette-result">Нажмите "РАСКРУТИТЬ"</div>
                     <button class="roulette-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150</button>
@@ -651,7 +647,7 @@
     (function() {
         'use strict';
 
-        // ---------- 1. TELEGRAM SDK (БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ) ----------
+        // ---------- 1. TELEGRAM SDK ----------
         let tg = null;
         let isTelegram = false;
 
@@ -686,7 +682,7 @@
         // ---------- 2. ПОЛУЧЕНИЕ USER_ID ----------
         const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-        // ---------- 3. СПИСОК ПОДАРКОВ (ПОЛНЫЕ URL ДЛЯ GITHUB PAGES) ----------
+        // ---------- 3. СПИСОК ПОДАРКОВ (GIF) ----------
         const BASE_URL = 'https://judepip.github.io/NFT-LAB';
         const GIFTS = [
             { name: 'Bow Tie', rarity: 'редкий', image: BASE_URL + '/images/BowTie.gif' },
@@ -701,12 +697,13 @@
             { name: 'Мишка', rarity: 'обычный', image: BASE_URL + '/images/Мишка.gif' },
         ];
 
-        // ---------- 4. СОСТОЯНИЕ (ТОЛЬКО LOCALSTORAGE, БЕЗ БЭКЕНДА) ----------
+        // ---------- 4. СОСТОЯНИЕ (С ПРИНУДИТЕЛЬНЫМ СБРОСОМ СТАРЫХ ДАННЫХ) ----------
         const STORAGE_KEY = 'lab_nft_state';
+        const VERSION_KEY = 'lab_nft_version';
 
         function getDefaultState() {
             return {
-                inventory: [],
+                inventory: [], // ← ПУСТОЙ ИНВЕНТАРЬ
                 balance: 1000.0,
                 spins: 0,
                 upgrades: [
@@ -720,19 +717,64 @@
 
         let state;
 
+        // Проверяем версию — если обновился код, сбрасываем старые данные
+        const currentVersion = '2.0';
+        const savedVersion = localStorage.getItem(VERSION_KEY);
+
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                state = parsed;
-                console.log('Состояние загружено из localStorage');
-            } else {
+            if (savedVersion !== currentVersion) {
+                // Новая версия — сбрасываем всё
+                console.log('Обнаружена новая версия приложения. Сброс старых данных...');
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.setItem(VERSION_KEY, currentVersion);
                 state = getDefaultState();
-                console.log('Создано новое состояние');
+            } else {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    // Проверяем, что инвентарь не содержит старых подарков
+                    if (parsed.inventory && parsed.inventory.length > 0) {
+                        // Если есть подарки — проверяем, не старые ли они
+                        const firstItem = parsed.inventory[0];
+                        if (firstItem && firstItem.name && 
+                            (firstItem.name.includes('Кристалл') || 
+                             firstItem.name.includes('Теневой') ||
+                             firstItem.name.includes('Голограмма'))) {
+                            // Это старые данные — сбрасываем
+                            console.log('Обнаружены старые подарки. Сброс инвентаря...');
+                            parsed.inventory = [];
+                        }
+                    }
+                    state = parsed;
+                    console.log('Состояние загружено из localStorage');
+                } else {
+                    state = getDefaultState();
+                    console.log('Создано новое состояние');
+                }
             }
         } catch (e) {
             console.warn('Ошибка загрузки состояния:', e);
             state = getDefaultState();
+        }
+
+        // Принудительно очищаем инвентарь, если он не пустой (на всякий случай)
+        if (state.inventory && state.inventory.length > 0) {
+            // Проверяем, есть ли подарки из старого списка
+            const hasOldGifts = state.inventory.some(item => 
+                item.name && (
+                    item.name.includes('Кристалл') ||
+                    item.name.includes('Теневой') ||
+                    item.name.includes('Голограмма') ||
+                    item.name.includes('Нейро-куб') ||
+                    item.name.includes('Плазменный') ||
+                    item.name.includes('Квантовый')
+                )
+            );
+            if (hasOldGifts) {
+                console.log('Удалены старые подарки из инвентаря');
+                state.inventory = [];
+                saveState();
+            }
         }
 
         function saveState() {
@@ -766,13 +808,16 @@
             balanceDisplay.textContent = state.balance.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             nftCount.textContent = state.inventory.length + ' шт.';
 
-            // Инвентарь
+            // ИНВЕНТАРЬ С GIF
             if (state.inventory.length === 0) {
                 inventoryGrid.innerHTML = `<div class="empty-inventory">🧪 Нет подарков. Крутите рулетку!</div>`;
             } else {
                 inventoryGrid.innerHTML = state.inventory.map(item => {
+                    // Используем GIF, если есть, иначе эмодзи
                     const iconHtml = item.image 
-                        ? `<img class="nft-image" src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="nft-icon" style="display:none;">🎁</div>`
+                        ? `<img class="nft-image" src="${item.image}" alt="${item.name}" loading="lazy" 
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                           <div class="nft-icon" style="display:none;">🎁</div>`
                         : `<div class="nft-icon">🎁</div>`;
                     return `
                         <div class="nft-item" data-id="${item.id}">
@@ -826,7 +871,7 @@
             saveState();
         }
 
-        // ---------- 7. СОЗДАНИЕ ЯЧЕЕК РУЛЕТКИ (С ПОЛНЫМИ URL) ----------
+        // ---------- 7. СОЗДАНИЕ ЯЧЕЕК РУЛЕТКИ ----------
         function createRouletteCells() {
             const cellsHtml = GIFTS.map((cell, index) => {
                 return `
@@ -896,7 +941,7 @@
             });
         }
 
-        // ---------- 11. РУЛЕТКА (5 СЕКУНД) ----------
+        // ---------- 11. РУЛЕТКА ----------
         spinBtn.addEventListener('click', function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -912,7 +957,6 @@
             const winIndex = Math.floor(Math.random() * GIFTS.length);
             const prize = GIFTS[winIndex];
 
-            // Списываем баланс и добавляем выигрыш
             state.balance -= 150;
             state.spins += 1;
             const newGift = {
@@ -923,7 +967,6 @@
             };
             state.inventory.push(newGift);
 
-            // Анимация
             clearHighlight();
             
             const totalCells = GIFTS.length;
@@ -1026,6 +1069,7 @@
         console.log('[LAB NFT] Mini App загружен. User ID:', USER_ID);
         console.log('[LAB NFT] Режим Telegram:', isTelegram);
         console.log('[LAB NFT] Всего подарков:', GIFTS.length);
+        console.log('[LAB NFT] Текущий инвентарь:', state.inventory.length, 'подарков');
     })();
 </script>
 </body>
