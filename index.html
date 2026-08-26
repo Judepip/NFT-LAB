@@ -19,11 +19,7 @@
     </script>
     <script src="https://telegram.org/js/telegram-web-app.js" onerror="console.warn('Telegram SDK не загрузился, используется эмуляция')"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --bg-primary: #0a0e1a;
             --bg-secondary: #12182b;
@@ -36,15 +32,7 @@
             --font-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
             --gold: #ffd700;
         }
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            font-family: var(--font-mono);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
+        html, body { height: 100%; overflow: hidden; font-family: var(--font-mono); background: var(--bg-primary); color: var(--text-primary); user-select: none; -webkit-tap-highlight-color: transparent; }
         body::before {
             content: '';
             position: fixed;
@@ -57,705 +45,104 @@
             pointer-events: none;
             z-index: 0;
         }
+        #app { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100vh; max-height: 100vh; padding: 8px 12px 8px 12px; backdrop-filter: blur(2px); }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 6px 14px 6px; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; }
+        .header h1 { font-size: 18px; font-weight: 600; letter-spacing: 1px; background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 20px rgba(0,255,136,0.2); }
+        .balance { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 30px; padding: 6px 16px; font-size: 14px; font-weight: 500; color: var(--gold); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 6px; }
+        .balance span { color: var(--text-secondary); font-weight: 400; }
+        .content { flex: 1; overflow-y: auto; overflow-x: hidden; margin: 10px 0 10px 0; padding: 4px 2px; scrollbar-width: thin; scrollbar-color: var(--neon-green) transparent; min-height: 0; }
+        .content::-webkit-scrollbar { width: 3px; }
+        .content::-webkit-scrollbar-track { background: transparent; }
+        .content::-webkit-scrollbar-thumb { background: var(--neon-green); border-radius: 10px; }
+        .screen { display: none; animation: fadeSlide 0.25s ease-out; }
+        .screen.active { display: block; }
+        @keyframes fadeSlide { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+        .glass-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 18px 16px; margin-bottom: 12px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
 
-        #app {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            max-height: 100vh;
-            padding: 8px 12px 8px 12px;
-            backdrop-filter: blur(2px);
-        }
+        .nft-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .nft-item { aspect-ratio: 1/1; background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428); border: 1px solid rgba(0,255,136,0.3); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: var(--text-secondary); transition: all 0.2s; box-shadow: 0 0 15px rgba(0,255,136,0.05); position: relative; overflow: hidden; cursor: pointer; padding: 4px; }
+        .nft-item::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, transparent, rgba(0,255,136,0.05), transparent, rgba(0,212,255,0.05), transparent); animation: rotateGlow 6s linear infinite; }
+        @keyframes rotateGlow { 100% { transform: rotate(360deg); } }
+        .nft-item .nft-icon { font-size: 36px; z-index: 1; filter: drop-shadow(0 0 8px rgba(0,255,136,0.4)); }
+        .nft-item .nft-image { width: 64px; height: 64px; object-fit: contain; z-index: 1; filter: drop-shadow(0 0 8px rgba(0,255,136,0.3)); }
+        .nft-item .nft-name { z-index: 1; margin-top: 4px; font-weight: 500; color: var(--text-primary); font-size: 10px; text-align: center; line-height: 1.2; max-width: 100%; word-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .empty-inventory { color: var(--text-secondary); text-align: center; padding: 30px 0; font-size: 14px; }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 6px 14px 6px;
-            border-bottom: 1px solid var(--glass-border);
-            flex-shrink: 0;
-        }
-        .header h1 {
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px rgba(0,255,136,0.2);
-        }
-        .balance {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 30px;
-            padding: 6px 16px;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--gold);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .balance span {
-            color: var(--text-secondary);
-            font-weight: 400;
-        }
+        .roulette-container { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+        .roulette-track { position: relative; width: 100%; overflow: hidden; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--glass-bg); padding: 8px 0; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+        .roulette-slider { display: flex; gap: 8px; padding: 0 8px; will-change: transform; transition: transform 5s cubic-bezier(0.1, 0.6, 0.2, 1); }
+        .roulette-cell { flex: 0 0 calc(20% - 8px); min-width: 60px; aspect-ratio: 3/4; background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428); border: 1px solid rgba(0,255,136,0.2); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 2px; transition: all 0.3s; box-shadow: 0 0 15px rgba(0,255,136,0.03); overflow: hidden; }
+        .roulette-cell img { width: 48px; height: 48px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(0,255,136,0.2)); margin-bottom: 2px; flex-shrink: 0; }
+        .roulette-cell .cell-name { font-size: 7px; font-weight: 600; text-align: center; color: var(--text-primary); line-height: 1.1; max-width: 100%; word-wrap: break-word; overflow-wrap: break-word; padding: 0 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; min-height: 16px; }
+        .roulette-cell.highlight { border-color: var(--neon-green); box-shadow: 0 0 40px rgba(0,255,136,0.4); transform: scale(1.05); }
+        .roulette-cell.highlight img { filter: drop-shadow(0 0 20px rgba(0,255,136,0.6)); }
+        .roulette-indicator { position: absolute; top: -2px; left: 50%; transform: translateX(-50%); width: 4px; height: calc(100% + 4px); background: var(--neon-green); box-shadow: 0 0 30px var(--neon-green), 0 0 60px rgba(0,255,136,0.3); border-radius: 2px; z-index: 10; pointer-events: none; }
+        .roulette-indicator::before, .roulette-indicator::after { content: ''; position: absolute; width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 20px var(--neon-green); left: 50%; transform: translateX(-50%); }
+        .roulette-indicator::before { top: -4px; }
+        .roulette-indicator::after { bottom: -4px; }
+        .roulette-btn { background: var(--neon-green); color: #0a0e1a; border: none; border-radius: 30px; padding: 14px 32px; font-weight: 700; font-size: 18px; font-family: var(--font-mono); width: 100%; max-width: 280px; box-shadow: 0 0 30px rgba(0,255,136,0.3); transition: 0.15s; cursor: pointer; margin-top: 4px; }
+        .roulette-btn:active { transform: scale(0.96); opacity: 0.8; }
+        .roulette-btn:disabled { opacity: 0.4; transform: scale(1); pointer-events: none; }
+        .roulette-result { text-align: center; font-size: 14px; min-height: 24px; color: var(--neon-cyan); margin-top: 2px; font-weight: 500; }
+        .roulette-hint { font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 0; }
 
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            margin: 10px 0 10px 0;
-            padding: 4px 2px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--neon-green) transparent;
-            min-height: 0;
-        }
-        .content::-webkit-scrollbar {
-            width: 3px;
-        }
-        .content::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .content::-webkit-scrollbar-thumb {
-            background: var(--neon-green);
-            border-radius: 10px;
-        }
-
-        .screen {
-            display: none;
-            animation: fadeSlide 0.25s ease-out;
-        }
-        .screen.active {
-            display: block;
-        }
-
-        @keyframes fadeSlide {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        .glass-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 18px 16px;
-            margin-bottom: 12px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-        }
-
-        .nft-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-        .nft-item {
-            aspect-ratio: 1/1;
-            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
-            border: 1px solid rgba(0,255,136,0.3);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-            box-shadow: 0 0 15px rgba(0,255,136,0.05);
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-            padding: 4px;
-        }
-        .nft-item::after {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: conic-gradient(from 0deg, transparent, rgba(0,255,136,0.05), transparent, rgba(0,212,255,0.05), transparent);
-            animation: rotateGlow 6s linear infinite;
-        }
-        @keyframes rotateGlow {
-            100% { transform: rotate(360deg); }
-        }
-        .nft-item .nft-icon {
-            font-size: 36px;
-            z-index: 1;
-            filter: drop-shadow(0 0 8px rgba(0,255,136,0.4));
-        }
-        .nft-item .nft-image {
-            width: 64px;
-            height: 64px;
-            object-fit: contain;
-            z-index: 1;
-            filter: drop-shadow(0 0 8px rgba(0,255,136,0.3));
-        }
-        .nft-item .nft-name {
-            z-index: 1;
-            margin-top: 4px;
-            font-weight: 500;
-            color: var(--text-primary);
-            font-size: 10px;
-            text-align: center;
-            line-height: 1.2;
-            max-width: 100%;
-            word-wrap: break-word;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .nft-item .nft-rarity {
-            z-index: 1;
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 2px 8px;
-            border-radius: 20px;
-            background: rgba(0,255,136,0.15);
-            color: var(--neon-green);
-            margin-top: 2px;
-            white-space: nowrap;
-        }
-        .empty-inventory {
-            color: var(--text-secondary);
-            text-align: center;
-            padding: 30px 0;
-            font-size: 14px;
-        }
-
-        .roulette-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            width: 100%;
-        }
-
-        .roulette-track {
-            position: relative;
-            width: 100%;
-            overflow: hidden;
-            border-radius: 16px;
-            border: 1px solid var(--glass-border);
-            background: var(--glass-bg);
-            padding: 8px 0;
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-        }
-
-        .roulette-slider {
-            display: flex;
-            gap: 8px;
-            padding: 0 8px;
-            will-change: transform;
-            transition: transform 5s cubic-bezier(0.1, 0.6, 0.2, 1);
-        }
-
-        .roulette-cell {
-            flex: 0 0 calc(20% - 8px);
-            min-width: 60px;
-            aspect-ratio: 3/4;
-            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
-            border: 1px solid rgba(0,255,136,0.2);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4px 2px;
-            transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(0,255,136,0.03);
-            overflow: hidden;
-        }
-
-        .roulette-cell img {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-            filter: drop-shadow(0 0 8px rgba(0,255,136,0.2));
-            margin-bottom: 2px;
-            flex-shrink: 0;
-        }
-
-        .roulette-cell .cell-name {
-            font-size: 7px;
-            font-weight: 600;
-            text-align: center;
-            color: var(--text-primary);
-            line-height: 1.1;
-            max-width: 100%;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            padding: 0 2px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            min-height: 16px;
-        }
-
-        .roulette-cell .cell-rarity {
-            font-size: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            padding: 1px 4px;
-            border-radius: 8px;
-            background: rgba(0,255,136,0.1);
-            color: var(--neon-green);
-            margin-top: 1px;
-            white-space: nowrap;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .roulette-cell.highlight {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 40px rgba(0,255,136,0.4);
-            transform: scale(1.05);
-        }
-        .roulette-cell.highlight img {
-            filter: drop-shadow(0 0 20px rgba(0,255,136,0.6));
-        }
-
-        .roulette-indicator {
-            position: absolute;
-            top: -2px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: calc(100% + 4px);
-            background: var(--neon-green);
-            box-shadow: 0 0 30px var(--neon-green), 0 0 60px rgba(0,255,136,0.3);
-            border-radius: 2px;
-            z-index: 10;
-            pointer-events: none;
-        }
-        .roulette-indicator::before,
-        .roulette-indicator::after {
-            content: '';
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: var(--neon-green);
-            border-radius: 50%;
-            box-shadow: 0 0 20px var(--neon-green);
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .roulette-indicator::before {
-            top: -4px;
-        }
-        .roulette-indicator::after {
-            bottom: -4px;
-        }
-
-        .roulette-btn {
-            background: var(--neon-green);
-            color: #0a0e1a;
-            border: none;
-            border-radius: 30px;
-            padding: 14px 32px;
-            font-weight: 700;
-            font-size: 18px;
-            font-family: var(--font-mono);
-            width: 100%;
-            max-width: 280px;
-            box-shadow: 0 0 30px rgba(0,255,136,0.3);
-            transition: 0.15s;
-            cursor: pointer;
-            margin-top: 4px;
-        }
-        .roulette-btn:active {
-            transform: scale(0.96);
-            opacity: 0.8;
-        }
-        .roulette-btn:disabled {
-            opacity: 0.4;
-            transform: scale(1);
-            pointer-events: none;
-        }
-
-        .roulette-result {
-            text-align: center;
-            font-size: 14px;
-            min-height: 24px;
-            color: var(--neon-cyan);
-            margin-top: 2px;
-            font-weight: 500;
-        }
-
-        .roulette-hint {
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-align: center;
-            margin-top: 0;
-        }
-
-        .upgrade-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
+        .upgrade-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
         .upgrade-item:last-child { border-bottom: none; }
-        .upgrade-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .upgrade-info .title {
-            font-weight: 500;
-        }
-        .upgrade-info .desc {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        .upgrade-level {
-            font-size: 13px;
-            color: var(--neon-cyan);
-            background: rgba(0,212,255,0.1);
-            padding: 2px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(0,212,255,0.2);
-        }
-        .upgrade-cost {
-            font-size: 12px;
-            color: var(--neon-green);
-            margin-right: 12px;
-        }
-        .upgrade-btn {
-            background: rgba(0,255,136,0.12);
-            border: 1px solid var(--neon-green);
-            color: var(--neon-green);
-            padding: 6px 18px;
-            border-radius: 20px;
-            font-family: var(--font-mono);
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
+        .upgrade-info { display: flex; flex-direction: column; gap: 2px; }
+        .upgrade-info .title { font-weight: 500; }
+        .upgrade-info .desc { font-size: 12px; color: var(--text-secondary); }
+        .upgrade-level { font-size: 13px; color: var(--neon-cyan); background: rgba(0,212,255,0.1); padding: 2px 12px; border-radius: 20px; border: 1px solid rgba(0,212,255,0.2); }
+        .upgrade-cost { font-size: 12px; color: var(--neon-green); margin-right: 12px; }
+        .upgrade-btn { background: rgba(0,255,136,0.12); border: 1px solid var(--neon-green); color: var(--neon-green); padding: 6px 18px; border-radius: 20px; font-family: var(--font-mono); font-size: 13px; cursor: pointer; transition: 0.15s; }
         .upgrade-btn:active { transform: scale(0.94); }
-        .upgrade-btn:disabled {
-            opacity: 0.3;
-            pointer-events: none;
-        }
+        .upgrade-btn:disabled { opacity: 0.3; pointer-events: none; }
 
-        .profile-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            margin: 0 auto 12px auto;
-            box-shadow: 0 0 40px rgba(0,255,136,0.2);
-        }
-        .profile-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        .stat-box {
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
-        }
-        .stat-box .value {
-            font-size: 22px;
-            font-weight: 600;
-            color: var(--gold);
-        }
-        .stat-box .label {
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan)); display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 12px auto; box-shadow: 0 0 40px rgba(0,255,136,0.2); }
+        .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .stat-box { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; text-align: center; }
+        .stat-box .value { font-size: 22px; font-weight: 600; color: var(--gold); }
+        .stat-box .label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .nav-center {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            flex-shrink: 0;
-            padding: 6px 0 4px 0;
-        }
-        .nav-bottom {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            flex-shrink: 0;
-            padding: 4px 0 8px 0;
-        }
-        .nav-btn {
-            background: var(--glass-bg);
-            backdrop-filter: blur(8px);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 12px 4px;
-            color: var(--text-secondary);
-            font-family: var(--font-mono);
-            font-size: 13px;
-            font-weight: 500;
-            text-align: center;
-            transition: 0.15s;
-            cursor: pointer;
-            letter-spacing: 0.3px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-        }
-        .nav-btn .icon {
-            font-size: 20px;
-            line-height: 1;
-        }
+        .nav-center { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex-shrink: 0; padding: 6px 0 4px 0; }
+        .nav-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-shrink: 0; padding: 4px 0 8px 0; }
+        .nav-btn { background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px 4px; color: var(--text-secondary); font-family: var(--font-mono); font-size: 13px; font-weight: 500; text-align: center; transition: 0.15s; cursor: pointer; letter-spacing: 0.3px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .nav-btn .icon { font-size: 20px; line-height: 1; }
         .nav-btn:active { transform: scale(0.94); }
-        .nav-btn.active {
-            border-color: var(--neon-green);
-            color: var(--neon-green);
-            box-shadow: 0 0 25px rgba(0,255,136,0.08);
-            background: rgba(0,255,136,0.05);
-        }
+        .nav-btn.active { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 25px rgba(0,255,136,0.08); background: rgba(0,255,136,0.05); }
 
-        @media (max-width: 380px) {
-            .header h1 { font-size: 15px; }
-            .balance { font-size: 12px; padding: 4px 12px; }
-            .nav-btn { font-size: 11px; padding: 10px 2px; }
-            .nav-btn .icon { font-size: 17px; }
-            .roulette-cell { flex: 0 0 calc(25% - 8px); min-width: 50px; }
-            .roulette-cell img { width: 36px; height: 36px; }
-            .roulette-cell .cell-name { font-size: 7px; }
-            .nft-item .nft-image { width: 48px; height: 48px; }
-            .modal-content img { width: 100px; height: 100px; }
-            .modal-actions { flex-direction: column; gap: 8px; }
-            .modal-actions .modal-btn { max-width: 100%; }
-        }
-
-        @media (min-width: 600px) {
-            .roulette-cell { flex: 0 0 calc(16.66% - 8px); }
-        }
-        @media (min-width: 900px) {
-            .roulette-cell { flex: 0 0 calc(12.5% - 8px); }
-        }
-
-        .nft-item .glow-pulse {
-            position: absolute;
-            inset: 0;
-            border-radius: 12px;
-            background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,255,136,0.1), transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
+        @media (max-width: 380px) { .header h1 { font-size: 15px; } .balance { font-size: 12px; padding: 4px 12px; } .nav-btn { font-size: 11px; padding: 10px 2px; } .nav-btn .icon { font-size: 17px; } .roulette-cell { flex: 0 0 calc(25% - 8px); min-width: 50px; } .roulette-cell img { width: 36px; height: 36px; } .roulette-cell .cell-name { font-size: 7px; } .nft-item .nft-image { width: 48px; height: 48px; } .modal-content img { width: 100px; height: 100px; } .modal-actions { flex-direction: column; gap: 8px; } .modal-actions .modal-btn { max-width: 100%; } }
+        @media (min-width: 600px) { .roulette-cell { flex: 0 0 calc(16.66% - 8px); } }
+        @media (min-width: 900px) { .roulette-cell { flex: 0 0 calc(12.5% - 8px); } }
+        .nft-item .glow-pulse { position: absolute; inset: 0; border-radius: 12px; background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,255,136,0.1), transparent 70%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .nft-item:hover .glow-pulse { opacity: 1; }
 
-        /* ---------- КАСТОМНЫЕ МОДАЛЬНЫЕ ОКНА ---------- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(12px);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s ease-out;
-            padding: 20px;
-        }
+        /* ---------- МОДАЛЬНЫЕ ОКНА ---------- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(12px); z-index: 1000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease-out; padding: 20px; }
+        @keyframes fadeIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
+        .modal-content { background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428); border: 2px solid var(--neon-green); border-radius: 24px; padding: 30px 24px 24px 24px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 0 60px rgba(0, 255, 136, 0.15); position: relative; overflow: hidden; }
+        .modal-content::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, transparent, rgba(0,255,136,0.03), transparent, rgba(0,212,255,0.03), transparent); animation: rotateGlow 8s linear infinite; }
+        .modal-content .modal-gif { width: 140px; height: 140px; object-fit: contain; margin: 0 auto 12px auto; display: block; position: relative; z-index: 1; filter: drop-shadow(0 0 30px rgba(0,255,136,0.3)); }
+        .modal-content .modal-title { font-size: 22px; font-weight: 700; color: var(--text-primary); position: relative; z-index: 1; margin-bottom: 4px; }
+        .modal-content .modal-price { font-size: 18px; color: var(--gold); position: relative; z-index: 1; margin-bottom: 16px; letter-spacing: 1px; }
+        .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 1; }
+        .modal-actions .modal-btn { padding: 12px 20px; border-radius: 30px; border: none; font-weight: 700; font-size: 14px; font-family: var(--font-mono); cursor: pointer; transition: 0.15s; flex: 1; min-width: 80px; max-width: 140px; }
+        .modal-actions .modal-btn:active { transform: scale(0.94); opacity: 0.8; }
+        .modal-actions .btn-sell { background: var(--gold); color: #0a0e1a; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        .modal-actions .btn-withdraw { background: var(--neon-cyan); color: #0a0e1a; box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+        .modal-actions .btn-close { background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); border: 1px solid var(--glass-border); }
+        .modal-actions .modal-btn:disabled { opacity: 0.4; pointer-events: none; }
 
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        .modal-content {
-            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
-            border: 2px solid var(--neon-green);
-            border-radius: 24px;
-            padding: 30px 24px 24px 24px;
-            max-width: 360px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 0 60px rgba(0, 255, 136, 0.15);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .modal-content::before {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: conic-gradient(from 0deg, transparent, rgba(0,255,136,0.03), transparent, rgba(0,212,255,0.03), transparent);
-            animation: rotateGlow 8s linear infinite;
-        }
-
-        .modal-content .modal-gif {
-            width: 140px;
-            height: 140px;
-            object-fit: contain;
-            margin: 0 auto 12px auto;
-            display: block;
-            position: relative;
-            z-index: 1;
-            filter: drop-shadow(0 0 30px rgba(0,255,136,0.3));
-        }
-
-        .modal-content .modal-title {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text-primary);
-            position: relative;
-            z-index: 1;
-            margin-bottom: 4px;
-        }
-
-        .modal-content .modal-price {
-            font-size: 18px;
-            color: var(--gold);
-            position: relative;
-            z-index: 1;
-            margin-bottom: 16px;
-            letter-spacing: 1px;
-        }
-
-        .modal-content .modal-price .stars {
-            display: inline-block;
-            margin-right: 6px;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .modal-actions .modal-btn {
-            padding: 12px 20px;
-            border-radius: 30px;
-            border: none;
-            font-weight: 700;
-            font-size: 14px;
-            font-family: var(--font-mono);
-            cursor: pointer;
-            transition: 0.15s;
-            flex: 1;
-            min-width: 80px;
-            max-width: 140px;
-        }
-
-        .modal-actions .modal-btn:active {
-            transform: scale(0.94);
-            opacity: 0.8;
-        }
-
-        .modal-actions .btn-sell {
-            background: var(--gold);
-            color: #0a0e1a;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        }
-
-        .modal-actions .btn-withdraw {
-            background: var(--neon-cyan);
-            color: #0a0e1a;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-        }
-
-        .modal-actions .btn-close {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-secondary);
-            border: 1px solid var(--glass-border);
-        }
-
-        .modal-actions .modal-btn:disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-
-        /* ----- МОДАЛ ДЛЯ ВЫВОДА ----- */
-        .withdraw-modal .modal-content {
-            max-width: 340px;
-        }
-
-        .withdraw-modal .modal-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-            background: rgba(0,0,0,0.3);
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-            font-size: 14px;
-            margin-bottom: 16px;
-            outline: none;
-            transition: border-color 0.2s;
-            position: relative;
-            z-index: 1;
-        }
-
-        .withdraw-modal .modal-input:focus {
-            border-color: var(--neon-green);
-        }
-
-        .withdraw-modal .modal-input::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.6;
-        }
-
-        .withdraw-modal .modal-info {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .withdraw-modal .modal-info .highlight {
-            color: var(--gold);
-        }
-
-        .withdraw-modal .modal-actions {
-            gap: 8px;
-        }
-
-        .withdraw-modal .modal-btn {
-            max-width: 100%;
-            flex: 1;
-        }
-
-        .withdraw-modal .btn-confirm {
-            background: var(--neon-green);
-            color: #0a0e1a;
-        }
-
-        .withdraw-modal .btn-confirm:disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-
-        .withdraw-modal .btn-cancel {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-secondary);
-            border: 1px solid var(--glass-border);
-        }
+        .withdraw-modal .modal-content { max-width: 340px; }
+        .withdraw-modal .modal-input { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); color: var(--text-primary); font-family: var(--font-mono); font-size: 14px; margin-bottom: 16px; outline: none; transition: border-color 0.2s; position: relative; z-index: 1; }
+        .withdraw-modal .modal-input:focus { border-color: var(--neon-green); }
+        .withdraw-modal .modal-input::placeholder { color: var(--text-secondary); opacity: 0.6; }
+        .withdraw-modal .modal-info { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; position: relative; z-index: 1; }
+        .withdraw-modal .modal-info .highlight { color: var(--gold); }
+        .withdraw-modal .modal-actions { gap: 8px; }
+        .withdraw-modal .modal-btn { max-width: 100%; flex: 1; }
+        .withdraw-modal .btn-confirm { background: var(--neon-green); color: #0a0e1a; }
+        .withdraw-modal .btn-confirm:disabled { opacity: 0.4; pointer-events: none; }
+        .withdraw-modal .btn-cancel { background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); border: 1px solid var(--glass-border); }
     </style>
 </head>
 <body>
@@ -812,7 +199,6 @@
                     <div class="stat-box"><div class="value" id="statSpins">0</div><div class="label">Спинов</div></div>
                     <div class="stat-box"><div class="value" id="statUpgrades">0</div><div class="label">Апгрейдов</div></div>
                 </div>
-                <!-- Кнопка вывода на профиле -->
                 <button class="roulette-btn" id="withdrawBtn" style="margin-top:12px; max-width:200px; background: var(--neon-cyan); box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);">
                     💸 ВЫВЕСТИ
                 </button>
@@ -880,29 +266,43 @@
         // ---------- 2. ПОЛУЧЕНИЕ USER_ID ----------
         const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-        // ---------- 3. СПИСОК ПОДАРКОВ (GIF + ЦЕНА В ЗВЁЗДАХ) ----------
+        // ---------- 3. СПИСОК ПОДАРКОВ (С ШАНСАМИ) ----------
         const BASE_URL = 'https://judepip.github.io/NFT-LAB';
         const GIFTS = [
-            { name: 'Bow Tie', rarity: 'редкий', price: 150, image: BASE_URL + '/images/BowTie.gif' },
-            { name: 'Chill Flame', rarity: 'эпик', price: 300, image: BASE_URL + '/images/ChillFlame.gif' },
-            { name: 'Big Year', rarity: 'легенд', price: 500, image: BASE_URL + '/images/BigYear.gif' },
-            { name: 'JACK IN THE BOX', rarity: 'обычный', price: 100, image: BASE_URL + '/images/JackInTheBox.gif' },
-            { name: 'Liberty Figure', rarity: 'легенд', price: 550, image: BASE_URL + '/images/LibertyFigure.gif' },
-            { name: 'Light Sword', rarity: 'эпик', price: 280, image: BASE_URL + '/images/LightSword.gif' },
-            { name: 'Star Notepad', rarity: 'редкий', price: 180, image: BASE_URL + '/images/StarNotepad.gif' },
-            { name: 'Кубок', rarity: 'легенд', price: 600, image: BASE_URL + '/images/Кубок.gif' },
-            { name: 'Кольцо', rarity: 'эпик', price: 350, image: BASE_URL + '/images/Кольцо.gif' },
-            { name: 'Мишка', rarity: 'обычный', price: 120, image: BASE_URL + '/images/Мишка.gif' },
+            { name: 'Bow Tie', price: 800, chance: 5, image: BASE_URL + '/images/BowTie.gif' },
+            { name: 'Chill Flame', price: 500, chance: 10, image: BASE_URL + '/images/ChillFlame.gif' },
+            { name: 'Big Year', price: 500, chance: 8, image: BASE_URL + '/images/BigYear.gif' },
+            { name: 'JACK IN THE BOX', price: 600, chance: 20, image: BASE_URL + '/images/JackInTheBox.gif' },
+            { name: 'Liberty Figure', price: 450, chance: 7, image: BASE_URL + '/images/LibertyFigure.gif' },
+            { name: 'Light Sword', price: 480, chance: 12, image: BASE_URL + '/images/LightSword.gif' },
+            { name: 'Star Notepad', price: 480, chance: 10, image: BASE_URL + '/images/StarNotepad.gif' },
+            { name: 'Кубок', price: 100, chance: 15, image: BASE_URL + '/images/Кубок.gif' },
+            { name: 'Кольцо', price: 100, chance: 8, image: BASE_URL + '/images/Кольцо.gif' },
+            { name: 'Мишка', price: 15, chance: 5, image: BASE_URL + '/images/Мишка.gif' },
         ];
 
-        // ---------- 4. СОСТОЯНИЕ ----------
+        // ---------- 4. ФУНКЦИЯ ВЫБОРА С УЧЁТОМ ШАНСОВ ----------
+        function getRandomGiftByChance() {
+            const totalChance = GIFTS.reduce((sum, g) => sum + g.chance, 0);
+            let random = Math.random() * totalChance;
+            
+            for (const gift of GIFTS) {
+                random -= gift.chance;
+                if (random <= 0) {
+                    return gift;
+                }
+            }
+            return GIFTS[0];
+        }
+
+        // ---------- 5. СОСТОЯНИЕ ----------
         const STORAGE_KEY = 'lab_nft_state';
         const VERSION_KEY = 'lab_nft_version';
 
         function getDefaultState() {
             return {
                 inventory: [],
-                balance: 1000, // теперь в звёздах (целое число)
+                balance: 1000,
                 spins: 0,
                 upgrades: [
                     { id: 'up1', level: 0 },
@@ -914,7 +314,7 @@
         }
 
         let state;
-        const currentVersion = '3.0';
+        const currentVersion = '3.2';
         const savedVersion = localStorage.getItem(VERSION_KEY);
 
         try {
@@ -975,7 +375,7 @@
             }
         }
 
-        // ---------- 5. DOM-ССЫЛКИ ----------
+        // ---------- 6. DOM-ССЫЛКИ ----------
         const $ = (id) => document.getElementById(id);
         const balanceDisplay = $('balanceDisplay');
         const nftCount = $('nftCount');
@@ -994,7 +394,7 @@
         const statUpgrades = $('statUpgrades');
         const withdrawBtn = $('withdrawBtn');
 
-        // ---------- 6. ФУНКЦИЯ ОБНОВЛЕНИЯ UI ----------
+        // ---------- 7. ФУНКЦИЯ ОБНОВЛЕНИЯ UI ----------
         function render() {
             balanceDisplay.textContent = Math.floor(state.balance);
             nftCount.textContent = state.inventory.length + ' шт.';
@@ -1013,7 +413,6 @@
                             <div class="glow-pulse"></div>
                             ${iconHtml}
                             <div class="nft-name">${item.name}</div>
-                            <div class="nft-rarity">${item.rarity || 'обычный'}</div>
                         </div>
                     `;
                 }).join('');
@@ -1058,7 +457,7 @@
             saveState();
         }
 
-        // ---------- 7. СОЗДАНИЕ БЕСКОНЕЧНОЙ ЛЕНТЫ РУЛЕТКИ ----------
+        // ---------- 8. СОЗДАНИЕ БЕСКОНЕЧНОЙ ЛЕНТЫ РУЛЕТКИ ----------
         function createRouletteCells() {
             const REPEAT_COUNT = 6;
             let cellsHtml = '';
@@ -1070,7 +469,6 @@
                                  onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                             <div style="font-size:28px; display:none;">🎁</div>
                             <div class="cell-name">${cell.name}</div>
-                            <div class="cell-rarity">${cell.rarity}</div>
                         </div>
                     `;
                 });
@@ -1086,7 +484,7 @@
             rouletteSlider.style.transition = '';
         }
 
-        // ---------- 8. НАВИГАЦИЯ ----------
+        // ---------- 9. НАВИГАЦИЯ ----------
         function switchScreen(screenId) {
             screens.forEach(s => s.classList.remove('active'));
             const target = document.getElementById(screenId);
@@ -1105,7 +503,7 @@
             });
         });
 
-        // ---------- 9. ОТПРАВКА В БОТА ----------
+        // ---------- 10. ОТПРАВКА В БОТА ----------
         function sendToBot(data) {
             try {
                 if (isTelegram && tg && typeof tg.sendData === 'function') {
@@ -1118,7 +516,7 @@
             }
         }
 
-        // ---------- 10. ПОДСВЕТКА ВЫИГРЫШНОЙ ЯЧЕЙКИ ----------
+        // ---------- 11. ПОДСВЕТКА ВЫИГРЫШНОЙ ЯЧЕЙКИ ----------
         function highlightCell(giftIndex) {
             const cells = document.querySelectorAll(`.roulette-cell[data-gift-index="${giftIndex}"]`);
             const centerX = window.innerWidth / 2;
@@ -1146,7 +544,7 @@
             });
         }
 
-        // ---------- 11. ОПРЕДЕЛЕНИЕ ВЫИГРЫША ПО ПОЗИЦИИ ИНДИКАТОРА ----------
+        // ---------- 12. ОПРЕДЕЛЕНИЕ ВЫИГРЫША ПО ПОЗИЦИИ ИНДИКАТОРА ----------
         function getGiftUnderIndicator() {
             const cells = document.querySelectorAll('.roulette-cell');
             const centerX = window.innerWidth / 2;
@@ -1170,7 +568,7 @@
             return 0;
         }
 
-        // ---------- 12. МОДАЛ ДЛЯ ВЫВОДА (С ВВОДОМ ЮЗЕРНЕЙМА) ----------
+        // ---------- 13. МОДАЛ ДЛЯ ВЫВОДА ----------
         function showWithdrawModal() {
             const oldModal = document.querySelector('.modal-overlay');
             if (oldModal) oldModal.remove();
@@ -1198,10 +596,8 @@
             const confirmBtn = overlay.querySelector('#withdrawConfirm');
             const cancelBtn = overlay.querySelector('#withdrawCancel');
 
-            // Фокус на поле ввода
             setTimeout(() => usernameInput.focus(), 100);
 
-            // Отмена
             cancelBtn.addEventListener('click', function() {
                 overlay.remove();
             });
@@ -1212,28 +608,22 @@
                 }
             });
 
-            // Подтверждение
             confirmBtn.addEventListener('click', function() {
                 const username = usernameInput.value.trim();
                 
-                // Проверка: введён ли юзернейм
                 if (!username) {
                     tg.showAlert('❌ Введите @username для вывода!');
                     return;
                 }
 
-                // Проверка: есть ли 25 звёзд на балансе
                 if (state.balance < 25) {
                     tg.showAlert('❌ Недостаточно звёзд! Нужно минимум 25 ⭐');
                     return;
                 }
 
-                // Списываем 25 звёзд
                 state.balance -= 25;
                 render();
                 overlay.remove();
-
-                // Уведомление
                 tg.showAlert(`✅ Заявка на вывод отправлена!\nЮзернейм: ${username}\nСписано: 25 ⭐`);
                 
                 sendToBot({
@@ -1246,7 +636,6 @@
                 });
             });
 
-            // Enter для подтверждения
             usernameInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     confirmBtn.click();
@@ -1254,13 +643,12 @@
             });
         }
 
-        // ---------- 13. МОДАЛ ДЛЯ NFT ----------
+        // ---------- 14. МОДАЛ ДЛЯ NFT ----------
         function showNftModal(gift) {
             const oldModal = document.querySelector('.modal-overlay');
             if (oldModal) oldModal.remove();
 
-            const giftData = GIFTS.find(g => g.name === gift.name);
-            const price = giftData ? giftData.price : 100;
+            const price = gift.price || 100;
 
             const overlay = document.createElement('div');
             overlay.className = 'modal-overlay';
@@ -1316,12 +704,11 @@
 
             withdrawBtnEl.addEventListener('click', function() {
                 overlay.remove();
-                // Открываем модал вывода
                 showWithdrawModal();
             });
         }
 
-        // ---------- 14. РУЛЕТКА ----------
+        // ---------- 15. РУЛЕТКА (С ШАНСАМИ) ----------
         spinBtn.addEventListener('click', function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -1334,8 +721,9 @@
             spinBtn.disabled = true;
             rouletteResult.textContent = '🌀 Крутим...';
 
-            const winGiftIndex = Math.floor(Math.random() * GIFTS.length);
-            const prize = GIFTS[winGiftIndex];
+            // ВЫБИРАЕМ ПОДАРОК С УЧЁТОМ ШАНСОВ
+            const prize = getRandomGiftByChance();
+            const winGiftIndex = GIFTS.indexOf(prize);
 
             clearHighlight();
 
@@ -1366,20 +754,20 @@
                 const newGift = {
                     id: 'gift_' + Date.now(),
                     name: actualPrize.name,
-                    rarity: actualPrize.rarity,
                     image: actualPrize.image,
+                    price: actualPrize.price,
                 };
                 state.inventory.push(newGift);
                 
                 highlightCell(actualWinIndex);
-                rouletteResult.textContent = `🎉 Вы выиграли: ${actualPrize.name}! (${actualPrize.rarity})`;
+                rouletteResult.textContent = `🎉 Вы выиграли: ${actualPrize.name}!`;
                 
                 showNftModal(newGift);
                 
                 render();
                 sendToBot({
                     action: 'roulette_spin',
-                    payload: { prize: actualPrize.name, rarity: actualPrize.rarity, balance: state.balance }
+                    payload: { prize: actualPrize.name, balance: state.balance }
                 });
             }, 4800);
 
@@ -1398,12 +786,12 @@
             }
         });
 
-        // ---------- 15. КНОПКА ВЫВОДА НА ПРОФИЛЕ ----------
+        // ---------- 16. КНОПКА ВЫВОДА ----------
         withdrawBtn.addEventListener('click', function() {
             showWithdrawModal();
         });
 
-        // ---------- 16. АПГРЕЙДЫ ----------
+        // ---------- 17. АПГРЕЙДЫ ----------
         upgradeList.addEventListener('click', function(e) {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn || btn.disabled) return;
@@ -1440,7 +828,7 @@
             });
         });
 
-        // ---------- 17. КЛИК ПО NFT ----------
+        // ---------- 18. КЛИК ПО NFT ----------
         inventoryGrid.addEventListener('click', function(e) {
             const item = e.target.closest('.nft-item');
             if (!item) return;
@@ -1455,7 +843,7 @@
             }
         });
 
-        // ---------- 18. ИНИЦИАЛИЗАЦИЯ ----------
+        // ---------- 19. ИНИЦИАЛИЗАЦИЯ ----------
         createRouletteCells();
         render();
 
