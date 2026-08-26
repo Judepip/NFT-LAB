@@ -537,6 +537,7 @@
             .roulette-cell img { width: 36px; height: 36px; }
             .roulette-cell .cell-name { font-size: 7px; }
             .nft-item .nft-image { width: 48px; height: 48px; }
+            .modal-content img { width: 100px; height: 100px; }
         }
 
         @media (min-width: 600px) {
@@ -556,6 +557,103 @@
             pointer-events: none;
         }
         .nft-item:hover .glow-pulse { opacity: 1; }
+
+        /* ---------- КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВЫИГРЫША ---------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-out;
+            padding: 20px;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-content {
+            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
+            border: 2px solid var(--neon-green);
+            border-radius: 24px;
+            padding: 30px 24px 24px 24px;
+            max-width: 340px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(0, 255, 136, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0,255,136,0.03), transparent, rgba(0,212,255,0.03), transparent);
+            animation: rotateGlow 8s linear infinite;
+        }
+
+        .modal-content .modal-gif {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            margin: 0 auto 12px auto;
+            display: block;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 0 30px rgba(0,255,136,0.3));
+        }
+
+        .modal-content .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 4px;
+        }
+
+        .modal-content .modal-rarity {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--neon-green);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 16px;
+        }
+
+        .modal-content .modal-close-btn {
+            background: var(--neon-green);
+            color: #0a0e1a;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 32px;
+            font-weight: 700;
+            font-size: 16px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: 0.15s;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 0 30px rgba(0,255,136,0.2);
+            width: 100%;
+            max-width: 200px;
+        }
+
+        .modal-content .modal-close-btn:active {
+            transform: scale(0.96);
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -710,7 +808,7 @@
         }
 
         let state;
-        const currentVersion = '2.5';
+        const currentVersion = '2.6';
         const savedVersion = localStorage.getItem(VERSION_KEY);
 
         try {
@@ -855,7 +953,7 @@
 
         // ---------- 7. СОЗДАНИЕ БЕСКОНЕЧНОЙ ЛЕНТЫ РУЛЕТКИ ----------
         function createRouletteCells() {
-            const REPEAT_COUNT = 6; // 6 повторений — достаточно для 5 оборотов
+            const REPEAT_COUNT = 6;
             let cellsHtml = '';
             for (let rep = 0; rep < REPEAT_COUNT; rep++) {
                 GIFTS.forEach((cell, index) => {
@@ -873,7 +971,6 @@
             
             rouletteSlider.innerHTML = cellsHtml;
             
-            // Начальная позиция — показываем середину ленты
             const startRepeat = 3;
             const startOffset = startRepeat * GIFTS.length * 20;
             rouletteSlider.style.transition = 'none';
@@ -966,7 +1063,40 @@
             return 0;
         }
 
-        // ---------- 12. РУЛЕТКА (С ОПРЕДЕЛЕНИЕМ ПО ИНДИКАТОРУ) ----------
+        // ---------- 12. КАСТОМНОЕ МОДАЛЬНОЕ ОКНО С GIF ----------
+        function showWinModal(gift) {
+            // Удаляем старый модал, если есть
+            const oldModal = document.querySelector('.modal-overlay');
+            if (oldModal) oldModal.remove();
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `
+                <div class="modal-content">
+                    <img class="modal-gif" src="${gift.image}" alt="${gift.name}" loading="lazy">
+                    <div class="modal-title">${gift.name}</div>
+                    <div class="modal-rarity">${gift.rarity || 'обычный'}</div>
+                    <button class="modal-close-btn">Закрыть</button>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            // Закрытие по кнопке
+            const closeBtn = overlay.querySelector('.modal-close-btn');
+            closeBtn.addEventListener('click', function() {
+                overlay.remove();
+            });
+
+            // Закрытие по клику на фон
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+        }
+
+        // ---------- 13. РУЛЕТКА (С КАСТОМНЫМ МОДАЛОМ) ----------
         spinBtn.addEventListener('click', function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -990,15 +1120,12 @@
             const repeats = 6;
             const cellWidthPercent = 20;
             
-            // Выбираем повторение, чтобы сделать 4-5 оборотов
             const targetRepeat = 4;
             const targetCellIndex = targetRepeat * totalUnique + winGiftIndex;
             
-            // Сдвиг, чтобы ячейка оказалась по центру (под индикатором)
             const visibleOffset = 2.5;
             const offsetPercent = targetCellIndex * cellWidthPercent - visibleOffset * cellWidthPercent;
 
-            // Применяем анимацию
             rouletteSlider.style.transition = 'none';
             void rouletteSlider.offsetWidth;
             
@@ -1007,12 +1134,11 @@
 
             if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
-            // Через 4.5 секунды определяем выигрыш по индикатору
+            // Через 4.5 секунды определяем выигрыш и показываем модал
             setTimeout(() => {
                 const actualWinIndex = getGiftUnderIndicator();
                 const actualPrize = GIFTS[actualWinIndex];
                 
-                // Списываем баланс и добавляем выигрыш
                 state.balance -= 150;
                 state.spins += 1;
                 const newGift = {
@@ -1025,7 +1151,9 @@
                 
                 highlightCell(actualWinIndex);
                 rouletteResult.textContent = `🎉 Вы выиграли: ${actualPrize.name}! (${actualPrize.rarity})`;
-                tg.showAlert(`🎉 Поздравляем! Вы выиграли ${actualPrize.name}!`);
+                
+                // КАСТОМНОЕ ОКНО С GIF
+                showWinModal(actualPrize);
                 
                 render();
                 sendToBot({
@@ -1034,7 +1162,6 @@
                 });
             }, 4800);
 
-            // Завершение через 5.5 секунд
             setTimeout(() => {
                 state.isSpinning = false;
                 spinBtn.disabled = false;
@@ -1050,7 +1177,7 @@
             }
         });
 
-        // ---------- 13. АПГРЕЙДЫ ----------
+        // ---------- 14. АПГРЕЙДЫ ----------
         upgradeList.addEventListener('click', function(e) {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn || btn.disabled) return;
@@ -1087,14 +1214,15 @@
             });
         });
 
-        // ---------- 14. КЛИК ПО NFT ----------
+        // ---------- 15. КЛИК ПО NFT ----------
         inventoryGrid.addEventListener('click', function(e) {
             const item = e.target.closest('.nft-item');
             if (!item) return;
             const id = item.dataset.id;
             const gift = state.inventory.find(n => n.id === id);
             if (gift) {
-                tg.showAlert(`📦 ${gift.name}\nРедкость: ${gift.rarity}\nID: ${gift.id}`);
+                // Показываем тот же модал при клике на NFT в инвентаре
+                showWinModal(gift);
                 sendToBot({
                     action: 'view_nft',
                     payload: { nftId: gift.id, name: gift.name }
@@ -1102,7 +1230,7 @@
             }
         });
 
-        // ---------- 15. ИНИЦИАЛИЗАЦИЯ ----------
+        // ---------- 16. ИНИЦИАЛИЗАЦИЯ ----------
         createRouletteCells();
         render();
 
