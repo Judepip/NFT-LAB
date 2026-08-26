@@ -208,7 +208,7 @@
             font-size: 14px;
         }
 
-        /* ----- РУЛЕТКА (ГОРИЗОНТАЛЬНАЯ) ----- */
+        /* ----- РУЛЕТКА (С ЭФФЕКТОМ ПРОЛЕТА) ----- */
         .roulette-container {
             display: flex;
             flex-direction: column;
@@ -225,14 +225,23 @@
             border: 1px solid var(--glass-border);
             background: var(--glass-bg);
             padding: 8px 0;
+            /* Добавляем маску для эффекта затемнения по краям */
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
         }
 
         .roulette-slider {
             display: flex;
             gap: 8px;
-            transition: transform 10s cubic-bezier(0.1, 0.7, 0.3, 1);
             padding: 0 8px;
             will-change: transform;
+        }
+
+        /* Анимация для эффекта пролетающих ячеек */
+        @keyframes cellBlur {
+            0% { filter: blur(2px) brightness(0.6); transform: scale(0.95); }
+            50% { filter: blur(4px) brightness(0.8); transform: scale(0.98); }
+            100% { filter: blur(0px) brightness(1); transform: scale(1); }
         }
 
         .roulette-cell {
@@ -249,6 +258,16 @@
             padding: 6px;
             transition: all 0.3s;
             box-shadow: 0 0 15px rgba(0,255,136,0.03);
+            /* Базовое состояние */
+            filter: blur(0px) brightness(1);
+            transform: scale(1);
+        }
+
+        /* Класс для эффекта пролетающей ячейки */
+        .roulette-cell.flying {
+            animation: cellBlur 0.15s ease-in-out;
+            border-color: rgba(0,255,136,0.6);
+            box-shadow: 0 0 30px rgba(0,255,136,0.15);
         }
 
         .roulette-cell img {
@@ -257,6 +276,7 @@
             object-fit: contain;
             filter: drop-shadow(0 0 8px rgba(0,255,136,0.2));
             margin-bottom: 4px;
+            transition: filter 0.3s;
         }
 
         .roulette-cell .cell-name {
@@ -284,8 +304,14 @@
 
         .roulette-cell.highlight {
             border-color: var(--neon-green);
-            box-shadow: 0 0 30px rgba(0,255,136,0.3);
-            transform: scale(1.02);
+            box-shadow: 0 0 40px rgba(0,255,136,0.4);
+            transform: scale(1.05);
+            filter: blur(0px) brightness(1.2);
+            animation: none;
+        }
+
+        .roulette-cell.highlight img {
+            filter: drop-shadow(0 0 20px rgba(0,255,136,0.6));
         }
 
         .roulette-indicator {
@@ -296,10 +322,30 @@
             width: 4px;
             height: calc(100% + 4px);
             background: var(--neon-green);
-            box-shadow: 0 0 20px var(--neon-green);
+            box-shadow: 0 0 30px var(--neon-green), 0 0 60px rgba(0,255,136,0.3);
             border-radius: 2px;
             z-index: 5;
             pointer-events: none;
+        }
+
+        /* Дополнительные мерцающие точки по бокам индикатора */
+        .roulette-indicator::before,
+        .roulette-indicator::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--neon-green);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .roulette-indicator::before {
+            top: -4px;
+        }
+        .roulette-indicator::after {
+            bottom: -4px;
         }
 
         .roulette-btn {
@@ -334,6 +380,7 @@
             min-height: 24px;
             color: var(--neon-cyan);
             margin-top: 2px;
+            font-weight: 500;
         }
 
         .roulette-hint {
@@ -623,7 +670,7 @@
         // ---------- 2. ПОЛУЧЕНИЕ USER_ID ----------
         const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-        // ---------- 3. СПИСОК ПОДАРКОВ (10 ШТУК, БЕЗ ПУСТЫХ) ----------
+        // ---------- 3. СПИСОК ПОДАРКОВ (10 ШТУК) ----------
         const GIFTS = [
             { name: 'Bow Tie', rarity: 'редкий', image: '/images/BowTie.png' },
             { name: 'Chill Flame', rarity: 'эпик', image: '/images/ChillFlame.png' },
@@ -637,7 +684,7 @@
             { name: 'Мишка', rarity: 'обычный', image: '/images/Мишка.png' },
         ];
 
-        // ---------- 4. СОСТОЯНИЕ (ЗАГРУЗКА ИЗ БД) ----------
+        // ---------- 4. СОСТОЯНИЕ ----------
         let state = {
             inventory: [],
             balance: 1000,
@@ -664,7 +711,7 @@
         const statSpins = $('statSpins');
         const statUpgrades = $('statUpgrades');
 
-        // ---------- 6. ЗАГРУЗКА ДАННЫХ С БЭКЕНДА ----------
+        // ---------- 6. ЗАГРУЗКА ДАННЫХ ----------
         async function loadUserData() {
             try {
                 const response = await fetch(`/api/user/${USER_ID}`);
@@ -681,7 +728,6 @@
             }
         }
 
-        // ---------- 7. ЗАПАСНОЙ ВАРИАНТ (localStorage) ----------
         function loadFromLocalStorage() {
             try {
                 const saved = localStorage.getItem('lab_nft_state');
@@ -712,9 +758,8 @@
             }
         }
 
-        // ---------- 8. РЕНДЕР ЯЧЕЕК РУЛЕТКИ (ТОЛЬКО 10 ПОДАРКОВ, БЕЗ ПУСТЫХ) ----------
+        // ---------- 7. РЕНДЕР ЯЧЕЕК РУЛЕТКИ ----------
         function renderRouletteCells(highlightIndex = -1) {
-            // Создаём массив только из 10 подарков
             const cells = GIFTS.map(g => ({ ...g, empty: false }));
 
             rouletteSlider.innerHTML = cells.map((cell, index) => {
@@ -740,12 +785,11 @@
             }).join('');
         }
 
-        // ---------- 9. ОБНОВЛЕНИЕ UI ----------
+        // ---------- 8. ОБНОВЛЕНИЕ UI ----------
         function render() {
             balanceDisplay.textContent = state.balance.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             nftCount.textContent = state.inventory.length + ' шт.';
 
-            // Инвентарь
             if (state.inventory.length === 0) {
                 inventoryGrid.innerHTML = `<div class="empty-inventory">🧪 Нет подарков. Крутите рулетку!</div>`;
             } else {
@@ -764,7 +808,6 @@
                 }).join('');
             }
 
-            // Апгрейды
             const upgradeDefs = [
                 { id: 'up1', name: 'Генератор GIFT', desc: '+5 GIFT/час', maxLvl: 5, baseCost: 150 },
                 { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', maxLvl: 4, baseCost: 200 },
@@ -794,7 +837,6 @@
                 `;
             }).join('');
 
-            // Профиль
             profileName.textContent = tg.initDataUnsafe?.user?.first_name || 'Аноним';
             profileId.textContent = `ID: ${USER_ID}`;
             statNFT.textContent = state.inventory.length;
@@ -805,7 +847,7 @@
             saveToLocalStorage();
         }
 
-        // ---------- 10. НАВИГАЦИЯ ----------
+        // ---------- 9. НАВИГАЦИЯ ----------
         function switchScreen(screenId) {
             screens.forEach(s => s.classList.remove('active'));
             const target = document.getElementById(screenId);
@@ -824,7 +866,7 @@
             });
         });
 
-        // ---------- 11. ОТПРАВКА ДАННЫХ В БОТА ----------
+        // ---------- 10. ОТПРАВКА В БОТА ----------
         function sendToBot(data) {
             try {
                 if (isTelegram && tg && typeof tg.sendData === 'function') {
@@ -837,7 +879,7 @@
             }
         }
 
-        // ---------- 12. РУЛЕТКА (10 СЕКУНД КРУЧЕНИЯ) ----------
+        // ---------- 11. РУЛЕТКА (5 СЕКУНД + ЭФФЕКТ ПРОЛЕТА) ----------
         spinBtn.addEventListener('click', async function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -848,13 +890,13 @@
 
             state.isSpinning = true;
             spinBtn.disabled = true;
-            rouletteResult.textContent = '🌀 Крутим... 10 секунд!';
+            rouletteResult.textContent = '🌀 Крутим... 5 секунд!';
 
             // Выбираем случайный подарок
             const winIndex = Math.floor(Math.random() * GIFTS.length);
             const prize = GIFTS[winIndex];
 
-            // Отправляем запрос на бэкенд
+            // Отправка на бэкенд
             try {
                 const response = await fetch(`/api/user/${USER_ID}/spin`, {
                     method: 'POST',
@@ -878,7 +920,6 @@
 
             } catch (error) {
                 console.error('Ошибка при спине:', error);
-                // Если бэкенд недоступен — работаем локально
                 state.balance -= 150;
                 state.spins += 1;
                 const newGift = {
@@ -891,40 +932,61 @@
                 tg.showAlert('⚠️ Бэкенд недоступен, данные сохранены локально');
             }
 
-            // --- АНИМАЦИЯ РУЛЕТКИ (10 СЕКУНД) ---
+            // --- АНИМАЦИЯ РУЛЕТКИ (5 СЕКУНД) С ЭФФЕКТОМ ПРОЛЕТА ---
 
-            // Делаем несколько полных оборотов + доворот до нужной ячейки
-            // Всего ячеек = 10. Чтобы ячейка оказалась по центру, сдвигаем на её индекс.
-            // Добавляем 3 полных оборота (10 * 3 = 30 ячеек) + доворот до winIndex
+            // Добавляем класс flying всем ячейкам для эффекта пролета
+            const allCells = document.querySelectorAll('.roulette-cell');
+            allCells.forEach((cell, idx) => {
+                cell.classList.add('flying');
+                // Случайная задержка для каждой ячейки, чтобы создать волну
+                cell.style.animationDelay = (idx * 0.03) + 's';
+            });
+
+            // Сдвигаем слайдер
             const totalCells = GIFTS.length;
-            const extraSpins = 3; // 3 полных оборота
-            const targetIndex = winIndex; // индекс выигрышной ячейки (0..9)
+            const extraSpins = 3; // 3 полных оборота за 5 секунд
+            const cellWidthPercent = 20;
+            const offsetPercent = (totalCells * extraSpins + winIndex) * cellWidthPercent;
             
-            // Сдвиг в процентах: каждая ячейка занимает ~20% ширины (100/5=20% на ячейку)
-            // Чтобы центр ячейки оказался под индикатором, нужно сдвинуть на (индекс * 20)%
-            // + добавляем полные обороты
-            const cellWidthPercent = 20; // 100% / 5 видимых ячеек
-            const offsetPercent = (totalCells * extraSpins + targetIndex) * cellWidthPercent;
-            
-            rouletteSlider.style.transition = 'transform 10s cubic-bezier(0.1, 0.7, 0.3, 1)';
+            rouletteSlider.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.3, 1)';
             rouletteSlider.style.transform = `translateX(-${offsetPercent}%)`;
 
-            // Подсветка выигрышной ячейки через 9.5 секунд (почти в конце)
+            // Визуальный эффект: меняем яркость и размытие у центральных ячеек во время вращения
+            let interval = setInterval(() => {
+                const centerIndex = Math.floor(document.querySelectorAll('.roulette-cell').length / 2);
+                const cells = document.querySelectorAll('.roulette-cell');
+                cells.forEach((cell, idx) => {
+                    // Ячейки ближе к центру — более яркие
+                    const distFromCenter = Math.abs(idx - centerIndex);
+                    const brightness = Math.max(0.6, 1 - distFromCenter * 0.08);
+                    cell.style.filter = `blur(${distFromCenter * 0.5}px) brightness(${brightness})`;
+                });
+            }, 100);
+
+            // Через 4.5 секунды (почти в конце) подсвечиваем выигрышную ячейку
             setTimeout(() => {
                 renderRouletteCells(winIndex);
-            }, 9500);
+            }, 4500);
 
-            // Вибрация в начале и в конце
+            // Вибрация
             if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
-            // Через 10.5 секунд завершаем
+            // Через 5.5 секунд завершаем
             setTimeout(() => {
+                clearInterval(interval);
+                
+                // Убираем эффект flying со всех ячеек
+                document.querySelectorAll('.roulette-cell').forEach(cell => {
+                    cell.classList.remove('flying');
+                    cell.style.filter = '';
+                    cell.style.animationDelay = '';
+                });
+
                 state.isSpinning = false;
                 spinBtn.disabled = false;
                 rouletteResult.textContent = `🎉 Вы выиграли: ${prize.name}! (${prize.rarity})`;
                 tg.showAlert(`🎉 Поздравляем! Вы выиграли ${prize.name}!`);
                 
-                // Снимаем подсветку через 2 секунды
                 setTimeout(() => {
                     renderRouletteCells();
                 }, 2000);
@@ -934,19 +996,19 @@
                     action: 'roulette_spin',
                     payload: { prize: prize.name, rarity: prize.rarity, balance: state.balance }
                 });
-            }, 10500); // 10 секунд кручения + 0.5 сек на завершение
+            }, 5500);
         });
 
-        // Двойной тап для быстрого кручения (тоже 10 секунд, но с ускоренной анимацией)
+        // Двойной тап
         spinBtn.addEventListener('dblclick', function(e) {
             e.preventDefault();
             if (!state.isSpinning) {
                 spinBtn.click();
-                tg.showAlert('⚡ БЫСТРОЕ КРУЧЕНИЕ! (всё равно 10 секунд)');
+                tg.showAlert('⚡ БЫСТРОЕ КРУЧЕНИЕ!');
             }
         });
 
-        // ---------- 13. АПГРЕЙДЫ ----------
+        // ---------- 12. АПГРЕЙДЫ ----------
         upgradeList.addEventListener('click', async function(e) {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn || btn.disabled) return;
@@ -980,7 +1042,7 @@
             }
         });
 
-        // ---------- 14. КЛИК ПО NFT ----------
+        // ---------- 13. КЛИК ПО NFT ----------
         inventoryGrid.addEventListener('click', function(e) {
             const item = e.target.closest('.nft-item');
             if (!item) return;
@@ -995,7 +1057,7 @@
             }
         });
 
-        // ---------- 15. ИНИЦИАЛИЗАЦИЯ ----------
+        // ---------- 14. ИНИЦИАЛИЗАЦИЯ ----------
         renderRouletteCells();
         loadUserData();
 
