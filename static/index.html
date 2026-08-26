@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LAB NFT · Mini App</title>
-    <!-- Эмуляция Telegram WebApp, если SDK не загрузился -->
     <script>
         if (!window.Telegram) {
             window.Telegram = {
@@ -148,7 +147,6 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         }
 
-        /* ----- ИНВЕНТАРЬ ----- */
         .nft-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -229,7 +227,6 @@
             font-size: 14px;
         }
 
-        /* ----- РУЛЕТКА ----- */
         .roulette-container {
             display: flex;
             flex-direction: column;
@@ -255,7 +252,7 @@
             gap: 8px;
             padding: 0 8px;
             will-change: transform;
-            transition: transform 5s cubic-bezier(0.1, 0.7, 0.3, 1);
+            transition: transform 5s cubic-bezier(0.1, 0.6, 0.2, 1);
         }
 
         .roulette-cell {
@@ -336,7 +333,7 @@
             background: var(--neon-green);
             box-shadow: 0 0 30px var(--neon-green), 0 0 60px rgba(0,255,136,0.3);
             border-radius: 2px;
-            z-index: 5;
+            z-index: 10;
             pointer-events: none;
         }
         .roulette-indicator::before,
@@ -400,7 +397,6 @@
             margin-top: 0;
         }
 
-        /* ----- АПГРЕЙД ----- */
         .upgrade-item {
             display: flex;
             justify-content: space-between;
@@ -451,7 +447,6 @@
             pointer-events: none;
         }
 
-        /* ----- ПРОФИЛЬ ----- */
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -488,7 +483,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* ----- НАВИГАЦИЯ ----- */
         .nav-center {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -543,6 +537,9 @@
             .roulette-cell img { width: 36px; height: 36px; }
             .roulette-cell .cell-name { font-size: 7px; }
             .nft-item .nft-image { width: 48px; height: 48px; }
+            .modal-content img { width: 100px; height: 100px; }
+            .modal-actions { flex-direction: column; gap: 8px; }
+            .modal-actions .modal-btn { max-width: 100%; }
         }
 
         @media (min-width: 600px) {
@@ -562,6 +559,135 @@
             pointer-events: none;
         }
         .nft-item:hover .glow-pulse { opacity: 1; }
+
+        /* ---------- КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ДЛЯ NFT ---------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-out;
+            padding: 20px;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-content {
+            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
+            border: 2px solid var(--neon-green);
+            border-radius: 24px;
+            padding: 30px 24px 24px 24px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(0, 255, 136, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0,255,136,0.03), transparent, rgba(0,212,255,0.03), transparent);
+            animation: rotateGlow 8s linear infinite;
+        }
+
+        .modal-content .modal-gif {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            margin: 0 auto 12px auto;
+            display: block;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 0 30px rgba(0,255,136,0.3));
+        }
+
+        .modal-content .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 4px;
+        }
+
+        .modal-content .modal-price {
+            font-size: 18px;
+            color: #ffd700;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+
+        .modal-content .modal-price .stars {
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .modal-actions .modal-btn {
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 700;
+            font-size: 14px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: 0.15s;
+            flex: 1;
+            min-width: 80px;
+            max-width: 140px;
+        }
+
+        .modal-actions .modal-btn:active {
+            transform: scale(0.94);
+            opacity: 0.8;
+        }
+
+        .modal-actions .btn-sell {
+            background: #ffd700;
+            color: #0a0e1a;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .modal-actions .btn-withdraw {
+            background: var(--neon-cyan);
+            color: #0a0e1a;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .modal-actions .btn-close {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            border: 1px solid var(--glass-border);
+        }
+
+        .modal-actions .modal-btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -682,28 +808,28 @@
         // ---------- 2. ПОЛУЧЕНИЕ USER_ID ----------
         const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-        // ---------- 3. СПИСОК ПОДАРКОВ (GIF) ----------
+        // ---------- 3. СПИСОК ПОДАРКОВ (GIF + ЦЕНА В ЗВЁЗДАХ) ----------
         const BASE_URL = 'https://judepip.github.io/NFT-LAB';
         const GIFTS = [
-            { name: 'Bow Tie', rarity: 'редкий', image: BASE_URL + '/images/BowTie.gif' },
-            { name: 'Chill Flame', rarity: 'эпик', image: BASE_URL + '/images/ChillFlame.gif' },
-            { name: 'Big Year', rarity: 'легенд', image: BASE_URL + '/images/BigYear.gif' },
-            { name: 'JACK IN THE BOX', rarity: 'обычный', image: BASE_URL + '/images/JackInTheBox.gif' },
-            { name: 'Liberty Figure', rarity: 'легенд', image: BASE_URL + '/images/LibertyFigure.gif' },
-            { name: 'Light Sword', rarity: 'эпик', image: BASE_URL + '/images/LightSword.gif' },
-            { name: 'Star Notepad', rarity: 'редкий', image: BASE_URL + '/images/StarNotepad.gif' },
-            { name: 'Кубок', rarity: 'легенд', image: BASE_URL + '/images/Кубок.gif' },
-            { name: 'Кольцо', rarity: 'эпик', image: BASE_URL + '/images/Кольцо.gif' },
-            { name: 'Мишка', rarity: 'обычный', image: BASE_URL + '/images/Мишка.gif' },
+            { name: 'Bow Tie', rarity: 'редкий', price: 150, image: BASE_URL + '/images/BowTie.gif' },
+            { name: 'Chill Flame', rarity: 'эпик', price: 300, image: BASE_URL + '/images/ChillFlame.gif' },
+            { name: 'Big Year', rarity: 'легенд', price: 500, image: BASE_URL + '/images/BigYear.gif' },
+            { name: 'JACK IN THE BOX', rarity: 'обычный', price: 100, image: BASE_URL + '/images/JackInTheBox.gif' },
+            { name: 'Liberty Figure', rarity: 'легенд', price: 550, image: BASE_URL + '/images/LibertyFigure.gif' },
+            { name: 'Light Sword', rarity: 'эпик', price: 280, image: BASE_URL + '/images/LightSword.gif' },
+            { name: 'Star Notepad', rarity: 'редкий', price: 180, image: BASE_URL + '/images/StarNotepad.gif' },
+            { name: 'Кубок', rarity: 'легенд', price: 600, image: BASE_URL + '/images/Кубок.gif' },
+            { name: 'Кольцо', rarity: 'эпик', price: 350, image: BASE_URL + '/images/Кольцо.gif' },
+            { name: 'Мишка', rarity: 'обычный', price: 120, image: BASE_URL + '/images/Мишка.gif' },
         ];
 
-        // ---------- 4. СОСТОЯНИЕ (С ПРИНУДИТЕЛЬНЫМ СБРОСОМ СТАРЫХ ДАННЫХ) ----------
+        // ---------- 4. СОСТОЯНИЕ ----------
         const STORAGE_KEY = 'lab_nft_state';
         const VERSION_KEY = 'lab_nft_version';
 
         function getDefaultState() {
             return {
-                inventory: [], // ← ПУСТОЙ ИНВЕНТАРЬ
+                inventory: [],
                 balance: 1000.0,
                 spins: 0,
                 upgrades: [
@@ -716,15 +842,12 @@
         }
 
         let state;
-
-        // Проверяем версию — если обновился код, сбрасываем старые данные
-        const currentVersion = '2.0';
+        const currentVersion = '2.7';
         const savedVersion = localStorage.getItem(VERSION_KEY);
 
         try {
             if (savedVersion !== currentVersion) {
-                // Новая версия — сбрасываем всё
-                console.log('Обнаружена новая версия приложения. Сброс старых данных...');
+                console.log('Обнаружена новая версия. Сброс старых данных...');
                 localStorage.removeItem(STORAGE_KEY);
                 localStorage.setItem(VERSION_KEY, currentVersion);
                 state = getDefaultState();
@@ -732,15 +855,12 @@
                 const saved = localStorage.getItem(STORAGE_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    // Проверяем, что инвентарь не содержит старых подарков
                     if (parsed.inventory && parsed.inventory.length > 0) {
-                        // Если есть подарки — проверяем, не старые ли они
                         const firstItem = parsed.inventory[0];
                         if (firstItem && firstItem.name && 
                             (firstItem.name.includes('Кристалл') || 
                              firstItem.name.includes('Теневой') ||
                              firstItem.name.includes('Голограмма'))) {
-                            // Это старые данные — сбрасываем
                             console.log('Обнаружены старые подарки. Сброс инвентаря...');
                             parsed.inventory = [];
                         }
@@ -757,9 +877,7 @@
             state = getDefaultState();
         }
 
-        // Принудительно очищаем инвентарь, если он не пустой (на всякий случай)
         if (state.inventory && state.inventory.length > 0) {
-            // Проверяем, есть ли подарки из старого списка
             const hasOldGifts = state.inventory.some(item => 
                 item.name && (
                     item.name.includes('Кристалл') ||
@@ -808,12 +926,10 @@
             balanceDisplay.textContent = state.balance.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             nftCount.textContent = state.inventory.length + ' шт.';
 
-            // ИНВЕНТАРЬ С GIF
             if (state.inventory.length === 0) {
                 inventoryGrid.innerHTML = `<div class="empty-inventory">🧪 Нет подарков. Крутите рулетку!</div>`;
             } else {
                 inventoryGrid.innerHTML = state.inventory.map(item => {
-                    // Используем GIF, если есть, иначе эмодзи
                     const iconHtml = item.image 
                         ? `<img class="nft-image" src="${item.image}" alt="${item.name}" loading="lazy" 
                              onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
@@ -830,7 +946,6 @@
                 }).join('');
             }
 
-            // Апгрейды
             const upgradeDefs = [
                 { id: 'up1', name: 'Генератор GIFT', desc: '+5 GIFT/час', maxLvl: 5, baseCost: 150 },
                 { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', maxLvl: 4, baseCost: 200 },
@@ -860,7 +975,6 @@
                 `;
             }).join('');
 
-            // Профиль
             profileName.textContent = tg.initDataUnsafe?.user?.first_name || 'Аноним';
             profileId.textContent = `ID: ${USER_ID}`;
             statNFT.textContent = state.inventory.length;
@@ -871,28 +985,32 @@
             saveState();
         }
 
-        // ---------- 7. СОЗДАНИЕ ЯЧЕЕК РУЛЕТКИ ----------
+        // ---------- 7. СОЗДАНИЕ БЕСКОНЕЧНОЙ ЛЕНТЫ РУЛЕТКИ ----------
         function createRouletteCells() {
-            const cellsHtml = GIFTS.map((cell, index) => {
-                return `
-                    <div class="roulette-cell" data-index="${index}">
-                        <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
-                             onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
-                             onload="console.log('GIF загружен:', this.src)">
-                        <div style="font-size:28px; display:none;">🎁</div>
-                        <div class="cell-name">${cell.name}</div>
-                        <div class="cell-rarity">${cell.rarity}</div>
-                    </div>
-                `;
-            }).join('');
+            const REPEAT_COUNT = 6;
+            let cellsHtml = '';
+            for (let rep = 0; rep < REPEAT_COUNT; rep++) {
+                GIFTS.forEach((cell, index) => {
+                    cellsHtml += `
+                        <div class="roulette-cell" data-gift-index="${index}">
+                            <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                            <div style="font-size:28px; display:none;">🎁</div>
+                            <div class="cell-name">${cell.name}</div>
+                            <div class="cell-rarity">${cell.rarity}</div>
+                        </div>
+                    `;
+                });
+            }
             
             rouletteSlider.innerHTML = cellsHtml;
+            
+            const startRepeat = 3;
+            const startOffset = startRepeat * GIFTS.length * 20;
             rouletteSlider.style.transition = 'none';
-            rouletteSlider.style.transform = 'translateX(0%)';
+            rouletteSlider.style.transform = `translateX(-${startOffset}%)`;
             void rouletteSlider.offsetWidth;
             rouletteSlider.style.transition = '';
-
-            console.log('Ячейки рулетки созданы, количество:', document.querySelectorAll('.roulette-cell').length);
         }
 
         // ---------- 8. НАВИГАЦИЯ ----------
@@ -928,11 +1046,25 @@
         }
 
         // ---------- 10. ПОДСВЕТКА ВЫИГРЫШНОЙ ЯЧЕЙКИ ----------
-        function highlightCell(index) {
-            const cells = document.querySelectorAll('.roulette-cell');
-            cells.forEach((cell, i) => {
-                cell.classList.toggle('highlight', i === index);
+        function highlightCell(giftIndex) {
+            const cells = document.querySelectorAll(`.roulette-cell[data-gift-index="${giftIndex}"]`);
+            const centerX = window.innerWidth / 2;
+            let closestCell = null;
+            let closestDist = Infinity;
+            
+            cells.forEach(cell => {
+                const rect = cell.getBoundingClientRect();
+                const cellCenter = rect.left + rect.width / 2;
+                const dist = Math.abs(cellCenter - centerX);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestCell = cell;
+                }
             });
+            
+            if (closestCell) {
+                closestCell.classList.add('highlight');
+            }
         }
 
         function clearHighlight() {
@@ -941,7 +1073,105 @@
             });
         }
 
-        // ---------- 11. РУЛЕТКА ----------
+        // ---------- 11. ОПРЕДЕЛЕНИЕ ВЫИГРЫША ПО ПОЗИЦИИ ИНДИКАТОРА ----------
+        function getGiftUnderIndicator() {
+            const cells = document.querySelectorAll('.roulette-cell');
+            const centerX = window.innerWidth / 2;
+            let closestCell = null;
+            let closestDist = Infinity;
+            
+            cells.forEach(cell => {
+                const rect = cell.getBoundingClientRect();
+                const cellCenter = rect.left + rect.width / 2;
+                const dist = Math.abs(cellCenter - centerX);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestCell = cell;
+                }
+            });
+            
+            if (closestCell) {
+                const giftIndex = parseInt(closestCell.dataset.giftIndex, 10);
+                return giftIndex;
+            }
+            return 0;
+        }
+
+        // ---------- 12. КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ДЛЯ NFT (С КНОПКАМИ) ----------
+        function showNftModal(gift, isWin = false) {
+            const oldModal = document.querySelector('.modal-overlay');
+            if (oldModal) oldModal.remove();
+
+            // Находим актуальную цену из GIFTS (если там есть price)
+            const giftData = GIFTS.find(g => g.name === gift.name);
+            const price = giftData ? giftData.price : 100;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `
+                <div class="modal-content">
+                    <img class="modal-gif" src="${gift.image}" alt="${gift.name}" loading="lazy">
+                    <div class="modal-title">${gift.name}</div>
+                    <div class="modal-price">
+                        <span class="stars">⭐</span> ${price}
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn btn-withdraw" data-action="withdraw">ВЫВЕСТИ</button>
+                        <button class="modal-btn btn-sell" data-action="sell">ПРОДАТЬ</button>
+                        <button class="modal-btn btn-close" data-action="close">ЗАКРЫТЬ</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            // Обработчики кнопок
+            const closeBtn = overlay.querySelector('[data-action="close"]');
+            const sellBtn = overlay.querySelector('[data-action="sell"]');
+            const withdrawBtn = overlay.querySelector('[data-action="withdraw"]');
+
+            // Закрытие
+            closeBtn.addEventListener('click', function() {
+                overlay.remove();
+            });
+
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+
+            // Продажа
+            sellBtn.addEventListener('click', function() {
+                // Находим NFT в инвентаре
+                const itemIndex = state.inventory.findIndex(item => item.id === gift.id);
+                if (itemIndex === -1) {
+                    tg.showAlert('❌ Этот подарок уже продан!');
+                    overlay.remove();
+                    return;
+                }
+
+                // Удаляем из инвентаря
+                state.inventory.splice(itemIndex, 1);
+                // Добавляем звёзды на баланс
+                state.balance += price;
+                render();
+                overlay.remove();
+                tg.showAlert(`✅ Вы продали ${gift.name} за ⭐${price}!`);
+                sendToBot({
+                    action: 'sell_nft',
+                    payload: { name: gift.name, price: price, balance: state.balance }
+                });
+            });
+
+            // Вывод (заглушка)
+            withdrawBtn.addEventListener('click', function() {
+                tg.showAlert(`🔜 Функция вывода "${gift.name}" в разработке!`);
+                overlay.remove();
+            });
+        }
+
+        // ---------- 13. РУЛЕТКА ----------
         spinBtn.addEventListener('click', function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -954,50 +1184,59 @@
             spinBtn.disabled = true;
             rouletteResult.textContent = '🌀 Крутим...';
 
-            const winIndex = Math.floor(Math.random() * GIFTS.length);
-            const prize = GIFTS[winIndex];
-
-            state.balance -= 150;
-            state.spins += 1;
-            const newGift = {
-                id: 'gift_' + Date.now(),
-                name: prize.name,
-                rarity: prize.rarity,
-                image: prize.image,
-            };
-            state.inventory.push(newGift);
+            const winGiftIndex = Math.floor(Math.random() * GIFTS.length);
+            const prize = GIFTS[winGiftIndex];
 
             clearHighlight();
-            
-            const totalCells = GIFTS.length;
-            const extraSpins = 3;
+
+            const totalUnique = GIFTS.length;
+            const repeats = 6;
             const cellWidthPercent = 20;
-            const offsetPercent = (totalCells * extraSpins + winIndex) * cellWidthPercent;
             
+            const targetRepeat = 4;
+            const targetCellIndex = targetRepeat * totalUnique + winGiftIndex;
+            
+            const visibleOffset = 2.5;
+            const offsetPercent = targetCellIndex * cellWidthPercent - visibleOffset * cellWidthPercent;
+
             rouletteSlider.style.transition = 'none';
-            rouletteSlider.style.transform = 'translateX(0%)';
             void rouletteSlider.offsetWidth;
             
-            rouletteSlider.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.3, 1)';
+            rouletteSlider.style.transition = 'transform 5s cubic-bezier(0.1, 0.6, 0.2, 1)';
             rouletteSlider.style.transform = `translateX(-${offsetPercent}%)`;
 
             if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
             setTimeout(() => {
-                highlightCell(winIndex);
+                const actualWinIndex = getGiftUnderIndicator();
+                const actualPrize = GIFTS[actualWinIndex];
+                
+                state.balance -= 150;
+                state.spins += 1;
+                const newGift = {
+                    id: 'gift_' + Date.now(),
+                    name: actualPrize.name,
+                    rarity: actualPrize.rarity,
+                    image: actualPrize.image,
+                };
+                state.inventory.push(newGift);
+                
+                highlightCell(actualWinIndex);
+                rouletteResult.textContent = `🎉 Вы выиграли: ${actualPrize.name}! (${actualPrize.rarity})`;
+                
+                // Показываем модал с GIF и кнопками
+                showNftModal(newGift, true);
+                
+                render();
+                sendToBot({
+                    action: 'roulette_spin',
+                    payload: { prize: actualPrize.name, rarity: actualPrize.rarity, balance: state.balance }
+                });
             }, 4800);
 
             setTimeout(() => {
                 state.isSpinning = false;
                 spinBtn.disabled = false;
-                rouletteResult.textContent = `🎉 Вы выиграли: ${prize.name}! (${prize.rarity})`;
-                tg.showAlert(`🎉 Поздравляем! Вы выиграли ${prize.name}!`);
-                
-                render();
-                sendToBot({
-                    action: 'roulette_spin',
-                    payload: { prize: prize.name, rarity: prize.rarity, balance: state.balance }
-                });
             }, 5500);
         });
 
@@ -1010,7 +1249,7 @@
             }
         });
 
-        // ---------- 12. АПГРЕЙДЫ ----------
+        // ---------- 14. АПГРЕЙДЫ ----------
         upgradeList.addEventListener('click', function(e) {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn || btn.disabled) return;
@@ -1047,14 +1286,14 @@
             });
         });
 
-        // ---------- 13. КЛИК ПО NFT ----------
+        // ---------- 15. КЛИК ПО NFT (ПОКАЗЫВАЕМ МОДАЛ) ----------
         inventoryGrid.addEventListener('click', function(e) {
             const item = e.target.closest('.nft-item');
             if (!item) return;
             const id = item.dataset.id;
             const gift = state.inventory.find(n => n.id === id);
             if (gift) {
-                tg.showAlert(`📦 ${gift.name}\nРедкость: ${gift.rarity}\nID: ${gift.id}`);
+                showNftModal(gift);
                 sendToBot({
                     action: 'view_nft',
                     payload: { nftId: gift.id, name: gift.name }
@@ -1062,7 +1301,7 @@
             }
         });
 
-        // ---------- 14. ИНИЦИАЛИЗАЦИЯ ----------
+        // ---------- 16. ИНИЦИАЛИЗАЦИЯ ----------
         createRouletteCells();
         render();
 
