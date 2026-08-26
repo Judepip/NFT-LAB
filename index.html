@@ -34,6 +34,7 @@
             --text-primary: #e8f0f8;
             --text-secondary: #8899bb;
             --font-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
+            --gold: #ffd700;
         }
         html, body {
             height: 100%;
@@ -92,7 +93,7 @@
             padding: 6px 16px;
             font-size: 14px;
             font-weight: 500;
-            color: var(--neon-green);
+            color: var(--gold);
             backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
@@ -474,7 +475,7 @@
         .stat-box .value {
             font-size: 22px;
             font-weight: 600;
-            color: var(--neon-green);
+            color: var(--gold);
         }
         .stat-box .label {
             font-size: 11px;
@@ -560,7 +561,7 @@
         }
         .nft-item:hover .glow-pulse { opacity: 1; }
 
-        /* ---------- КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ДЛЯ NFT ---------- */
+        /* ---------- КАСТОМНЫЕ МОДАЛЬНЫЕ ОКНА ---------- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -626,7 +627,7 @@
 
         .modal-content .modal-price {
             font-size: 18px;
-            color: #ffd700;
+            color: var(--gold);
             position: relative;
             z-index: 1;
             margin-bottom: 16px;
@@ -667,7 +668,7 @@
         }
 
         .modal-actions .btn-sell {
-            background: #ffd700;
+            background: var(--gold);
             color: #0a0e1a;
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
         }
@@ -688,6 +689,73 @@
             opacity: 0.4;
             pointer-events: none;
         }
+
+        /* ----- МОДАЛ ДЛЯ ВЫВОДА ----- */
+        .withdraw-modal .modal-content {
+            max-width: 340px;
+        }
+
+        .withdraw-modal .modal-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0,0,0,0.3);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .withdraw-modal .modal-input:focus {
+            border-color: var(--neon-green);
+        }
+
+        .withdraw-modal .modal-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .withdraw-modal .modal-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .withdraw-modal .modal-info .highlight {
+            color: var(--gold);
+        }
+
+        .withdraw-modal .modal-actions {
+            gap: 8px;
+        }
+
+        .withdraw-modal .modal-btn {
+            max-width: 100%;
+            flex: 1;
+        }
+
+        .withdraw-modal .btn-confirm {
+            background: var(--neon-green);
+            color: #0a0e1a;
+        }
+
+        .withdraw-modal .btn-confirm:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .withdraw-modal .btn-cancel {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            border: 1px solid var(--glass-border);
+        }
     </style>
 </head>
 <body>
@@ -696,7 +764,7 @@
     <div class="header">
         <h1>🧪 LAB NFT</h1>
         <div class="balance">
-            <span>⚡</span> <span id="balanceDisplay">1,000.0</span> <span>GIFT</span>
+            <span>⭐</span> <span id="balanceDisplay">1,000</span>
         </div>
     </div>
 
@@ -720,7 +788,7 @@
                         <div class="roulette-slider" id="rouletteSlider"></div>
                     </div>
                     <div id="rouletteResult" class="roulette-result">Нажмите "РАСКРУТИТЬ"</div>
-                    <button class="roulette-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150</button>
+                    <button class="roulette-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150 ⭐</button>
                     <div class="roulette-hint">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
                 </div>
             </div>
@@ -740,10 +808,14 @@
                 <div style="color:var(--text-secondary); font-size:13px;" id="profileId">ID: 0</div>
                 <div class="profile-stats">
                     <div class="stat-box"><div class="value" id="statNFT">0</div><div class="label">NFT</div></div>
-                    <div class="stat-box"><div class="value" id="statLevel">1</div><div class="label">Уровень</div></div>
+                    <div class="stat-box"><div class="value" id="statBalance">0 ⭐</div><div class="label">Баланс</div></div>
                     <div class="stat-box"><div class="value" id="statSpins">0</div><div class="label">Спинов</div></div>
                     <div class="stat-box"><div class="value" id="statUpgrades">0</div><div class="label">Апгрейдов</div></div>
                 </div>
+                <!-- Кнопка вывода на профиле -->
+                <button class="roulette-btn" id="withdrawBtn" style="margin-top:12px; max-width:200px; background: var(--neon-cyan); box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);">
+                    💸 ВЫВЕСТИ
+                </button>
             </div>
         </div>
 
@@ -830,7 +902,7 @@
         function getDefaultState() {
             return {
                 inventory: [],
-                balance: 1000.0,
+                balance: 1000, // теперь в звёздах (целое число)
                 spins: 0,
                 upgrades: [
                     { id: 'up1', level: 0 },
@@ -842,7 +914,7 @@
         }
 
         let state;
-        const currentVersion = '2.7';
+        const currentVersion = '3.0';
         const savedVersion = localStorage.getItem(VERSION_KEY);
 
         try {
@@ -917,13 +989,14 @@
         const profileName = $('profileName');
         const profileId = $('profileId');
         const statNFT = $('statNFT');
-        const statLevel = $('statLevel');
+        const statBalance = $('statBalance');
         const statSpins = $('statSpins');
         const statUpgrades = $('statUpgrades');
+        const withdrawBtn = $('withdrawBtn');
 
         // ---------- 6. ФУНКЦИЯ ОБНОВЛЕНИЯ UI ----------
         function render() {
-            balanceDisplay.textContent = state.balance.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            balanceDisplay.textContent = Math.floor(state.balance);
             nftCount.textContent = state.inventory.length + ' шт.';
 
             if (state.inventory.length === 0) {
@@ -947,9 +1020,9 @@
             }
 
             const upgradeDefs = [
-                { id: 'up1', name: 'Генератор GIFT', desc: '+5 GIFT/час', maxLvl: 5, baseCost: 150 },
+                { id: 'up1', name: 'Генератор ⭐', desc: '+5 ⭐/час', maxLvl: 5, baseCost: 150 },
                 { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', maxLvl: 4, baseCost: 200 },
-                { id: 'up3', name: 'Ускоритель спина', desc: 'Спин стоит -2 GIFT', maxLvl: 6, baseCost: 100 },
+                { id: 'up3', name: 'Ускоритель спина', desc: 'Спин стоит -2 ⭐', maxLvl: 6, baseCost: 100 },
             ];
 
             upgradeList.innerHTML = upgradeDefs.map(u => {
@@ -966,7 +1039,7 @@
                         </div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span class="upgrade-level">Ур.${level}/${u.maxLvl}</span>
-                            <span class="upgrade-cost">${isMax ? 'MAX' : cost + ' GIFT'}</span>
+                            <span class="upgrade-cost">${isMax ? 'MAX' : cost + ' ⭐'}</span>
                             <button class="upgrade-btn" data-id="${u.id}" ${!canAfford ? 'disabled' : ''}>
                                 ${isMax ? '✔' : '↑'}
                             </button>
@@ -978,7 +1051,7 @@
             profileName.textContent = tg.initDataUnsafe?.user?.first_name || 'Аноним';
             profileId.textContent = `ID: ${USER_ID}`;
             statNFT.textContent = state.inventory.length;
-            statLevel.textContent = 1;
+            statBalance.textContent = Math.floor(state.balance) + ' ⭐';
             statSpins.textContent = state.spins;
             statUpgrades.textContent = state.upgrades.filter(u => u.level > 0).length;
 
@@ -1097,12 +1170,95 @@
             return 0;
         }
 
-        // ---------- 12. КАСТОМНОЕ МОДАЛЬНОЕ ОКНО ДЛЯ NFT (С КНОПКАМИ) ----------
-        function showNftModal(gift, isWin = false) {
+        // ---------- 12. МОДАЛ ДЛЯ ВЫВОДА (С ВВОДОМ ЮЗЕРНЕЙМА) ----------
+        function showWithdrawModal() {
             const oldModal = document.querySelector('.modal-overlay');
             if (oldModal) oldModal.remove();
 
-            // Находим актуальную цену из GIFTS (если там есть price)
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay withdraw-modal';
+            overlay.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-title" style="font-size:20px;">💸 ВЫВОД</div>
+                    <div class="modal-info">
+                        Комиссия: <span class="highlight">25 ⭐</span><br>
+                        Доступно: <span class="highlight">${Math.floor(state.balance)} ⭐</span>
+                    </div>
+                    <input class="modal-input" id="withdrawUsername" type="text" placeholder="Введите @username" autocomplete="off">
+                    <div class="modal-actions">
+                        <button class="modal-btn btn-confirm" id="withdrawConfirm">ВЫВЕСТИ</button>
+                        <button class="modal-btn btn-cancel" id="withdrawCancel">ОТМЕНА</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const usernameInput = overlay.querySelector('#withdrawUsername');
+            const confirmBtn = overlay.querySelector('#withdrawConfirm');
+            const cancelBtn = overlay.querySelector('#withdrawCancel');
+
+            // Фокус на поле ввода
+            setTimeout(() => usernameInput.focus(), 100);
+
+            // Отмена
+            cancelBtn.addEventListener('click', function() {
+                overlay.remove();
+            });
+
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+
+            // Подтверждение
+            confirmBtn.addEventListener('click', function() {
+                const username = usernameInput.value.trim();
+                
+                // Проверка: введён ли юзернейм
+                if (!username) {
+                    tg.showAlert('❌ Введите @username для вывода!');
+                    return;
+                }
+
+                // Проверка: есть ли 25 звёзд на балансе
+                if (state.balance < 25) {
+                    tg.showAlert('❌ Недостаточно звёзд! Нужно минимум 25 ⭐');
+                    return;
+                }
+
+                // Списываем 25 звёзд
+                state.balance -= 25;
+                render();
+                overlay.remove();
+
+                // Уведомление
+                tg.showAlert(`✅ Заявка на вывод отправлена!\nЮзернейм: ${username}\nСписано: 25 ⭐`);
+                
+                sendToBot({
+                    action: 'withdraw',
+                    payload: { 
+                        username: username, 
+                        amount: 25, 
+                        balance: state.balance 
+                    }
+                });
+            });
+
+            // Enter для подтверждения
+            usernameInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    confirmBtn.click();
+                }
+            });
+        }
+
+        // ---------- 13. МОДАЛ ДЛЯ NFT ----------
+        function showNftModal(gift) {
+            const oldModal = document.querySelector('.modal-overlay');
+            if (oldModal) oldModal.remove();
+
             const giftData = GIFTS.find(g => g.name === gift.name);
             const price = giftData ? giftData.price : 100;
 
@@ -1125,12 +1281,10 @@
 
             document.body.appendChild(overlay);
 
-            // Обработчики кнопок
             const closeBtn = overlay.querySelector('[data-action="close"]');
             const sellBtn = overlay.querySelector('[data-action="sell"]');
-            const withdrawBtn = overlay.querySelector('[data-action="withdraw"]');
+            const withdrawBtnEl = overlay.querySelector('[data-action="withdraw"]');
 
-            // Закрытие
             closeBtn.addEventListener('click', function() {
                 overlay.remove();
             });
@@ -1141,9 +1295,7 @@
                 }
             });
 
-            // Продажа
             sellBtn.addEventListener('click', function() {
-                // Находим NFT в инвентаре
                 const itemIndex = state.inventory.findIndex(item => item.id === gift.id);
                 if (itemIndex === -1) {
                     tg.showAlert('❌ Этот подарок уже продан!');
@@ -1151,9 +1303,7 @@
                     return;
                 }
 
-                // Удаляем из инвентаря
                 state.inventory.splice(itemIndex, 1);
-                // Добавляем звёзды на баланс
                 state.balance += price;
                 render();
                 overlay.remove();
@@ -1164,19 +1314,19 @@
                 });
             });
 
-            // Вывод (заглушка)
-            withdrawBtn.addEventListener('click', function() {
-                tg.showAlert(`🔜 Функция вывода "${gift.name}" в разработке!`);
+            withdrawBtnEl.addEventListener('click', function() {
                 overlay.remove();
+                // Открываем модал вывода
+                showWithdrawModal();
             });
         }
 
-        // ---------- 13. РУЛЕТКА ----------
+        // ---------- 14. РУЛЕТКА ----------
         spinBtn.addEventListener('click', function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
-                rouletteResult.textContent = '❌ Недостаточно GIFT (нужно 150)';
-                tg.showAlert('Недостаточно GIFT! Нужно 150');
+                rouletteResult.textContent = '❌ Недостаточно ⭐ (нужно 150)';
+                tg.showAlert('Недостаточно звёзд! Нужно 150 ⭐');
                 return;
             }
 
@@ -1224,8 +1374,7 @@
                 highlightCell(actualWinIndex);
                 rouletteResult.textContent = `🎉 Вы выиграли: ${actualPrize.name}! (${actualPrize.rarity})`;
                 
-                // Показываем модал с GIF и кнопками
-                showNftModal(newGift, true);
+                showNftModal(newGift);
                 
                 render();
                 sendToBot({
@@ -1249,7 +1398,12 @@
             }
         });
 
-        // ---------- 14. АПГРЕЙДЫ ----------
+        // ---------- 15. КНОПКА ВЫВОДА НА ПРОФИЛЕ ----------
+        withdrawBtn.addEventListener('click', function() {
+            showWithdrawModal();
+        });
+
+        // ---------- 16. АПГРЕЙДЫ ----------
         upgradeList.addEventListener('click', function(e) {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn || btn.disabled) return;
@@ -1272,7 +1426,7 @@
             
             const cost = def.baseCost * (level + 1);
             if (state.balance < cost) {
-                tg.showAlert('Недостаточно GIFT для апгрейда!');
+                tg.showAlert('Недостаточно ⭐ для апгрейда!');
                 return;
             }
             
@@ -1286,7 +1440,7 @@
             });
         });
 
-        // ---------- 15. КЛИК ПО NFT (ПОКАЗЫВАЕМ МОДАЛ) ----------
+        // ---------- 17. КЛИК ПО NFT ----------
         inventoryGrid.addEventListener('click', function(e) {
             const item = e.target.closest('.nft-item');
             if (!item) return;
@@ -1301,7 +1455,7 @@
             }
         });
 
-        // ---------- 16. ИНИЦИАЛИЗАЦИЯ ----------
+        // ---------- 18. ИНИЦИАЛИЗАЦИЯ ----------
         createRouletteCells();
         render();
 
