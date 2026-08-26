@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LAB NFT · Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Lottie для TGS-анимаций -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
     <style>
         /* ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И СБРОС ---------- */
         * {
@@ -177,9 +175,10 @@
             z-index: 1;
             filter: drop-shadow(0 0 8px rgba(0,255,136,0.4));
         }
-        .nft-item .lottie-container {
-            width: 60px;
-            height: 60px;
+        .nft-item .nft-image {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
             z-index: 1;
             filter: drop-shadow(0 0 8px rgba(0,255,136,0.3));
         }
@@ -190,6 +189,13 @@
             color: var(--text-primary);
             font-size: 10px;
             text-align: center;
+            line-height: 1.2;
+            max-width: 100%;
+            word-wrap: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
         .nft-item .nft-rarity {
             z-index: 1;
@@ -201,6 +207,7 @@
             background: rgba(0,255,136,0.15);
             color: var(--neon-green);
             margin-top: 2px;
+            white-space: nowrap;
         }
         .empty-inventory {
             color: var(--text-secondary);
@@ -209,7 +216,7 @@
             font-size: 14px;
         }
 
-        /* ----- РУЛЕТКА ----- */
+        /* ----- РУЛЕТКА (С ПОДДЕРЖКОЙ GIF) ----- */
         .roulette-container {
             display: flex;
             flex-direction: column;
@@ -249,39 +256,52 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 6px;
+            padding: 4px 2px;
             transition: all 0.3s;
             box-shadow: 0 0 15px rgba(0,255,136,0.03);
+            overflow: hidden;
         }
 
-        .roulette-cell .lottie-container {
+        .roulette-cell img {
             width: 48px;
             height: 48px;
-            margin-bottom: 2px;
+            object-fit: contain;
             filter: drop-shadow(0 0 8px rgba(0,255,136,0.2));
+            margin-bottom: 2px;
+            flex-shrink: 0;
         }
 
         .roulette-cell .cell-name {
-            font-size: 9px;
-            font-weight: 500;
+            font-size: 7px;
+            font-weight: 600;
             text-align: center;
             color: var(--text-primary);
-            line-height: 1.2;
+            line-height: 1.1;
             max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            padding: 0 2px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap;
+            min-height: 16px;
         }
 
         .roulette-cell .cell-rarity {
-            font-size: 7px;
+            font-size: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 1px 6px;
-            border-radius: 10px;
+            letter-spacing: 0.3px;
+            padding: 1px 4px;
+            border-radius: 8px;
             background: rgba(0,255,136,0.1);
             color: var(--neon-green);
-            margin-top: 2px;
+            margin-top: 1px;
+            white-space: nowrap;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .roulette-cell.highlight {
@@ -289,7 +309,7 @@
             box-shadow: 0 0 40px rgba(0,255,136,0.4);
             transform: scale(1.05);
         }
-        .roulette-cell.highlight .lottie-container {
+        .roulette-cell.highlight img {
             filter: drop-shadow(0 0 20px rgba(0,255,136,0.6));
         }
 
@@ -507,9 +527,9 @@
             .nav-btn { font-size: 11px; padding: 10px 2px; }
             .nav-btn .icon { font-size: 17px; }
             .roulette-cell { flex: 0 0 calc(25% - 8px); min-width: 50px; }
-            .roulette-cell .lottie-container { width: 32px; height: 32px; }
-            .roulette-cell .cell-name { font-size: 8px; }
-            .nft-item .lottie-container { width: 44px; height: 44px; }
+            .roulette-cell img { width: 36px; height: 36px; }
+            .roulette-cell .cell-name { font-size: 7px; }
+            .nft-item .nft-image { width: 48px; height: 48px; }
         }
 
         @media (min-width: 600px) {
@@ -650,18 +670,18 @@
         // ---------- 2. ПОЛУЧЕНИЕ USER_ID ----------
         const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-        // ---------- 3. СПИСОК ПОДАРКОВ (TGS) ----------
+        // ---------- 3. СПИСОК ПОДАРКОВ (GIF) ----------
         const GIFTS = [
-            { name: 'Bow Tie', rarity: 'редкий', file: '/images/BowTie.tgs' },
-            { name: 'Chill Flame', rarity: 'эпик', file: '/images/ChillFlame.tgs' },
-            { name: 'Big Year', rarity: 'легенд', file: '/images/BigYear.tgs' },
-            { name: 'JACK IN THE BOX', rarity: 'обычный', file: '/images/JackInTheBox.tgs' },
-            { name: 'Liberty Figure', rarity: 'легенд', file: '/images/LibertyFigure.tgs' },
-            { name: 'Light Sword', rarity: 'эпик', file: '/images/LightSword.tgs' },
-            { name: 'Star Notepad', rarity: 'редкий', file: '/images/StarNotepad.tgs' },
-            { name: 'Кубок', rarity: 'легенд', file: '/images/Кубок.tgs' },
-            { name: 'Кольцо', rarity: 'эпик', file: '/images/Кольцо.tgs' },
-            { name: 'Мишка', rarity: 'обычный', file: '/images/Мишка.tgs' },
+            { name: 'Bow Tie', rarity: 'редкий', image: '/images/BowTie.gif' },
+            { name: 'Chill Flame', rarity: 'эпик', image: '/images/ChillFlame.gif' },
+            { name: 'Big Year', rarity: 'легенд', image: '/images/BigYear.gif' },
+            { name: 'JACK IN THE BOX', rarity: 'обычный', image: '/images/JackInTheBox.gif' },
+            { name: 'Liberty Figure', rarity: 'легенд', image: '/images/LibertyFigure.gif' },
+            { name: 'Light Sword', rarity: 'эпик', image: '/images/LightSword.gif' },
+            { name: 'Star Notepad', rarity: 'редкий', image: '/images/StarNotepad.gif' },
+            { name: 'Кубок', rarity: 'легенд', image: '/images/Кубок.gif' },
+            { name: 'Кольцо', rarity: 'эпик', image: '/images/Кольцо.gif' },
+            { name: 'Мишка', rarity: 'обычный', image: '/images/Мишка.gif' },
         ];
 
         // ---------- 4. СОСТОЯНИЕ ----------
@@ -691,29 +711,7 @@
         const statSpins = $('statSpins');
         const statUpgrades = $('statUpgrades');
 
-        // ---------- 6. ФУНКЦИЯ ЗАГРУЗКИ LOTTIE-АНИМАЦИИ ----------
-        function loadLottie(container, filePath, loop = true, autoplay = true) {
-            if (!container) return null;
-            // Очищаем контейнер
-            container.innerHTML = '';
-            
-            try {
-                const anim = lottie.loadAnimation({
-                    container: container,
-                    renderer: 'svg',
-                    loop: loop,
-                    autoplay: autoplay,
-                    path: filePath,
-                });
-                return anim;
-            } catch (e) {
-                console.warn('Ошибка загрузки Lottie:', filePath, e);
-                container.innerHTML = '<div style="font-size:28px;">🎁</div>';
-                return null;
-            }
-        }
-
-        // ---------- 7. ЗАГРУЗКА ДАННЫХ ----------
+        // ---------- 6. ЗАГРУЗКА ДАННЫХ ----------
         async function loadUserData() {
             try {
                 const response = await fetch(`/api/user/${USER_ID}`);
@@ -760,44 +758,57 @@
             }
         }
 
-        // ---------- 8. ОБНОВЛЕНИЕ UI (С ПОДДЕРЖКОЙ TGS) ----------
+        // ---------- 7. СОЗДАНИЕ ЯЧЕЕК РУЛЕТКИ (GIF) ----------
+        function createRouletteCells() {
+            const cellsHtml = GIFTS.map((cell, index) => {
+                let content = '';
+                if (cell.image) {
+                    content = `
+                        <img src="${cell.image}" alt="${cell.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                        <div style="font-size:28px; display:none;">🎁</div>
+                        <div class="cell-name">${cell.name}</div>
+                        <div class="cell-rarity">${cell.rarity}</div>
+                    `;
+                } else {
+                    content = `
+                        <div style="font-size:28px;">🎁</div>
+                        <div class="cell-name">${cell.name}</div>
+                        <div class="cell-rarity">${cell.rarity}</div>
+                    `;
+                }
+                return `<div class="roulette-cell" data-index="${index}">${content}</div>`;
+            }).join('');
+            
+            rouletteSlider.innerHTML = cellsHtml;
+            rouletteSlider.style.transition = 'none';
+            rouletteSlider.style.transform = 'translateX(0%)';
+            void rouletteSlider.offsetWidth;
+            rouletteSlider.style.transition = '';
+        }
+
+        // ---------- 8. ОБНОВЛЕНИЕ UI ----------
         function render() {
             balanceDisplay.textContent = state.balance.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
             nftCount.textContent = state.inventory.length + ' шт.';
 
-            // Инвентарь
             if (state.inventory.length === 0) {
                 inventoryGrid.innerHTML = `<div class="empty-inventory">🧪 Нет подарков. Крутите рулетку!</div>`;
             } else {
                 inventoryGrid.innerHTML = state.inventory.map(item => {
-                    let mediaHtml = '';
-                    if (item.file && item.file.endsWith('.tgs')) {
-                        mediaHtml = `<div class="lottie-container" data-file="${item.file}"></div>`;
-                    } else if (item.image) {
-                        mediaHtml = `<img class="nft-image" src="${item.image}" alt="${item.name}" loading="lazy">`;
-                    } else {
-                        mediaHtml = `<div class="nft-icon">🎁</div>`;
-                    }
+                    const iconHtml = item.image 
+                        ? `<img class="nft-image" src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="nft-icon" style="display:none;">🎁</div>`
+                        : `<div class="nft-icon">🎁</div>`;
                     return `
                         <div class="nft-item" data-id="${item.id}">
                             <div class="glow-pulse"></div>
-                            ${mediaHtml}
+                            ${iconHtml}
                             <div class="nft-name">${item.name}</div>
                             <div class="nft-rarity">${item.rarity || 'обычный'}</div>
                         </div>
                     `;
                 }).join('');
-
-                // Загружаем Lottie для всех .tgs контейнеров в инвентаре
-                document.querySelectorAll('.nft-item .lottie-container').forEach(container => {
-                    const file = container.dataset.file;
-                    if (file) {
-                        loadLottie(container, file, true, true);
-                    }
-                });
             }
 
-            // Апгрейды
             const upgradeDefs = [
                 { id: 'up1', name: 'Генератор GIFT', desc: '+5 GIFT/час', maxLvl: 5, baseCost: 150 },
                 { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', maxLvl: 4, baseCost: 200 },
@@ -827,7 +838,6 @@
                 `;
             }).join('');
 
-            // Профиль
             profileName.textContent = tg.initDataUnsafe?.user?.first_name || 'Аноним';
             profileId.textContent = `ID: ${USER_ID}`;
             statNFT.textContent = state.inventory.length;
@@ -884,42 +894,7 @@
             });
         }
 
-        // ---------- 12. СОЗДАНИЕ ЯЧЕЕК РУЛЕТКИ С LOTTIE ----------
-        function createRouletteCells() {
-            const cellsHtml = GIFTS.map((cell, index) => {
-                let content = '';
-                if (cell.file && cell.file.endsWith('.tgs')) {
-                    content = `
-                        <div class="lottie-container" data-file="${cell.file}"></div>
-                        <div class="cell-name">${cell.name}</div>
-                        <div class="cell-rarity">${cell.rarity}</div>
-                    `;
-                } else {
-                    content = `
-                        <div style="font-size:28px;">🎁</div>
-                        <div class="cell-name">${cell.name}</div>
-                        <div class="cell-rarity">${cell.rarity}</div>
-                    `;
-                }
-                return `<div class="roulette-cell" data-index="${index}">${content}</div>`;
-            }).join('');
-            
-            rouletteSlider.innerHTML = cellsHtml;
-            rouletteSlider.style.transition = 'none';
-            rouletteSlider.style.transform = 'translateX(0%)';
-            void rouletteSlider.offsetWidth;
-            rouletteSlider.style.transition = '';
-
-            // Загружаем Lottie для всех .tgs в рулетке
-            document.querySelectorAll('.roulette-cell .lottie-container').forEach(container => {
-                const file = container.dataset.file;
-                if (file) {
-                    loadLottie(container, file, true, true);
-                }
-            });
-        }
-
-        // ---------- 13. РУЛЕТКА (5 СЕКУНД) ----------
+        // ---------- 12. РУЛЕТКА (5 СЕКУНД) ----------
         spinBtn.addEventListener('click', async function() {
             if (state.isSpinning) return;
             if (state.balance < 150) {
@@ -943,7 +918,7 @@
                     body: JSON.stringify({
                         prize: prize.name,
                         rarity: prize.rarity,
-                        file: prize.file,
+                        image: prize.image,
                     })
                 });
 
@@ -965,7 +940,7 @@
                     id: 'gift_' + Date.now(),
                     name: prize.name,
                     rarity: prize.rarity,
-                    file: prize.file,
+                    image: prize.image,
                 };
                 state.inventory.push(newGift);
                 tg.showAlert('⚠️ Бэкенд недоступен, данные сохранены локально');
@@ -999,13 +974,6 @@
                 tg.showAlert(`🎉 Поздравляем! Вы выиграли ${prize.name}!`);
                 
                 render();
-                // Перезагружаем Lottie в инвентаре после обновления
-                document.querySelectorAll('.nft-item .lottie-container').forEach(container => {
-                    const file = container.dataset.file;
-                    if (file) {
-                        loadLottie(container, file, true, true);
-                    }
-                });
                 sendToBot({
                     action: 'roulette_spin',
                     payload: { prize: prize.name, rarity: prize.rarity, balance: state.balance }
@@ -1022,7 +990,7 @@
             }
         });
 
-        // ---------- 14. АПГРЕЙДЫ ----------
+        // ---------- 13. АПГРЕЙДЫ ----------
         upgradeList.addEventListener('click', async function(e) {
             const btn = e.target.closest('.upgrade-btn');
             if (!btn || btn.disabled) return;
@@ -1056,7 +1024,7 @@
             }
         });
 
-        // ---------- 15. КЛИК ПО NFT ----------
+        // ---------- 14. КЛИК ПО NFT ----------
         inventoryGrid.addEventListener('click', function(e) {
             const item = e.target.closest('.nft-item');
             if (!item) return;
@@ -1071,7 +1039,7 @@
             }
         });
 
-        // ---------- 16. ИНИЦИАЛИЗАЦИЯ ----------
+        // ---------- 15. ИНИЦИАЛИЗАЦИЯ ----------
         createRouletteCells();
         loadUserData();
 
