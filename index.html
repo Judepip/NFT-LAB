@@ -19,6 +19,7 @@
     </script>
     <script src="https://telegram.org/js/telegram-web-app.js" onerror="console.warn('Telegram SDK не загрузился, используется эмуляция')"></script>
     <style>
+        /* ---------- СТИЛЬ (полный, из предыдущей версии) ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -100,6 +101,12 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .balance:hover {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
         }
         .balance span {
             color: var(--text-secondary);
@@ -516,23 +523,60 @@
             background: rgba(0, 255, 136, 0.05);
         }
         @media (max-width: 380px) {
-            .header h1 { font-size: 15px; }
-            .balance { font-size: 12px; padding: 4px 12px; }
-            .nav-btn { font-size: 11px; padding: 10px 2px; }
-            .nav-btn .icon { font-size: 17px; }
-            .roulette-cell { flex: 0 0 calc(25% - 8px); min-width: 50px; }
-            .roulette-cell img { width: 36px; height: 36px; }
-            .roulette-cell .cell-name { font-size: 7px; }
-            .nft-item .nft-image { width: 48px; height: 48px; }
-            .modal-content img { width: 100px; height: 100px; }
-            .modal-actions { flex-direction: column; gap: 8px; }
-            .modal-actions .modal-btn { max-width: 100%; }
+            .header h1 {
+                font-size: 15px;
+            }
+            .balance {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+            .nav-btn {
+                font-size: 11px;
+                padding: 10px 2px;
+            }
+            .nav-btn .icon {
+                font-size: 17px;
+            }
+            .roulette-cell {
+                flex: 0 0 calc(25% - 8px);
+                min-width: 50px;
+            }
+            .roulette-cell img {
+                width: 36px;
+                height: 36px;
+            }
+            .roulette-cell .cell-name {
+                font-size: 7px;
+            }
+            .nft-item .nft-image {
+                width: 48px;
+                height: 48px;
+            }
+            .modal-content img {
+                width: 100px;
+                height: 100px;
+            }
+            .modal-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .modal-actions .modal-btn {
+                max-width: 100%;
+            }
+            .shop-btn {
+                font-size: 16px !important;
+                padding: 14px !important;
+            }
         }
         @media (min-width: 600px) {
-            .roulette-cell { flex: 0 0 calc(16.66% - 8px); }
+            .roulette-cell {
+                flex: 0 0 calc(16.66% - 8px);
+            }
         }
         @media (min-width: 900px) {
-            .roulette-cell { flex: 0 0 calc(12.5% - 8px); }
+            .roulette-cell {
+                flex: 0 0 calc(12.5% - 8px);
+            }
         }
         .nft-item .glow-pulse {
             position: absolute;
@@ -546,6 +590,8 @@
         .nft-item:hover .glow-pulse {
             opacity: 1;
         }
+
+        /* ---------- МОДАЛЬНЫЕ ОКНА ---------- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -562,8 +608,14 @@
             padding: 20px;
         }
         @keyframes fadeIn {
-            0% { opacity: 0; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
         .modal-content {
             background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
@@ -673,6 +725,53 @@
             color: #0a0e1a;
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
         }
+
+        /* ---------- МАГАЗИН (ПОКУПКА ЗВЁЗД) ---------- */
+        .shop-modal .modal-content {
+            max-width: 340px;
+        }
+        .shop-modal .modal-title {
+            font-size: 20px;
+        }
+        .shop-btn {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid var(--gold);
+            border-radius: 16px;
+            background: rgba(255, 215, 0, 0.05);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        .shop-btn:active {
+            transform: scale(0.96);
+        }
+        .shop-btn .stars {
+            color: var(--gold);
+        }
+        .shop-btn .ton {
+            color: var(--neon-cyan);
+            font-weight: 400;
+            font-size: 14px;
+        }
+        .shop-btn .badge {
+            font-size: 12px;
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--neon-green);
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        /* ---------- МОДАЛ ВЫВОДА ---------- */
         .withdraw-modal .modal-content {
             max-width: 340px;
         }
@@ -728,6 +827,46 @@
             color: var(--text-secondary);
             border: 1px solid var(--glass-border);
         }
+
+        /* ---------- ПРОГРЕСС-БАР ---------- */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 12px;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            animation: progressPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes progressPulse {
+            0% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.6;
+            }
+        }
+        .withdraw-status-text {
+            font-size: 14px;
+            color: var(--neon-cyan);
+            margin-top: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ---------- КУЛДАУН ---------- */
         .cooldown-text {
             color: var(--text-secondary);
             font-size: 14px;
@@ -742,10 +881,6 @@
             color: var(--gold);
             font-weight: 700;
             font-size: 18px;
-        }
-        .withdraw-btn-disabled {
-            opacity: 0.4 !important;
-            pointer-events: none !important;
         }
         .referral-progress {
             margin-top: 8px;
@@ -784,7 +919,7 @@
 
         <div class="header">
             <h1>🧪 LAB NFT</h1>
-            <div class="balance">
+            <div class="balance" id="balanceClick">
                 <span>⭐</span> <span id="balanceDisplay">1,000</span>
             </div>
         </div>
@@ -951,9 +1086,10 @@
                 return GIFTS[0];
             }
 
-            // ---------- 6. СОСТОЯНИЕ (ВСЁ В LOCALSTORAGE) ----------
+            // ---------- 6. СОСТОЯНИЕ ----------
             const STORAGE_KEY = 'lab_nft_state';
             const COOLDOWN_KEY = 'withdraw_cooldown';
+            const WITHDRAW_REQUESTS_KEY = 'withdraw_requests';
 
             function getDefaultState() {
                 return {
@@ -997,7 +1133,56 @@
                 }
             }
 
-            // ---------- 7. КУЛДАУН НА ВЫВОД ----------
+            // ---------- 7. ЗАЯВКИ НА ВЫВОД ----------
+            function getWithdrawRequests() {
+                try {
+                    const saved = localStorage.getItem(WITHDRAW_REQUESTS_KEY);
+                    if (saved) {
+                        return JSON.parse(saved);
+                    }
+                } catch (e) {
+                    console.warn('Ошибка загрузки заявок:', e);
+                }
+                return [];
+            }
+
+            function saveWithdrawRequests(requests) {
+                try {
+                    localStorage.setItem(WITHDRAW_REQUESTS_KEY, JSON.stringify(requests));
+                } catch (e) {
+                    console.warn('Ошибка сохранения заявок:', e);
+                }
+            }
+
+            function addWithdrawRequest(username, amount, giftId = null) {
+                const requests = getWithdrawRequests();
+                const newRequest = {
+                    id: Date.now(),
+                    user_id: USER_ID,
+                    username: username,
+                    amount: amount,
+                    status: 'pending',
+                    created_at: new Date().toISOString(),
+                    gift_id: giftId
+                };
+                requests.push(newRequest);
+                saveWithdrawRequests(requests);
+                return newRequest;
+            }
+
+            function removeWithdrawRequest(requestId) {
+                let requests = getWithdrawRequests();
+                requests = requests.filter(req => req.id !== requestId);
+                saveWithdrawRequests(requests);
+            }
+
+            function getPendingWithdrawRequestForGift(giftId) {
+                if (!giftId) return null;
+                const requests = getWithdrawRequests();
+                return requests.find(req => req.gift_id === giftId && req.status === 'pending');
+            }
+
+            // ---------- 8. КУЛДАУН НА ВЫВОД ----------
             const COOLDOWN_HOURS = 24;
             const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
 
@@ -1025,7 +1210,7 @@
                 return getRemainingCooldown() > 0;
             }
 
-            // ---------- 8. БЕСПЛАТНАЯ РУЛЕТКА ----------
+            // ---------- 9. БЕСПЛАТНАЯ РУЛЕТКА ----------
             function canUseFreeSpin() {
                 if (!state.freeSpinUsedAt) return true;
                 const usedTime = new Date(state.freeSpinUsedAt).getTime();
@@ -1039,7 +1224,7 @@
                 return remaining > 0 ? remaining : 0;
             }
 
-            // ---------- 9. ОБНОВЛЕНИЕ UI ----------
+            // ---------- 10. ОБНОВЛЕНИЕ UI ----------
             function updateFreeSpinButton() {
                 const btn = document.getElementById('freeSpinBtn');
                 const timer = document.getElementById('freeSpinTimer');
@@ -1074,9 +1259,10 @@
                 freeSpinInterval = setInterval(updateFreeSpinButton, 1000);
             }
 
-            // ---------- 10. DOM-ССЫЛКИ ----------
+            // ---------- 11. DOM-ССЫЛКИ ----------
             const $ = (id) => document.getElementById(id);
             const balanceDisplay = $('balanceDisplay');
+            const balanceClick = $('balanceClick');
             const nftCount = $('nftCount');
             const screens = document.querySelectorAll('.screen');
             const navBtns = document.querySelectorAll('.nav-btn');
@@ -1098,7 +1284,7 @@
             const referralStatus = $('referralStatus');
             const withdrawCooldownContainer = $('withdrawCooldownContainer');
 
-            // ---------- 11. ОТПРАВКА В БОТА ----------
+            // ---------- 12. ОТПРАВКА В БОТА ----------
             function sendToBot(data) {
                 try {
                     if (isTelegram && tg && typeof tg.sendData === 'function') {
@@ -1111,7 +1297,7 @@
                 }
             }
 
-            // ---------- 12. ПРИГЛАШЕНИЕ ----------
+            // ---------- 13. ПРИГЛАШЕНИЕ ----------
             function shareInviteLink() {
                 const link = `https://t.me/${botUsername}?start=${USER_ID}`;
                 const text =
@@ -1206,11 +1392,97 @@
                 });
             }
 
-            // ---------- 13. МОДАЛ ДЛЯ ВЫВОДА ----------
-            function showWithdrawModal() {
+            // ---------- 14. МАГАЗИН (ПОКУПКА ЗВЁЗД) ----------
+            function showShopModal(message = null) {
+                const oldModal = document.querySelector('.modal-overlay');
+                if (oldModal) oldModal.remove();
+
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay shop-modal';
+                overlay.innerHTML = `
+                        <div class="modal-content">
+                            <div class="modal-title" style="font-size:20px;position:relative;z-index:1;">⭐ ПОПОЛНИТЬ БАЛАНС</div>
+                            ${message ? `<div style="font-size:13px;color:var(--neon-cyan);margin:8px 0 12px 0;position:relative;z-index:1;">${message}</div>` : ''}
+                            <button class="shop-btn" data-stars="200" data-ton="2">
+                                <span><span class="stars">⭐ 200</span></span>
+                                <span class="ton">${'TON'.repeat(1)} 2 TON</span>
+                            </button>
+                            <button class="shop-btn" data-stars="500" data-ton="5">
+                                <span><span class="stars">⭐ 500</span> <span class="badge">🔥 Выгодно</span></span>
+                                <span class="ton">${'TON'.repeat(1)} 5 TON</span>
+                            </button>
+                            <button class="shop-btn" data-stars="1000" data-ton="9">
+                                <span><span class="stars">⭐ 1000</span> <span class="badge">🔥 ЛУЧШЕЕ</span></span>
+                                <span class="ton">${'TON'.repeat(1)} 9 TON</span>
+                            </button>
+                            <div class="modal-actions" style="margin-top:12px;position:relative;z-index:1;">
+                                <button class="modal-btn btn-close" id="shopCloseBtn">ЗАКРЫТЬ</button>
+                            </div>
+                        </div>
+                    `;
+
+                document.body.appendChild(overlay);
+
+                const closeBtn = overlay.querySelector('#shopCloseBtn');
+                closeBtn.addEventListener('click', function() {
+                    overlay.remove();
+                });
+
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) {
+                        overlay.remove();
+                    }
+                });
+
+                // Обработка покупки
+                overlay.querySelectorAll('.shop-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const stars = parseInt(this.dataset.stars, 10);
+                        const ton = this.dataset.ton;
+                        overlay.remove();
+
+                        // Показываем подтверждение оплаты через TON
+                        tg.showAlert(
+                            `💳 ОПЛАТА ЧЕРЕЗ TON\n\n` +
+                            `⭐ ${stars} звёзд за ${ton} TON\n\n` +
+                            `💰 Кошелёк: \n` +
+                            `UQCf... (адрес для оплаты)\n\n` +
+                            `После оплаты звёзды зачислятся автоматически.`
+                        );
+
+                        // Отправляем событие в бота
+                        sendToBot({
+                            action: 'buy_stars',
+                            payload: {
+                                stars: stars,
+                                ton: ton,
+                                user_id: USER_ID,
+                                timestamp: new Date().toISOString()
+                            }
+                        });
+
+                        // Для демонстрации — добавляем звёзды (в реальности это делает бэкенд после проверки оплаты)
+                        // Временно добавляем для теста:
+                        state.balance += stars;
+                        render();
+                        tg.showAlert(`✅ ${stars} звёзд зачислено на ваш баланс!`);
+                    });
+                });
+            }
+
+            // ---------- 15. МОДАЛ ДЛЯ ВЫВОДА ----------
+            function showWithdrawModal(giftId = null) {
                 if (isCooldownActive()) {
                     tg.showAlert('⏳ Вы уже отправляли заявку! Попробуйте через 24 часа.');
                     return;
+                }
+
+                if (giftId) {
+                    const existingRequest = getPendingWithdrawRequestForGift(giftId);
+                    if (existingRequest) {
+                        tg.showAlert('⏳ На этот подарок уже отправлена заявка на вывод!');
+                        return;
+                    }
                 }
 
                 if (!state.canWithdraw) {
@@ -1231,7 +1503,13 @@
                                 Доступно: <span class="highlight">${Math.floor(state.balance)} ⭐</span>
                             </div>
                             <input class="modal-input" id="withdrawUsername" type="text" placeholder="Введите @username" autocomplete="off">
-                            <div class="modal-actions">
+                            <div id="withdrawStatusContainer" style="display:none;">
+                                <div class="withdraw-status-text">⏳ Скоро отправим...</div>
+                                <div class="progress-container">
+                                    <div class="progress-bar" id="progressBar" style="width:0%;"></div>
+                                </div>
+                            </div>
+                            <div class="modal-actions" id="withdrawActions">
                                 <button class="modal-btn btn-confirm" id="withdrawConfirm">ВЫВЕСТИ</button>
                                 <button class="modal-btn btn-cancel" id="withdrawCancel">ОТМЕНА</button>
                             </div>
@@ -1243,6 +1521,8 @@
                 const usernameInput = overlay.querySelector('#withdrawUsername');
                 const confirmBtn = overlay.querySelector('#withdrawConfirm');
                 const cancelBtn = overlay.querySelector('#withdrawCancel');
+                const statusContainer = overlay.querySelector('#withdrawStatusContainer');
+                const progressBar = overlay.querySelector('#progressBar');
 
                 setTimeout(() => usernameInput.focus(), 100);
 
@@ -1270,12 +1550,21 @@
                     }
 
                     confirmBtn.disabled = true;
-                    confirmBtn.innerHTML = '⏳ ОТПРАВКА...';
-                    confirmBtn.style.opacity = '0.6';
+                    cancelBtn.disabled = true;
+                    usernameInput.disabled = true;
+                    statusContainer.style.display = 'block';
+
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += Math.random() * 15;
+                        if (progress > 90) progress = 90;
+                        progressBar.style.width = progress + '%';
+                    }, 200);
+
+                    const request = addWithdrawRequest(username, 25, giftId);
 
                     state.balance -= 25;
                     render();
-                    setCooldown();
 
                     sendToBot({
                         action: 'withdraw',
@@ -1284,15 +1573,23 @@
                             amount: 25,
                             balance: state.balance,
                             user_id: USER_ID,
+                            request_id: request.id,
+                            gift_id: giftId,
                             timestamp: new Date().toISOString()
                         }
                     });
 
+                    setCooldown();
+
                     setTimeout(() => {
-                        overlay.remove();
-                        tg.showAlert(`✅ Заявка на вывод отправлена!\nЮзернейм: ${username}\nСписано: 25 ⭐\nСледующая попытка через 24 часа.`);
-                        updateWithdrawButton();
-                    }, 2000);
+                        clearInterval(interval);
+                        progressBar.style.width = '100%';
+                        setTimeout(() => {
+                            overlay.remove();
+                            tg.showAlert(`✅ Заявка на вывод отправлена!\nЮзернейм: ${username}\nСписано: 25 ⭐\nСледующая попытка через 24 часа.`);
+                            updateWithdrawButton();
+                        }, 500);
+                    }, 3000);
                 });
 
                 usernameInput.addEventListener('keydown', function(e) {
@@ -1302,14 +1599,15 @@
                 });
             }
 
-            // ---------- 14. МОДАЛ ДЛЯ NFT ----------
+            // ---------- 16. МОДАЛ ДЛЯ NFT ----------
             function showNftModal(gift) {
                 const oldModal = document.querySelector('.modal-overlay');
                 if (oldModal) oldModal.remove();
 
                 const price = gift.price || 100;
                 const isFree = gift.is_free || false;
-                const canSell = !isFree || state.canWithdraw;
+                const canSellOrWithdraw = !isFree || state.canWithdraw;
+                const pendingRequest = getPendingWithdrawRequestForGift(gift.id);
 
                 const overlay = document.createElement('div');
                 overlay.className = 'modal-overlay';
@@ -1321,10 +1619,11 @@
                                 <span class="stars">⭐</span> ${price}
                             </div>
                             ${isFree && !state.canWithdraw ? `<div class="modal-locked">🔒 Требуется 7 рефералов для продажи/вывода (${state.referralCount}/7)</div>` : ''}
+                            ${pendingRequest ? `<div class="modal-locked" style="color:var(--gold);">⏳ Заявка на вывод отправлена (ожидает обработки)</div>` : ''}
                             <div class="modal-actions">
-                                <button class="modal-btn btn-withdraw" data-action="withdraw" ${!canSell ? 'disabled' : ''}>ВЫВЕСТИ</button>
-                                <button class="modal-btn btn-sell" data-action="sell" ${!canSell ? 'disabled' : ''}>ПРОДАТЬ</button>
-                                ${!canSell ? `<button class="modal-btn btn-invite" data-action="invite">ПРИГЛАСИТЬ</button>` : ''}
+                                <button class="modal-btn btn-withdraw" data-action="withdraw" ${!canSellOrWithdraw || pendingRequest ? 'disabled' : ''}>ВЫВЕСТИ</button>
+                                <button class="modal-btn btn-sell" data-action="sell" ${!canSellOrWithdraw ? 'disabled' : ''}>ПРОДАТЬ</button>
+                                ${!canSellOrWithdraw ? `<button class="modal-btn btn-invite" data-action="invite">ПРИГЛАСИТЬ</button>` : ''}
                                 <button class="modal-btn btn-close" data-action="close">ЗАКРЫТЬ</button>
                             </div>
                         </div>
@@ -1348,16 +1647,24 @@
                 });
 
                 sellBtn.addEventListener('click', function() {
-                    if (!canSell) {
+                    if (!canSellOrWithdraw) {
                         tg.showAlert(`❌ Продажа заблокирована!\nПригласите 7 друзей (${state.referralCount}/7)`);
                         return;
                     }
+
                     const itemIndex = state.inventory.findIndex(item => item.id === gift.id);
                     if (itemIndex === -1) {
                         tg.showAlert('❌ Этот подарок уже продан!');
                         overlay.remove();
                         return;
                     }
+
+                    const request = getPendingWithdrawRequestForGift(gift.id);
+                    if (request) {
+                        removeWithdrawRequest(request.id);
+                        tg.showAlert(`ℹ️ Заявка на вывод "${gift.name}" отменена (вы продали подарок).`);
+                    }
+
                     state.inventory.splice(itemIndex, 1);
                     state.balance += price;
                     render();
@@ -1376,7 +1683,12 @@
 
                 withdrawBtnEl.addEventListener('click', function() {
                     overlay.remove();
-                    showWithdrawModal();
+                    const existingRequest = getPendingWithdrawRequestForGift(gift.id);
+                    if (existingRequest) {
+                        tg.showAlert('⏳ На этот подарок уже отправлена заявка на вывод!');
+                        return;
+                    }
+                    showWithdrawModal(gift.id);
                 });
 
                 if (inviteBtnEl) {
@@ -1387,7 +1699,7 @@
                 }
             }
 
-            // ---------- 15. ОБНОВЛЕНИЕ КНОПКИ ВЫВОДА ----------
+            // ---------- 17. ОБНОВЛЕНИЕ КНОПКИ ВЫВОДА ----------
             function updateWithdrawButton() {
                 const remaining = getRemainingCooldown();
 
@@ -1419,7 +1731,7 @@
                 cooldownInterval = setInterval(updateWithdrawButton, 1000);
             }
 
-            // ---------- 16. РЕНДЕР ----------
+            // ---------- 18. РЕНДЕР ----------
             function render() {
                 balanceDisplay.textContent = Math.floor(state.balance);
                 nftCount.textContent = state.inventory.length + ' шт.';
@@ -1433,8 +1745,11 @@
                                  onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                                    <div class="nft-icon" style="display:none;">🎁</div>` :
                             `<div class="nft-icon">🎁</div>`;
-                        const lockHtml = item.is_free && !state.canWithdraw ?
-                            `<div class="nft-lock">🔒</div>` :
+                        const hasRequest = getPendingWithdrawRequestForGift(item.id);
+                        const isFree = item.is_free || false;
+                        const showLock = (isFree && !state.canWithdraw) || hasRequest;
+                        const lockHtml = showLock ?
+                            `<div class="nft-lock">${hasRequest ? '⏳' : '🔒'}</div>` :
                             '';
                         return `
                                 <div class="nft-item" data-id="${item.id}">
@@ -1495,7 +1810,7 @@
                 saveState();
             }
 
-            // ---------- 17. РУЛЕТКА ----------
+            // ---------- 19. РУЛЕТКА ----------
             function createRouletteCells() {
                 const REPEAT_COUNT = 6;
                 let cellsHtml = '';
@@ -1520,7 +1835,7 @@
                 rouletteSlider.style.transition = '';
             }
 
-            // ---------- 18. НАВИГАЦИЯ ----------
+            // ---------- 20. НАВИГАЦИЯ ----------
             function switchScreen(screenId) {
                 screens.forEach(s => s.classList.remove('active'));
                 const target = document.getElementById(screenId);
@@ -1539,7 +1854,12 @@
                 });
             });
 
-            // ---------- 19. ФУНКЦИИ РУЛЕТКИ ----------
+            // ---------- 21. КЛИК ПО БАЛАНСУ (ОТКРЫТЬ МАГАЗИН) ----------
+            balanceClick.addEventListener('click', function() {
+                showShopModal();
+            });
+
+            // ---------- 22. ФУНКЦИИ РУЛЕТКИ ----------
             function highlightCell(giftIndex) {
                 const cells = document.querySelectorAll(`.roulette-cell[data-gift-index="${giftIndex}"]`);
                 const centerX = window.innerWidth / 2;
@@ -1586,13 +1906,13 @@
                 return 0;
             }
 
-            // ---------- 20. ЗАПУСК РУЛЕТКИ (БЕЗ БЭКЕНДА) ----------
+            // ---------- 23. ЗАПУСК РУЛЕТКИ ----------
             function performSpin(isFree) {
                 if (state.isSpinning) return;
 
                 if (!isFree && state.balance < 150) {
-                    rouletteResult.textContent = '❌ Недостаточно ⭐ (нужно 150)';
-                    tg.showAlert('Недостаточно звёзд! Нужно 150 ⭐');
+                    // ВМЕСТО СТАНДАРТНОГО ОКНА — ОТКРЫВАЕМ МАГАЗИН
+                    showShopModal('❌ Недостаточно звёзд! Пополните баланс:');
                     return;
                 }
 
@@ -1633,7 +1953,6 @@
 
                     if (!isFree) {
                         state.balance -= 150;
-                        // При платном спине даём право на вывод
                         state.canWithdraw = true;
                     } else {
                         state.freeSpinUsedAt = new Date().toISOString();
@@ -1699,7 +2018,7 @@
                 }
             });
 
-            // ---------- 21. КЛИК ПО NFT ----------
+            // ---------- 24. КЛИК ПО NFT ----------
             inventoryGrid.addEventListener('click', function(e) {
                 const item = e.target.closest('.nft-item');
                 if (!item) return;
@@ -1714,16 +2033,16 @@
                 }
             });
 
-            // ---------- 22. КНОПКИ ПРОФИЛЯ ----------
+            // ---------- 25. КНОПКИ ПРОФИЛЯ ----------
             inviteBtn.addEventListener('click', function() {
                 shareInviteLink();
             });
 
             withdrawBtn.addEventListener('click', function() {
-                showWithdrawModal();
+                showWithdrawModal(null);
             });
 
-            // ---------- 23. АПГРЕЙДЫ ----------
+            // ---------- 26. АПГРЕЙДЫ ----------
             upgradeList.addEventListener('click', function(e) {
                 const btn = e.target.closest('.upgrade-btn');
                 if (!btn || btn.disabled) return;
@@ -1741,7 +2060,8 @@
                 if (level >= def.maxLvl) return;
                 const cost = def.baseCost * (level + 1);
                 if (state.balance < cost) {
-                    tg.showAlert('Недостаточно ⭐ для апгрейда!');
+                    // Если не хватает — открываем магазин
+                    showShopModal('❌ Недостаточно звёзд для апгрейда! Пополните баланс:');
                     return;
                 }
                 state.balance -= cost;
@@ -1754,7 +2074,7 @@
                 });
             });
 
-            // ---------- 24. ИНИЦИАЛИЗАЦИЯ ----------
+            // ---------- 27. ИНИЦИАЛИЗАЦИЯ ----------
             createRouletteCells();
             render();
             updateFreeSpinButton();
