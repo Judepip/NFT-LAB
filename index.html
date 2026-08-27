@@ -580,7 +580,6 @@
             opacity: 1;
         }
 
-        /* MODALS */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -771,7 +770,6 @@
             border: 1px solid var(--glass-border);
         }
 
-        /* COOLDOWN */
         .cooldown-text {
             color: var(--text-secondary);
             font-size: 14px;
@@ -826,7 +824,6 @@
 <body>
     <div id="app">
 
-        <!-- HEADER -->
         <div class="header">
             <h1>🧪 LAB NFT</h1>
             <div class="balance">
@@ -834,10 +831,8 @@
             </div>
         </div>
 
-        <!-- CONTENT -->
         <div class="content" id="contentArea">
 
-            <!-- INVENTORY -->
             <div class="screen active" id="screenInventory">
                 <div class="glass-card">
                     <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
@@ -848,7 +843,6 @@
                 </div>
             </div>
 
-            <!-- ROULETTE -->
             <div class="screen" id="screenRoulette">
                 <div class="glass-card">
                     <div class="roulette-container">
@@ -869,7 +863,6 @@
                 </div>
             </div>
 
-            <!-- UPGRADES -->
             <div class="screen" id="screenUpgrade">
                 <div class="glass-card">
                     <div style="margin-bottom:10px; font-weight:500;">🔧 Улучшения лаборатории</div>
@@ -877,7 +870,6 @@
                 </div>
             </div>
 
-            <!-- PROFILE -->
             <div class="screen" id="screenProfile">
                 <div class="glass-card" style="text-align:center;">
                     <div class="profile-avatar" id="profileAvatar">👤</div>
@@ -909,7 +901,6 @@
 
         </div>
 
-        <!-- NAVIGATION -->
         <div class="nav-center">
             <div class="nav-btn active" data-screen="screenInventory">
                 <span class="icon">📦</span> ИНВЕНТАРЬ
@@ -1008,7 +999,7 @@
             }
 
             let state;
-            const currentVersion = '4.0';
+            const currentVersion = '4.1';
             const savedVersion = localStorage.getItem(VERSION_KEY);
 
             try {
@@ -1135,7 +1126,6 @@
                 }
             }
 
-            // Запускаем таймер для бесплатной рулетки
             let freeSpinInterval = null;
 
             function startFreeSpinTimer() {
@@ -1197,7 +1187,97 @@
                 }
             }
 
-            // ---------- 11. МОДАЛ ДЛЯ ВЫВОДА ----------
+            // ---------- 11. ПРИГЛАШЕНИЕ (С КНОПКОЙ ПОДЕЛИТЬСЯ) ----------
+            function shareInviteLink() {
+                const link = `https://t.me/${botUsername}?start=${USER_ID}`;
+                const text =
+                    `🧪 Привет! Присоединяйся к LAB NFT и крути рулетку!\n🔗 Моя реферальная ссылка: ${link}\n\nПолучи бонусы за приглашённых друзей! 🎁`;
+
+                // Пытаемся отправить через Telegram
+                if (isTelegram && tg) {
+                    try {
+                        // Используем openTelegramLink для отправки в чат
+                        tg.openTelegramLink(
+                            `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
+                        sendToBot({
+                            action: 'get_referral_link',
+                            payload: {}
+                        });
+                        return;
+                    } catch (e) {
+                        console.warn('Ошибка openTelegramLink:', e);
+                    }
+                }
+
+                // Запасной вариант: показываем модал с кнопкой копирования
+                const oldModal = document.querySelector('.modal-overlay');
+                if (oldModal) oldModal.remove();
+
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = `
+                        <div class="modal-content" style="max-width:340px;">
+                            <div style="font-size:20px;font-weight:700;position:relative;z-index:1;">🔗 ПРИГЛАСИТЬ</div>
+                            <div style="font-size:13px;color:var(--text-secondary);margin:12px 0;position:relative;z-index:1;">
+                                Отправьте ссылку друзьям:<br>
+                                <span style="color:var(--gold);word-break:break-all;font-size:12px;">${link}</span>
+                            </div>
+                            <div class="modal-actions" style="position:relative;z-index:1;">
+                                <button class="modal-btn btn-sell" id="copyLinkBtn" style="max-width:100%;flex:1;">📋 КОПИРОВАТЬ</button>
+                                <button class="modal-btn btn-close" id="closeShareBtn" style="max-width:100%;flex:1;">ЗАКРЫТЬ</button>
+                            </div>
+                        </div>
+                    `;
+
+                document.body.appendChild(overlay);
+
+                const copyBtn = overlay.querySelector('#copyLinkBtn');
+                const closeBtn = overlay.querySelector('#closeShareBtn');
+
+                copyBtn.addEventListener('click', function() {
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(link).then(() => {
+                            tg.showAlert('✅ Ссылка скопирована! Отправьте её друзьям.');
+                            overlay.remove();
+                        }).catch(() => {
+                            const textarea = document.createElement('textarea');
+                            textarea.value = link;
+                            document.body.appendChild(textarea);
+                            textarea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textarea);
+                            tg.showAlert('✅ Ссылка скопирована!');
+                            overlay.remove();
+                        });
+                    } else {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = link;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        tg.showAlert('✅ Ссылка скопирована!');
+                        overlay.remove();
+                    }
+                });
+
+                closeBtn.addEventListener('click', function() {
+                    overlay.remove();
+                });
+
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) {
+                        overlay.remove();
+                    }
+                });
+
+                sendToBot({
+                    action: 'get_referral_link',
+                    payload: {}
+                });
+            }
+
+            // ---------- 12. МОДАЛ ДЛЯ ВЫВОДА ----------
             function showWithdrawModal() {
                 if (isCooldownActive()) {
                     tg.showAlert('⏳ Вы уже отправляли заявку! Попробуйте через 24 часа.');
@@ -1260,19 +1340,14 @@
                         return;
                     }
 
-                    // Блокируем
                     confirmBtn.disabled = true;
                     confirmBtn.innerHTML = '⏳ ОТПРАВКА...';
                     confirmBtn.style.opacity = '0.6';
 
-                    // Списываем
                     state.balance -= 25;
                     render();
-
-                    // Кулдаун
                     setCooldown();
 
-                    // Отправляем в бота
                     sendToBot({
                         action: 'withdraw',
                         payload: {
@@ -1298,7 +1373,7 @@
                 });
             }
 
-            // ---------- 12. МОДАЛ ДЛЯ NFT ----------
+            // ---------- 13. МОДАЛ ДЛЯ NFT ----------
             function showNftModal(gift) {
                 const oldModal = document.querySelector('.modal-overlay');
                 if (oldModal) oldModal.remove();
@@ -1383,16 +1458,6 @@
                 }
             }
 
-            // ---------- 13. ПРИГЛАШЕНИЕ ----------
-            function shareInviteLink() {
-                const link = `https://t.me/${botUsername}?start=${USER_ID}`;
-                tg.showAlert(`🔗 Ваша реферальная ссылка:\n${link}\n\nПоделитесь ею с друзьями!`);
-                sendToBot({
-                    action: 'get_referral_link',
-                    payload: {}
-                });
-            }
-
             // ---------- 14. ОБНОВЛЕНИЕ КНОПКИ ВЫВОДА ----------
             function updateWithdrawButton() {
                 const remaining = getRemainingCooldown();
@@ -1414,7 +1479,6 @@
                 }
             }
 
-            // Запускаем таймер кулдауна
             let cooldownInterval = null;
 
             function startCooldownTimer() {
@@ -1431,7 +1495,6 @@
                 balanceDisplay.textContent = Math.floor(state.balance);
                 nftCount.textContent = state.inventory.length + ' шт.';
 
-                // Инвентарь
                 if (state.inventory.length === 0) {
                     inventoryGrid.innerHTML = `<div class="empty-inventory">🧪 Нет подарков. Крутите рулетку!</div>`;
                 } else {
@@ -1455,7 +1518,6 @@
                     }).join('');
                 }
 
-                // Апгрейды
                 const upgradeDefs = [
                     { id: 'up1', name: 'Генератор ⭐', desc: '+5 ⭐/час', maxLvl: 5, baseCost: 150 },
                     { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', maxLvl: 4, baseCost: 200 },
@@ -1485,7 +1547,6 @@
                         `;
                 }).join('');
 
-                // Профиль
                 profileName.textContent = tg.initDataUnsafe?.user?.first_name || 'Аноним';
                 profileId.textContent = `ID: ${USER_ID}`;
                 statNFT.textContent = state.inventory.length;
@@ -1493,7 +1554,6 @@
                 statSpins.textContent = state.spins;
                 statUpgrades.textContent = state.upgrades.filter(u => u.level > 0).length;
 
-                // Рефералы
                 referralCount.textContent = state.referralCount || 0;
                 if (state.canWithdraw) {
                     referralStatus.textContent = '✅ Вывод разблокирован!';
@@ -1691,7 +1751,6 @@
                 performSpin(true);
             });
 
-            // Двойной тап
             spinBtn.addEventListener('dblclick', function(e) {
                 e.preventDefault();
                 if (!state.isSpinning) {
@@ -1784,7 +1843,6 @@
                     console.log('Данные загружены с сервера');
                 } catch (error) {
                     console.error('Ошибка загрузки данных:', error);
-                    // Используем локальные данные
                     render();
                     updateFreeSpinButton();
                     startFreeSpinTimer();
@@ -1795,7 +1853,6 @@
             // ---------- 24. ИНИЦИАЛИЗАЦИЯ ----------
             createRouletteCells();
 
-            // Отправляем открытие с рефералом, если есть
             const urlParams = new URLSearchParams(window.location.search);
             const referrer = urlParams.get('start');
             if (referrer && referrer !== String(USER_ID)) {
