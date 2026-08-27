@@ -960,19 +960,42 @@
             // ---------- 3. СПИСОК ПОДАРКОВ ----------
             const BASE_URL = 'https://judepip.github.io/NFT-LAB';
             const GIFTS = [
-                { name: 'Bow Tie', price: 800, chance: 5, image: BASE_URL + '/images/BowTie.gif' },
-                { name: 'Chill Flame', price: 500, chance: 10, image: BASE_URL + '/images/ChillFlame.gif' },
-                { name: 'Big Year', price: 500, chance: 8, image: BASE_URL + '/images/BigYear.gif' },
-                { name: 'JACK IN THE BOX', price: 600, chance: 20, image: BASE_URL + '/images/JackInTheBox.gif' },
-                { name: 'Liberty Figure', price: 450, chance: 7, image: BASE_URL + '/images/LibertyFigure.gif' },
-                { name: 'Light Sword', price: 480, chance: 12, image: BASE_URL + '/images/LightSword.gif' },
-                { name: 'Star Notepad', price: 480, chance: 10, image: BASE_URL + '/images/StarNotepad.gif' },
-                { name: 'Кубок', price: 100, chance: 15, image: BASE_URL + '/images/Кубок.gif' },
-                { name: 'Кольцо', price: 100, chance: 8, image: BASE_URL + '/images/Кольцо.gif' },
-                { name: 'Мишка', price: 15, chance: 5, image: BASE_URL + '/images/Мишка.gif' },
+                { name: 'Bow Tie', price: 800, image: BASE_URL + '/images/BowTie.gif' },
+                { name: 'Chill Flame', price: 500, image: BASE_URL + '/images/ChillFlame.gif' },
+                { name: 'Big Year', price: 500, image: BASE_URL + '/images/BigYear.gif' },
+                { name: 'JACK IN THE BOX', price: 600, image: BASE_URL + '/images/JackInTheBox.gif' },
+                { name: 'Liberty Figure', price: 450, image: BASE_URL + '/images/LibertyFigure.gif' },
+                { name: 'Light Sword', price: 480, image: BASE_URL + '/images/LightSword.gif' },
+                { name: 'Star Notepad', price: 480, image: BASE_URL + '/images/StarNotepad.gif' },
+                { name: 'Кубок', price: 100, image: BASE_URL + '/images/Кубок.gif' },
+                { name: 'Кольцо', price: 100, image: BASE_URL + '/images/Кольцо.gif' },
+                { name: 'Мишка', price: 15, image: BASE_URL + '/images/Мишка.gif' },
             ];
 
-            // ---------- 4. СОСТОЯНИЕ ----------
+            // ---------- 4. ШАНСЫ ДЛЯ ПЛАТНОЙ РУЛЕТКИ (150 ⭐) ----------
+            // Мишка (25), Кольцо (20), Кубок (18), Bow Tie (10), Chill Flame (8), Big Year (6), JACK IN THE BOX (5), Liberty Figure (4), Light Sword (3), Star Notepad (1)
+            const PAID_CHANCES = [10, 8, 6, 5, 4, 3, 1, 18, 20, 25];
+
+            // ---------- 5. ШАНСЫ ДЛЯ БЕСПЛАТНОЙ РУЛЕТКИ ----------
+            // Chill Flame (25), Кубок (22), Bow Tie (12), Big Year (10), JACK IN THE BOX (8), Liberty Figure (7), Light Sword (6), Star Notepad (5), Кольцо (3), Мишка (2)
+            const FREE_CHANCES = [12, 25, 10, 8, 7, 6, 5, 22, 3, 2];
+
+            // ---------- 6. ФУНКЦИЯ ВЫБОРА ПО ШАНСАМ ----------
+            function getRandomGiftByChance(isFree) {
+                const chances = isFree ? FREE_CHANCES : PAID_CHANCES;
+                const totalChance = chances.reduce((sum, c) => sum + c, 0);
+                let random = Math.random() * totalChance;
+
+                for (let i = 0; i < GIFTS.length; i++) {
+                    random -= chances[i];
+                    if (random <= 0) {
+                        return GIFTS[i];
+                    }
+                }
+                return GIFTS[0];
+            }
+
+            // ---------- 7. СОСТОЯНИЕ ----------
             const STORAGE_KEY = 'lab_nft_state';
             const VERSION_KEY = 'lab_nft_version';
             const COOLDOWN_KEY = 'withdraw_cooldown';
@@ -996,7 +1019,7 @@
             }
 
             let state;
-            const currentVersion = '4.2';
+            const currentVersion = '4.3';
             const savedVersion = localStorage.getItem(VERSION_KEY);
 
             try {
@@ -1057,7 +1080,7 @@
                 }
             }
 
-            // ---------- 5. КУЛДАУН НА ВЫВОД ----------
+            // ---------- 8. КУЛДАУН НА ВЫВОД ----------
             const COOLDOWN_HOURS = 24;
             const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
 
@@ -1085,7 +1108,7 @@
                 return getRemainingCooldown() > 0;
             }
 
-            // ---------- 6. БЕСПЛАТНАЯ РУЛЕТКА ----------
+            // ---------- 9. БЕСПЛАТНАЯ РУЛЕТКА ----------
             function canUseFreeSpin() {
                 if (!state.freeSpinUsedAt) return true;
                 const usedTime = new Date(state.freeSpinUsedAt).getTime();
@@ -1099,7 +1122,7 @@
                 return remaining > 0 ? remaining : 0;
             }
 
-            // ---------- 7. ОБНОВЛЕНИЕ UI ----------
+            // ---------- 10. ОБНОВЛЕНИЕ UI ----------
             function updateFreeSpinButton() {
                 const btn = document.getElementById('freeSpinBtn');
                 const timer = document.getElementById('freeSpinTimer');
@@ -1119,7 +1142,7 @@
                     const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
                     const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
                     countdown.textContent =
-                    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 }
             }
 
@@ -1134,20 +1157,7 @@
                 freeSpinInterval = setInterval(updateFreeSpinButton, 1000);
             }
 
-            // ---------- 8. ФУНКЦИЯ ВЫБОРА ПО ШАНСАМ ----------
-            function getRandomGiftByChance() {
-                const totalChance = GIFTS.reduce((sum, g) => sum + g.chance, 0);
-                let random = Math.random() * totalChance;
-                for (const gift of GIFTS) {
-                    random -= gift.chance;
-                    if (random <= 0) {
-                        return gift;
-                    }
-                }
-                return GIFTS[0];
-            }
-
-            // ---------- 9. DOM-ССЫЛКИ ----------
+            // ---------- 11. DOM-ССЫЛКИ ----------
             const $ = (id) => document.getElementById(id);
             const balanceDisplay = $('balanceDisplay');
             const nftCount = $('nftCount');
@@ -1171,7 +1181,7 @@
             const referralStatus = $('referralStatus');
             const withdrawCooldownContainer = $('withdrawCooldownContainer');
 
-            // ---------- 10. ОТПРАВКА В БОТА ----------
+            // ---------- 12. ОТПРАВКА В БОТА ----------
             function sendToBot(data) {
                 try {
                     if (isTelegram && tg && typeof tg.sendData === 'function') {
@@ -1184,14 +1194,14 @@
                 }
             }
 
-            // ---------- 11. ПРИГЛАШЕНИЕ (С ПРЯМОЙ ССЫЛКОЙ НА MINI APP) ----------
+            // ---------- 13. ПРИГЛАШЕНИЕ ----------
             function shareInviteLink() {
-                const link = `https://t.me/${botUsername}/app?startapp=${USER_ID}`;
+                const link = `https://t.me/${botUsername}?start=${USER_ID}`;
                 const text =
                     `🔥 ВОТ ЧТО Я ВЫВЕЛ С NFT LAB БОТА! 💰✨\n\n` +
-                    `Хочешь также присоединяйся по моей ссылке: 👇\n` +
+                    `Хочешь также? Присоединяйся по моей ссылке: 👇\n` +
                     `${link}\n\n` +
-                    `🎰 Крути рулетку, собирай NFT-подарки и зарабатывай звёзды! ⭐\n` +
+                    `🎰 Крути рулетку, собирай NFT и зарабатывай звёзды! ⭐\n` +
                     `💎 Удачи! 🍀`;
 
                 if (isTelegram && tg) {
@@ -1209,7 +1219,6 @@
                     }
                 }
 
-                // Запасной вариант
                 const oldModal = document.querySelector('.modal-overlay');
                 if (oldModal) oldModal.remove();
 
@@ -1280,7 +1289,7 @@
                 });
             }
 
-            // ---------- 12. МОДАЛ ДЛЯ ВЫВОДА ----------
+            // ---------- 14. МОДАЛ ДЛЯ ВЫВОДА ----------
             function showWithdrawModal() {
                 if (isCooldownActive()) {
                     tg.showAlert('⏳ Вы уже отправляли заявку! Попробуйте через 24 часа.');
@@ -1288,7 +1297,7 @@
                 }
 
                 if (!state.canWithdraw) {
-                    tg.showAlert(`❌ Вывод заблокирован!\nПригласите 7 друзей (сейчас: ${state.referralCount}/7)`);
+                    tg.showAlert(`❌ Вывод доступен только после платного спина или 7 рефералов.\nВаш прогресс: ${state.referralCount}/7`);
                     return;
                 }
 
@@ -1376,7 +1385,7 @@
                 });
             }
 
-            // ---------- 13. МОДАЛ ДЛЯ NFT ----------
+            // ---------- 15. МОДАЛ ДЛЯ NFT ----------
             function showNftModal(gift) {
                 const oldModal = document.querySelector('.modal-overlay');
                 if (oldModal) oldModal.remove();
@@ -1461,7 +1470,7 @@
                 }
             }
 
-            // ---------- 14. ОБНОВЛЕНИЕ КНОПКИ ВЫВОДА ----------
+            // ---------- 16. ОБНОВЛЕНИЕ КНОПКИ ВЫВОДА ----------
             function updateWithdrawButton() {
                 const remaining = getRemainingCooldown();
 
@@ -1493,7 +1502,7 @@
                 cooldownInterval = setInterval(updateWithdrawButton, 1000);
             }
 
-            // ---------- 15. РЕНДЕР ----------
+            // ---------- 17. РЕНДЕР ----------
             function render() {
                 balanceDisplay.textContent = Math.floor(state.balance);
                 nftCount.textContent = state.inventory.length + ' шт.';
@@ -1569,7 +1578,7 @@
                 saveState();
             }
 
-            // ---------- 16. РУЛЕТКА ----------
+            // ---------- 18. РУЛЕТКА ----------
             function createRouletteCells() {
                 const REPEAT_COUNT = 6;
                 let cellsHtml = '';
@@ -1594,7 +1603,7 @@
                 rouletteSlider.style.transition = '';
             }
 
-            // ---------- 17. НАВИГАЦИЯ ----------
+            // ---------- 19. НАВИГАЦИЯ ----------
             function switchScreen(screenId) {
                 screens.forEach(s => s.classList.remove('active'));
                 const target = document.getElementById(screenId);
@@ -1613,7 +1622,7 @@
                 });
             });
 
-            // ---------- 18. ФУНКЦИИ РУЛЕТКИ ----------
+            // ---------- 20. ФУНКЦИИ РУЛЕТКИ ----------
             function highlightCell(giftIndex) {
                 const cells = document.querySelectorAll(`.roulette-cell[data-gift-index="${giftIndex}"]`);
                 const centerX = window.innerWidth / 2;
@@ -1660,7 +1669,7 @@
                 return 0;
             }
 
-            // ---------- 19. ЗАПУСК РУЛЕТКИ ----------
+            // ---------- 21. ЗАПУСК РУЛЕТКИ ----------
             function performSpin(isFree) {
                 if (state.isSpinning) return;
 
@@ -1681,7 +1690,8 @@
                 freeSpinBtn.disabled = true;
                 rouletteResult.textContent = '🌀 Крутим...';
 
-                const prize = getRandomGiftByChance();
+                // ВЫБОР ПОДАРКА С УЧЁТОМ ШАНСОВ
+                const prize = getRandomGiftByChance(isFree);
                 const winGiftIndex = GIFTS.indexOf(prize);
 
                 clearHighlight();
@@ -1770,7 +1780,7 @@
                 }
             });
 
-            // ---------- 20. КЛИК ПО NFT ----------
+            // ---------- 22. КЛИК ПО NFT ----------
             inventoryGrid.addEventListener('click', function(e) {
                 const item = e.target.closest('.nft-item');
                 if (!item) return;
@@ -1785,7 +1795,7 @@
                 }
             });
 
-            // ---------- 21. КНОПКИ ПРОФИЛЯ ----------
+            // ---------- 23. КНОПКИ ПРОФИЛЯ ----------
             inviteBtn.addEventListener('click', function() {
                 shareInviteLink();
             });
@@ -1794,7 +1804,7 @@
                 showWithdrawModal();
             });
 
-            // ---------- 22. АПГРЕЙДЫ ----------
+            // ---------- 24. АПГРЕЙДЫ ----------
             upgradeList.addEventListener('click', function(e) {
                 const btn = e.target.closest('.upgrade-btn');
                 if (!btn || btn.disabled) return;
@@ -1825,7 +1835,7 @@
                 });
             });
 
-            // ---------- 23. ЗАГРУЗКА ДАННЫХ С СЕРВЕРА ----------
+            // ---------- 25. ЗАГРУЗКА ДАННЫХ С СЕРВЕРА ----------
             async function loadUserData() {
                 try {
                     const response = await fetch(`/api/user/${USER_ID}`);
@@ -1853,10 +1863,9 @@
                 }
             }
 
-            // ---------- 24. ИНИЦИАЛИЗАЦИЯ ----------
+            // ---------- 26. ИНИЦИАЛИЗАЦИЯ ----------
             createRouletteCells();
 
-            // Читаем параметр startapp (для ссылок вида t.me/bot/app?startapp=123)
             const urlParams = new URLSearchParams(window.location.search);
             const referrer = urlParams.get('startapp');
             if (referrer && referrer !== String(USER_ID)) {
