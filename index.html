@@ -579,7 +579,6 @@
         .nft-item:hover .glow-pulse {
             opacity: 1;
         }
-
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -713,7 +712,6 @@
             color: #0a0e1a;
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
         }
-
         .withdraw-modal .modal-content {
             max-width: 340px;
         }
@@ -769,7 +767,6 @@
             color: var(--text-secondary);
             border: 1px solid var(--glass-border);
         }
-
         .cooldown-text {
             color: var(--text-secondary);
             font-size: 14px;
@@ -999,7 +996,7 @@
             }
 
             let state;
-            const currentVersion = '4.1';
+            const currentVersion = '4.2';
             const savedVersion = localStorage.getItem(VERSION_KEY);
 
             try {
@@ -1187,18 +1184,21 @@
                 }
             }
 
-            // ---------- 11. ПРИГЛАШЕНИЕ (С КНОПКОЙ ПОДЕЛИТЬСЯ) ----------
+            // ---------- 11. ПРИГЛАШЕНИЕ (С ТЕКСТОМ И КАРТИНКОЙ) ----------
             function shareInviteLink() {
                 const link = `https://t.me/${botUsername}?start=${USER_ID}`;
                 const text =
-                    `🧪 Привет! Присоединяйся к LAB NFT и крути рулетку!\n🔗 Моя реферальная ссылка: ${link}\n\nПолучи бонусы за приглашённых друзей! 🎁`;
+                    `🔥 ВОТ ЧТО Я ВЫВЕЛ С NFT LAB БОТА! 💰✨\n\n` +
+                    `Хочешь также присоединяйся по моей ссылке: 👇\n` +
+                    `${link}\n\n` +
+                    `🎰 Крути рулетку, собирай NFT-подарки и зарабатывай звёзды! ⭐\n` +
+                    `💎 Удачи! 🍀`;
 
-                // Пытаемся отправить через Telegram
                 if (isTelegram && tg) {
                     try {
-                        // Используем openTelegramLink для отправки в чат
-                        tg.openTelegramLink(
-                            `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
+                        const shareUrl =
+                            `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+                        tg.openTelegramLink(shareUrl);
                         sendToBot({
                             action: 'get_referral_link',
                             payload: {}
@@ -1209,7 +1209,7 @@
                     }
                 }
 
-                // Запасной вариант: показываем модал с кнопкой копирования
+                // Запасной вариант
                 const oldModal = document.querySelector('.modal-overlay');
                 if (oldModal) oldModal.remove();
 
@@ -1218,9 +1218,11 @@
                 overlay.innerHTML = `
                         <div class="modal-content" style="max-width:340px;">
                             <div style="font-size:20px;font-weight:700;position:relative;z-index:1;">🔗 ПРИГЛАСИТЬ</div>
-                            <div style="font-size:13px;color:var(--text-secondary);margin:12px 0;position:relative;z-index:1;">
-                                Отправьте ссылку друзьям:<br>
-                                <span style="color:var(--gold);word-break:break-all;font-size:12px;">${link}</span>
+                            <div style="margin:8px 0;position:relative;z-index:1;">
+                                <img src="${BASE_URL}/images/ref.png" alt="Ref" style="width:100%;max-width:280px;border-radius:12px;border:1px solid var(--glass-border);">
+                            </div>
+                            <div style="font-size:13px;color:var(--text-secondary);margin:8px 0;position:relative;z-index:1;text-align:left;padding:0 8px;">
+                                ${text.replace(/\n/g, '<br>')}
                             </div>
                             <div class="modal-actions" style="position:relative;z-index:1;">
                                 <button class="modal-btn btn-sell" id="copyLinkBtn" style="max-width:100%;flex:1;">📋 КОПИРОВАТЬ</button>
@@ -1235,28 +1237,29 @@
                 const closeBtn = overlay.querySelector('#closeShareBtn');
 
                 copyBtn.addEventListener('click', function() {
+                    const fullText = text + '\n\n' + link;
                     if (navigator.clipboard) {
-                        navigator.clipboard.writeText(link).then(() => {
-                            tg.showAlert('✅ Ссылка скопирована! Отправьте её друзьям.');
+                        navigator.clipboard.writeText(fullText).then(() => {
+                            tg.showAlert('✅ Текст скопирован! Отправьте его друзьям вместе с картинкой.');
                             overlay.remove();
                         }).catch(() => {
                             const textarea = document.createElement('textarea');
-                            textarea.value = link;
+                            textarea.value = fullText;
                             document.body.appendChild(textarea);
                             textarea.select();
                             document.execCommand('copy');
                             document.body.removeChild(textarea);
-                            tg.showAlert('✅ Ссылка скопирована!');
+                            tg.showAlert('✅ Текст скопирован!');
                             overlay.remove();
                         });
                     } else {
                         const textarea = document.createElement('textarea');
-                        textarea.value = link;
+                        textarea.value = fullText;
                         document.body.appendChild(textarea);
                         textarea.select();
                         document.execCommand('copy');
                         document.body.removeChild(textarea);
-                        tg.showAlert('✅ Ссылка скопирована!');
+                        tg.showAlert('✅ Текст скопирован!');
                         overlay.remove();
                     }
                 });
