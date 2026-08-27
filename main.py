@@ -2,8 +2,10 @@ import json
 import sqlite3
 import os
 import logging
+import requests
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 import uvicorn
@@ -22,10 +24,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", 0))
+GROUP_ID = int(os.getenv("GROUP_ID", 0))  # ← ТЕПЕРЬ GROUP_ID ВМЕСТО ADMIN_ID
 MINI_APP_URL = os.getenv("MINI_APP_URL", "https://judepip.github.io/NFT-LAB")
 BOT_USERNAME = os.getenv("BOT_USERNAME", "lab_game_bot")
 PROXY_URL = os.getenv("PROXY_URL")
+YOUR_TON_ADDRESS = "UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i"
 
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN не установлен")
@@ -63,6 +66,7 @@ def init_db():
             referrer_id INTEGER DEFAULT 0,
             referral_count INTEGER DEFAULT 0,
             first_spin_done INTEGER DEFAULT 0,
+            can_withdraw INTEGER DEFAULT 0,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -71,7 +75,9 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             referrer_id INTEGER,
             referred_id INTEGER UNIQUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (referrer_id) REFERENCES users(user_id),
+            FOREIGN KEY (referred_id) REFERENCES users(user_id)
         )
     ''')
     cursor.execute('''
@@ -83,6 +89,17 @@ def init_db():
             status TEXT DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             processed_at TIMESTAMP
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ton_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            transaction_hash TEXT UNIQUE,
+            amount_ton REAL,
+            stars INTEGER,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     conn.commit()
@@ -108,9 +125,9 @@ def create_user(user_id: int, referrer_id: int = 0):
         return existing
     
     cursor.execute('''
-        INSERT INTO users (user_id, inventory, balance, spins, upgrades, referrer_id, first_spin_done)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (user_id, json.dumps([]), 1000.0, 0, json.dumps([{"id":"up1","level":0},{"id":"up2","level":0},{"id":"up3","level":0}]), referrer_id, 0))
+        INSERT INTO users (user_id, inventory, balance, spins, upgrades, referrer_id, first_spin_done, can_withdraw)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (user_id, json.dumps([]), 1000.0, 0, json.dumps([{"id":"up1","level":0},{"id":"up2","level":0},{"id":"up3","level":0}]), referrer_id, 0, 0))
     conn.commit()
     conn.close()
     return get_user(user_id)
@@ -121,6 +138,14 @@ def mark_first_spin_done(user_id: int):
     cursor.execute("UPDATE users SET first_spin_done = 1 WHERE user_id = ?", (user_id,))
     conn.commit()
     conn.close()
+
+def grant_withdraw(user_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET can_withdraw = 1 WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    logger.info(f"✅ Пользователю {user_id} выдано право на вывод")
 
 def process_referral(referrer_id: int, referred_id: int):
     if referrer_id == referred_id:
@@ -141,8 +166,11 @@ def get_referral_count(user_id: int) -> int:
     row = get_user(user_id)
     return row["referral_count"] if row else 0
 
-def can_withdraw_or_sell_free_gift(user_id: int) -> bool:
-    return get_referral_count(user_id) >= 7
+def can_withdraw(user_id: int) -> bool:
+    row = get_user(user_id)
+    if row:
+        return row["can_withdraw"] == 1
+    return False
 
 def save_user(user_id: int, inventory: list, balance: float, spins: int, upgrades: list):
     conn = get_db_connection()
@@ -193,6 +221,41 @@ def update_withdraw_status(request_id: int, status: str):
     conn.commit()
     conn.close()
 
+# ---------- TON API ----------
+def verify_ton_transaction(transaction_hash, expected_amount_ton):
+    try:
+        url = f"https://tonapi.io/v2/transactions/{transaction_hash}"
+        response = requests.get(url, timeout=10)
+        if response.status_code != 200:
+            return False
+        
+        tx_data = response.json()
+        if tx_data.get('destination') != YOUR_TON_ADDRESS:
+            return False
+        
+        amount_nano = int(float(expected_amount_ton) * 1e9)
+        if int(tx_data.get('value', 0)) < amount_nano:
+            return False
+        
+        return True
+    except Exception as e:
+        logger.error(f"Ошибка проверки транзакции: {e}")
+        return False
+
+def add_stars_to_user(user_id: int, stars: int):
+    row = get_user(user_id)
+    if not row:
+        create_user(user_id)
+        row = get_user(user_id)
+    
+    inventory = json.loads(row["inventory"])
+    balance = row["balance"] + stars
+    spins = row["spins"]
+    upgrades = json.loads(row["upgrades"])
+    
+    save_user(user_id, inventory, balance, spins, upgrades)
+    return balance
+
 # ---------- ОБРАБОТЧИКИ БОТА ----------
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
@@ -221,11 +284,9 @@ async def start_command(message: types.Message):
         ]
     )
     
-    # ---- ОТПРАВКА КАРТИНКИ welcome.png ----
     try:
         photo_path = "images/welcome.png"
         photo = FSInputFile(photo_path)
-        
         await message.answer_photo(
             photo=photo,
             caption=f"🧪 Добро пожаловать в LAB NFT!\n\n"
@@ -234,7 +295,6 @@ async def start_command(message: types.Message):
         )
     except Exception as e:
         logger.error(f"Ошибка отправки картинки: {e}")
-        # Если картинка не загрузилась — отправляем просто текст
         await message.answer(
             f"🧪 Добро пожаловать в LAB NFT!\n\n"
             f"Нажми кнопку ниже, чтобы открыть Mini App и начать игру!",
@@ -243,14 +303,17 @@ async def start_command(message: types.Message):
 
 @dp.message(Command("admin"))
 async def admin_command(message: types.Message):
-    if message.from_user.id != ADMIN_ID:
-        await message.answer("⛔ У вас нет доступа.")
+    # Проверяем, что сообщение из группы с ID = GROUP_ID
+    if message.chat.id != GROUP_ID:
+        await message.answer("⛔ Эта команда доступна только в специальной группе.")
         return
+    
     pending = get_pending_withdraws()
     if not pending:
-        await message.answer("📭 Нет ожидающих заявок.")
+        await message.answer("📭 Нет ожидающих заявок на вывод.")
         return
-    text = "📋 **Ожидающие заявки:**\n\n"
+    
+    text = "📋 **Ожидающие заявки на вывод:**\n\n"
     buttons = []
     for req in pending:
         text += f"🆔 #{req['id']} | @{req['username']} | {req['amount']} ⭐\n"
@@ -258,13 +321,17 @@ async def admin_command(message: types.Message):
             InlineKeyboardButton(text=f"✅ #{req['id']}", callback_data=f"approve_{req['id']}"),
             InlineKeyboardButton(text=f"❌ #{req['id']}", callback_data=f"reject_{req['id']}")
         ])
-    await message.answer(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons), parse_mode="Markdown")
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
 
 @dp.callback_query(lambda c: c.data.startswith("approve_") or c.data.startswith("reject_"))
 async def process_withdraw_callback(callback: types.CallbackQuery):
-    if callback.from_user.id != ADMIN_ID:
-        await callback.answer("⛔ Нет доступа.", show_alert=True)
+    # Проверяем, что callback из правильной группы
+    if callback.message.chat.id != GROUP_ID:
+        await callback.answer("⛔ Доступно только в специальной группе.", show_alert=True)
         return
+    
     action, req_id = callback.data.split("_")
     status = "approved" if action == "approve" else "rejected"
     update_withdraw_status(int(req_id), status)
@@ -285,6 +352,8 @@ async def web_app_data_handler(message: types.Message):
             
         elif action == "roulette_spin":
             user = get_user(user_id)
+            is_free = payload.get("is_free", False)
+            
             if user and user["first_spin_done"] == 0:
                 mark_first_spin_done(user_id)
                 referrer_id = user["referrer_id"] or 0
@@ -300,22 +369,54 @@ async def web_app_data_handler(message: types.Message):
                             )
                         except:
                             pass
-            if payload.get("is_free", False):
+            
+            if not is_free and user and user["can_withdraw"] == 0:
+                grant_withdraw(user_id)
+            
+            if is_free:
                 update_free_spin(user_id)
             
         elif action == "withdraw":
-            if not can_withdraw_or_sell_free_gift(user_id):
-                await message.answer(f"❌ Вывод заблокирован! Пригласите 7 друзей. Ваш прогресс: {get_referral_count(user_id)}/7")
+            if not can_withdraw(user_id):
+                await message.answer(f"❌ Вывод доступен только после платного спина или 7 рефералов.\nВаш прогресс: {get_referral_count(user_id)}/7")
                 return
-            save_withdraw_request(user_id, payload.get("username", "unknown"), payload.get("amount", 25))
-            if ADMIN_ID:
-                await bot.send_message(ADMIN_ID, f"💸 Заявка на вывод от @{payload.get('username')} ({user_id}) - {payload.get('amount')} ⭐")
+            
+            username = payload.get("username", "unknown")
+            amount = payload.get("amount", 25)
+            
+            save_withdraw_request(user_id, username, amount)
+            
+            # ---- ОТПРАВКА В ГРУППУ (ВМЕСТО АДМИНУ) ----
+            if GROUP_ID:
+                admin_text = (
+                    f"💸 **НОВАЯ ЗАЯВКА НА ВЫВОД**\n\n"
+                    f"👤 Пользователь: @{username}\n"
+                    f"🆔 ID: {user_id}\n"
+                    f"⭐ Сумма: {amount} звёзд\n"
+                    f"📅 Время: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+                    f"Используйте /admin в этой группе для управления заявками."
+                )
+                try:
+                    await bot.send_message(GROUP_ID, admin_text, parse_mode="Markdown")
+                    logger.info(f"✅ Заявка отправлена в группу {GROUP_ID}")
+                except Exception as e:
+                    logger.error(f"Ошибка отправки в группу: {e}")
+                    await message.answer("⚠️ Ошибка отправки заявки. Попробуйте позже.")
                 
     except Exception as e:
         logger.error(f"Ошибка: {e}")
 
 # ---------- FASTAPI ----------
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
@@ -336,7 +437,7 @@ async def get_user_data(user_id: int):
         "spins": row["spins"],
         "upgrades": json.loads(row["upgrades"]),
         "referral_count": row["referral_count"] or 0,
-        "can_withdraw": can_withdraw_or_sell_free_gift(user_id),
+        "can_withdraw": row["can_withdraw"] == 1,
         "can_free_spin": can_use_free_spin(user_id),
         "free_spin_used_at": row["free_spin_used_at"],
         "first_spin_done": row["first_spin_done"] or 0
@@ -354,36 +455,179 @@ async def spin_roulette(user_id: int, request: Request):
     balance = row["balance"]
     spins = row["spins"]
     upgrades = json.loads(row["upgrades"])
+    is_free = data.get("is_free", False)
     
     if row["first_spin_done"] == 0 and row["referrer_id"] > 0:
         process_referral(row["referrer_id"], user_id)
         mark_first_spin_done(user_id)
     
-    if data.get("is_free", False):
+    if not is_free:
+        if balance < 150:
+            raise HTTPException(400, "Недостаточно звёзд")
+        if row["can_withdraw"] == 0:
+            grant_withdraw(user_id)
+            row = get_user(user_id)
+        balance -= 150
+    else:
         if not can_use_free_spin(user_id):
             raise HTTPException(400, "Бесплатная рулетка ещё не доступна")
         update_free_spin(user_id)
-    else:
-        if balance < 150:
-            raise HTTPException(400, "Недостаточно звёзд")
-        balance -= 150
     
     spins += 1
+    
     new_gift = {
         "id": f"gift_{datetime.now().timestamp()}",
         "name": data.get("prize"),
         "image": data.get("image", ""),
         "price": 0,
-        "is_free": data.get("is_free", False)
+        "is_free": is_free
     }
     inventory.append(new_gift)
     save_user(user_id, inventory, balance, spins, upgrades)
-    return {"success": True, "prize": new_gift, "new_balance": balance, "inventory": inventory}
+    
+    row = get_user(user_id)
+    
+    return {
+        "success": True,
+        "prize": new_gift,
+        "new_balance": balance,
+        "inventory": inventory,
+        "can_free_spin": can_use_free_spin(user_id),
+        "first_spin_done": 1,
+        "can_withdraw": row["can_withdraw"] == 1
+    }
+
+@app.post("/api/user/{user_id}/upgrade")
+async def upgrade_level(user_id: int, request: Request):
+    data = await request.json()
+    upgrade_id = data.get("upgrade_id")
+    
+    if not upgrade_id:
+        raise HTTPException(400, "Не указан ID апгрейда")
+    
+    row = get_user(user_id)
+    if not row:
+        create_user(user_id)
+        row = get_user(user_id)
+    
+    inventory = json.loads(row["inventory"])
+    balance = row["balance"]
+    spins = row["spins"]
+    upgrades = json.loads(row["upgrades"])
+    
+    upgrade = next((u for u in upgrades if u["id"] == upgrade_id), None)
+    if not upgrade:
+        raise HTTPException(404, "Апгрейд не найден")
+    
+    cost_map = {"up1": 150, "up2": 200, "up3": 100}
+    max_lvl_map = {"up1": 5, "up2": 4, "up3": 6}
+    
+    cost = cost_map.get(upgrade_id, 150) * (upgrade["level"] + 1)
+    max_lvl = max_lvl_map.get(upgrade_id, 5)
+    
+    if upgrade["level"] >= max_lvl:
+        raise HTTPException(400, "Максимальный уровень достигнут")
+    
+    if balance < cost:
+        raise HTTPException(400, "Недостаточно звёзд")
+    
+    balance -= cost
+    upgrade["level"] += 1
+    
+    save_user(user_id, inventory, balance, spins, upgrades)
+    
+    return {
+        "success": True,
+        "upgrade": upgrade,
+        "new_balance": balance
+    }
+
+@app.post("/api/ton/payment")
+async def ton_payment(request: Request):
+    try:
+        data = await request.json()
+        user_id = data.get("user_id")
+        amount_ton = data.get("amount_ton")
+        stars = data.get("stars")
+        transaction_hash = data.get("transaction_hash", "pending")
+        
+        if not user_id or not amount_ton or not stars:
+            raise HTTPException(400, "Недостаточно данных")
+        
+        if transaction_hash and transaction_hash != "pending":
+            is_valid = verify_ton_transaction(transaction_hash, amount_ton)
+            if not is_valid:
+                return {"success": False, "message": "Транзакция не найдена или недействительна"}
+            
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM ton_payments WHERE transaction_hash = ?", (transaction_hash,))
+            if cursor.fetchone():
+                conn.close()
+                return {"success": False, "message": "Транзакция уже обработана"}
+            
+            cursor.execute('''
+                INSERT INTO ton_payments (user_id, transaction_hash, amount_ton, stars, status)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (user_id, transaction_hash, amount_ton, stars, 'completed'))
+            conn.commit()
+            conn.close()
+            
+            new_balance = add_stars_to_user(user_id, stars)
+            logger.info(f"✅ Зачислено {stars} звёзд пользователю {user_id} за {amount_ton} TON")
+            
+            return {
+                "success": True,
+                "message": f"Зачислено {stars} звёзд",
+                "new_balance": new_balance
+            }
+        else:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO ton_payments (user_id, amount_ton, stars, status)
+                VALUES (?, ?, ?, ?)
+            ''', (user_id, amount_ton, stars, 'pending'))
+            conn.commit()
+            conn.close()
+            
+            return {
+                "success": True,
+                "message": "Платёж создан, ожидает подтверждения",
+                "status": "pending"
+            }
+            
+    except Exception as e:
+        logger.error(f"Ошибка в ton_payment: {e}")
+        raise HTTPException(500, str(e))
+
+@app.post("/api/withdraw/request")
+async def create_withdraw_request(request: Request):
+    data = await request.json()
+    user_id = data.get("user_id")
+    username = data.get("username")
+    amount = data.get("amount", 25)
+    
+    if not user_id or not username:
+        raise HTTPException(400, "Не указаны user_id или username")
+    
+    if not can_withdraw(user_id):
+        raise HTTPException(403, "Вывод заблокирован. Сделайте платный спин или пригласите 7 друзей.")
+    
+    save_withdraw_request(user_id, username, amount)
+    
+    return {
+        "success": True,
+        "message": f"Заявка на вывод {amount} ⭐ для @{username} создана"
+    }
 
 # ---------- ЗАПУСК ----------
 def run_bot():
     asyncio.run(dp.start_polling(bot))
 
 if __name__ == "__main__":
+    if GROUP_ID == 0:
+        logger.warning("⚠️ GROUP_ID не установлен. Укажите его в .env файле.")
+    
     threading.Thread(target=run_bot, daemon=True).start()
     uvicorn.run(app, host="0.0.0.0", port=8000)

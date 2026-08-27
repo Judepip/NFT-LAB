@@ -17,8 +17,12 @@
             };
         }
     </script>
+    <!-- TON Connect SDK -->
+    <script src="https://unpkg.com/@tonconnect/sdk@2.0.0/dist/tonconnect-sdk.min.js">
+    </script>
     <script src="https://telegram.org/js/telegram-web-app.js" onerror="console.warn('Telegram SDK не загрузился, используется эмуляция')"></script>
     <style>
+        /* ---------- ПОЛНЫЙ СТИЛЬ (все стили из предыдущей версии) ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -100,6 +104,12 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .balance:hover {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
         }
         .balance span {
             color: var(--text-secondary);
@@ -556,6 +566,10 @@
             .modal-actions .modal-btn {
                 max-width: 100%;
             }
+            .shop-btn {
+                font-size: 16px !important;
+                padding: 14px !important;
+            }
         }
         @media (min-width: 600px) {
             .roulette-cell {
@@ -579,6 +593,7 @@
         .nft-item:hover .glow-pulse {
             opacity: 1;
         }
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -712,6 +727,53 @@
             color: #0a0e1a;
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
         }
+
+        /* ---------- МАГАЗИН ---------- */
+        .shop-modal .modal-content {
+            max-width: 340px;
+        }
+        .shop-modal .modal-title {
+            font-size: 20px;
+        }
+        .shop-btn {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid var(--gold);
+            border-radius: 16px;
+            background: rgba(255, 215, 0, 0.05);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        .shop-btn:active {
+            transform: scale(0.96);
+        }
+        .shop-btn .stars {
+            color: var(--gold);
+        }
+        .shop-btn .ton {
+            color: var(--neon-cyan);
+            font-weight: 400;
+            font-size: 14px;
+        }
+        .shop-btn .badge {
+            font-size: 12px;
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--neon-green);
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        /* ---------- ВЫВОД ---------- */
         .withdraw-modal .modal-content {
             max-width: 340px;
         }
@@ -767,6 +829,46 @@
             color: var(--text-secondary);
             border: 1px solid var(--glass-border);
         }
+
+        /* ---------- ПРОГРЕСС-БАР ---------- */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 12px;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            animation: progressPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes progressPulse {
+            0% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.6;
+            }
+        }
+        .withdraw-status-text {
+            font-size: 14px;
+            color: var(--neon-cyan);
+            margin-top: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ---------- КУЛДАУН ---------- */
         .cooldown-text {
             color: var(--text-secondary);
             font-size: 14px;
@@ -781,10 +883,6 @@
             color: var(--gold);
             font-weight: 700;
             font-size: 18px;
-        }
-        .withdraw-btn-disabled {
-            opacity: 0.4 !important;
-            pointer-events: none !important;
         }
         .referral-progress {
             margin-top: 8px;
@@ -816,6 +914,39 @@
             min-width: 120px;
             margin-top: 0;
         }
+
+        /* ---------- TON CONNECT ---------- */
+        #ton-connect-container {
+            position: relative;
+            z-index: 1;
+            margin: 8px 0;
+        }
+        #ton-connect-container .tc-btn {
+            background: var(--neon-cyan);
+            color: #0a0e1a;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 20px;
+            font-weight: 700;
+            font-size: 14px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: 0.15s;
+            width: 100%;
+        }
+        #ton-connect-container .tc-btn:active {
+            transform: scale(0.96);
+            opacity: 0.8;
+        }
+        #ton-connect-container .tc-btn:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .ton-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -823,7 +954,7 @@
 
         <div class="header">
             <h1>🧪 LAB NFT</h1>
-            <div class="balance">
+            <div class="balance" id="balanceClick">
                 <span>⭐</span> <span id="balanceDisplay">1,000</span>
             </div>
         </div>
@@ -954,28 +1085,146 @@
                 };
             }
 
-            // ---------- 2. ПОЛУЧЕНИЕ USER_ID ----------
+            // ---------- 2. TON CONNECT ----------
+            // ВАШ АДРЕС ДЛЯ ПОЛУЧЕНИЯ TON (ЗАМЕНЁН)
+            const YOUR_TON_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
+
+            let tonConnector = null;
+            let tonWalletConnected = false;
+            let tonWalletAddress = '';
+
+            function initTonConnect() {
+                try {
+                    tonConnector = new TonConnectSDK({
+                        manifestUrl: 'https://judepip.github.io/NFT-LAB/tonconnect-manifest.json',
+                        restoreConnection: true
+                    });
+
+                    if (tonConnector.connected) {
+                        tonWalletConnected = true;
+                        tonWalletAddress = tonConnector.wallet?.account?.address || '';
+                        console.log('TON Wallet уже подключён:', tonWalletAddress);
+                    }
+
+                    tonConnector.on('connect', (wallet) => {
+                        tonWalletConnected = true;
+                        tonWalletAddress = wallet.account.address;
+                        console.log('TON Wallet подключён:', tonWalletAddress);
+                        updateTonStatus();
+                    });
+
+                    tonConnector.on('disconnect', () => {
+                        tonWalletConnected = false;
+                        tonWalletAddress = '';
+                        console.log('TON Wallet отключён');
+                        updateTonStatus();
+                    });
+
+                    updateTonStatus();
+                } catch (e) {
+                    console.error('Ошибка инициализации TON Connect:', e);
+                }
+            }
+
+            function updateTonStatus() {
+                const statusEl = document.getElementById('tonStatus');
+                if (statusEl) {
+                    if (tonWalletConnected && tonWalletAddress) {
+                        const short = tonWalletAddress.slice(0, 6) + '...' + tonWalletAddress.slice(-4);
+                        statusEl.textContent = `✅ Подключён: ${short}`;
+                        statusEl.style.color = 'var(--neon-green)';
+                    } else {
+                        statusEl.textContent = '⛔ Кошелёк не подключён';
+                        statusEl.style.color = 'var(--text-secondary)';
+                    }
+                }
+            }
+
+            async function connectTonWallet() {
+                if (!tonConnector) {
+                    initTonConnect();
+                    if (!tonConnector) {
+                        tg.showAlert('❌ Ошибка инициализации TON Connect');
+                        return;
+                    }
+                }
+
+                if (tonConnector.connected) {
+                    tg.showAlert('✅ Кошелёк уже подключён');
+                    return;
+                }
+
+                try {
+                    const wallet = await tonConnector.connect({
+                        bridgeUrl: 'https://bridge.tonapi.io/bridge'
+                    });
+
+                    if (wallet) {
+                        tonWalletConnected = true;
+                        tonWalletAddress = wallet.account.address;
+                        updateTonStatus();
+                        tg.showAlert('✅ Кошелёк успешно подключён!');
+                    }
+                } catch (e) {
+                    console.error('Ошибка подключения кошелька:', e);
+                    tg.showAlert('❌ Ошибка подключения кошелька.');
+                }
+            }
+
+            async function disconnectTonWallet() {
+                if (tonConnector) {
+                    try {
+                        await tonConnector.disconnect();
+                        tonWalletConnected = false;
+                        tonWalletAddress = '';
+                        updateTonStatus();
+                        tg.showAlert('✅ Кошелёк отключён');
+                    } catch (e) {
+                        console.error('Ошибка отключения кошелька:', e);
+                    }
+                }
+            }
+
+            // ---------- 3. ПОЛУЧЕНИЕ USER_ID ----------
             const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-            // ---------- 3. СПИСОК ПОДАРКОВ ----------
+            // ---------- 4. СПИСОК ПОДАРКОВ ----------
             const BASE_URL = 'https://judepip.github.io/NFT-LAB';
             const GIFTS = [
-                { name: 'Bow Tie', price: 800, chance: 5, image: BASE_URL + '/images/BowTie.gif' },
-                { name: 'Chill Flame', price: 500, chance: 10, image: BASE_URL + '/images/ChillFlame.gif' },
-                { name: 'Big Year', price: 500, chance: 8, image: BASE_URL + '/images/BigYear.gif' },
-                { name: 'JACK IN THE BOX', price: 600, chance: 20, image: BASE_URL + '/images/JackInTheBox.gif' },
-                { name: 'Liberty Figure', price: 450, chance: 7, image: BASE_URL + '/images/LibertyFigure.gif' },
-                { name: 'Light Sword', price: 480, chance: 12, image: BASE_URL + '/images/LightSword.gif' },
-                { name: 'Star Notepad', price: 480, chance: 10, image: BASE_URL + '/images/StarNotepad.gif' },
-                { name: 'Кубок', price: 100, chance: 15, image: BASE_URL + '/images/Кубок.gif' },
-                { name: 'Кольцо', price: 100, chance: 8, image: BASE_URL + '/images/Кольцо.gif' },
-                { name: 'Мишка', price: 15, chance: 5, image: BASE_URL + '/images/Мишка.gif' },
+                { name: 'Bow Tie', price: 800, image: BASE_URL + '/images/BowTie.gif' },
+                { name: 'Chill Flame', price: 500, image: BASE_URL + '/images/ChillFlame.gif' },
+                { name: 'Big Year', price: 500, image: BASE_URL + '/images/BigYear.gif' },
+                { name: 'JACK IN THE BOX', price: 600, image: BASE_URL + '/images/JackInTheBox.gif' },
+                { name: 'Liberty Figure', price: 450, image: BASE_URL + '/images/LibertyFigure.gif' },
+                { name: 'Light Sword', price: 480, image: BASE_URL + '/images/LightSword.gif' },
+                { name: 'Star Notepad', price: 480, image: BASE_URL + '/images/StarNotepad.gif' },
+                { name: 'Кубок', price: 100, image: BASE_URL + '/images/Кубок.gif' },
+                { name: 'Кольцо', price: 100, image: BASE_URL + '/images/Кольцо.gif' },
+                { name: 'Мишка', price: 15, image: BASE_URL + '/images/Мишка.gif' },
             ];
 
-            // ---------- 4. СОСТОЯНИЕ ----------
+            // ---------- 5. ШАНСЫ ----------
+            const PAID_CHANCES = [10, 8, 6, 5, 4, 3, 1, 18, 20, 25];
+            const FREE_CHANCES = [12, 25, 10, 8, 7, 6, 5, 22, 3, 2];
+
+            // ---------- 6. ФУНКЦИЯ ВЫБОРА ПО ШАНСАМ ----------
+            function getRandomGiftByChance(isFree) {
+                const chances = isFree ? FREE_CHANCES : PAID_CHANCES;
+                const totalChance = chances.reduce((sum, c) => sum + c, 0);
+                let random = Math.random() * totalChance;
+                for (let i = 0; i < GIFTS.length; i++) {
+                    random -= chances[i];
+                    if (random <= 0) {
+                        return GIFTS[i];
+                    }
+                }
+                return GIFTS[0];
+            }
+
+            // ---------- 7. СОСТОЯНИЕ ----------
             const STORAGE_KEY = 'lab_nft_state';
-            const VERSION_KEY = 'lab_nft_version';
             const COOLDOWN_KEY = 'withdraw_cooldown';
+            const WITHDRAW_REQUESTS_KEY = 'withdraw_requests';
 
             function getDefaultState() {
                 return {
@@ -990,63 +1239,25 @@
                     isSpinning: false,
                     referralCount: 0,
                     canWithdraw: false,
-                    canFreeSpin: true,
                     freeSpinUsedAt: null,
                 };
             }
 
             let state;
-            const currentVersion = '4.2';
-            const savedVersion = localStorage.getItem(VERSION_KEY);
 
             try {
-                if (savedVersion !== currentVersion) {
-                    console.log('Обнаружена новая версия. Сброс старых данных...');
-                    localStorage.removeItem(STORAGE_KEY);
-                    localStorage.setItem(VERSION_KEY, currentVersion);
-                    state = getDefaultState();
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    state = parsed;
+                    console.log('Состояние загружено из localStorage');
                 } else {
-                    const saved = localStorage.getItem(STORAGE_KEY);
-                    if (saved) {
-                        const parsed = JSON.parse(saved);
-                        if (parsed.inventory && parsed.inventory.length > 0) {
-                            const firstItem = parsed.inventory[0];
-                            if (firstItem && firstItem.name &&
-                                (firstItem.name.includes('Кристалл') ||
-                                    firstItem.name.includes('Теневой') ||
-                                    firstItem.name.includes('Голограмма'))) {
-                                console.log('Обнаружены старые подарки. Сброс инвентаря...');
-                                parsed.inventory = [];
-                            }
-                        }
-                        state = parsed;
-                        console.log('Состояние загружено из localStorage');
-                    } else {
-                        state = getDefaultState();
-                        console.log('Создано новое состояние');
-                    }
+                    state = getDefaultState();
+                    console.log('Создано новое состояние');
                 }
             } catch (e) {
                 console.warn('Ошибка загрузки состояния:', e);
                 state = getDefaultState();
-            }
-
-            if (state.inventory && state.inventory.length > 0) {
-                const hasOldGifts = state.inventory.some(item =>
-                    item.name && (
-                        item.name.includes('Кристалл') ||
-                        item.name.includes('Теневой') ||
-                        item.name.includes('Голограмма') ||
-                        item.name.includes('Нейро-куб') ||
-                        item.name.includes('Плазменный') ||
-                        item.name.includes('Квантовый')
-                    )
-                );
-                if (hasOldGifts) {
-                    console.log('Удалены старые подарки из инвентаря');
-                    state.inventory = [];
-                    saveState();
-                }
             }
 
             function saveState() {
@@ -1057,7 +1268,56 @@
                 }
             }
 
-            // ---------- 5. КУЛДАУН НА ВЫВОД ----------
+            // ---------- 8. ЗАЯВКИ ----------
+            function getWithdrawRequests() {
+                try {
+                    const saved = localStorage.getItem(WITHDRAW_REQUESTS_KEY);
+                    if (saved) {
+                        return JSON.parse(saved);
+                    }
+                } catch (e) {
+                    console.warn('Ошибка загрузки заявок:', e);
+                }
+                return [];
+            }
+
+            function saveWithdrawRequests(requests) {
+                try {
+                    localStorage.setItem(WITHDRAW_REQUESTS_KEY, JSON.stringify(requests));
+                } catch (e) {
+                    console.warn('Ошибка сохранения заявок:', e);
+                }
+            }
+
+            function addWithdrawRequest(username, amount, giftId = null) {
+                const requests = getWithdrawRequests();
+                const newRequest = {
+                    id: Date.now(),
+                    user_id: USER_ID,
+                    username: username,
+                    amount: amount,
+                    status: 'pending',
+                    created_at: new Date().toISOString(),
+                    gift_id: giftId
+                };
+                requests.push(newRequest);
+                saveWithdrawRequests(requests);
+                return newRequest;
+            }
+
+            function removeWithdrawRequest(requestId) {
+                let requests = getWithdrawRequests();
+                requests = requests.filter(req => req.id !== requestId);
+                saveWithdrawRequests(requests);
+            }
+
+            function getPendingWithdrawRequestForGift(giftId) {
+                if (!giftId) return null;
+                const requests = getWithdrawRequests();
+                return requests.find(req => req.gift_id === giftId && req.status === 'pending');
+            }
+
+            // ---------- 9. КУЛДАУН ----------
             const COOLDOWN_HOURS = 24;
             const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
 
@@ -1085,7 +1345,7 @@
                 return getRemainingCooldown() > 0;
             }
 
-            // ---------- 6. БЕСПЛАТНАЯ РУЛЕТКА ----------
+            // ---------- 10. БЕСПЛАТНАЯ РУЛЕТКА ----------
             function canUseFreeSpin() {
                 if (!state.freeSpinUsedAt) return true;
                 const usedTime = new Date(state.freeSpinUsedAt).getTime();
@@ -1099,7 +1359,7 @@
                 return remaining > 0 ? remaining : 0;
             }
 
-            // ---------- 7. ОБНОВЛЕНИЕ UI ----------
+            // ---------- 11. ОБНОВЛЕНИЕ UI ----------
             function updateFreeSpinButton() {
                 const btn = document.getElementById('freeSpinBtn');
                 const timer = document.getElementById('freeSpinTimer');
@@ -1119,7 +1379,7 @@
                     const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
                     const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
                     countdown.textContent =
-                    `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 }
             }
 
@@ -1134,22 +1394,10 @@
                 freeSpinInterval = setInterval(updateFreeSpinButton, 1000);
             }
 
-            // ---------- 8. ФУНКЦИЯ ВЫБОРА ПО ШАНСАМ ----------
-            function getRandomGiftByChance() {
-                const totalChance = GIFTS.reduce((sum, g) => sum + g.chance, 0);
-                let random = Math.random() * totalChance;
-                for (const gift of GIFTS) {
-                    random -= gift.chance;
-                    if (random <= 0) {
-                        return gift;
-                    }
-                }
-                return GIFTS[0];
-            }
-
-            // ---------- 9. DOM-ССЫЛКИ ----------
+            // ---------- 12. DOM ----------
             const $ = (id) => document.getElementById(id);
             const balanceDisplay = $('balanceDisplay');
+            const balanceClick = $('balanceClick');
             const nftCount = $('nftCount');
             const screens = document.querySelectorAll('.screen');
             const navBtns = document.querySelectorAll('.nav-btn');
@@ -1171,7 +1419,7 @@
             const referralStatus = $('referralStatus');
             const withdrawCooldownContainer = $('withdrawCooldownContainer');
 
-            // ---------- 10. ОТПРАВКА В БОТА ----------
+            // ---------- 13. ОТПРАВКА В БОТА ----------
             function sendToBot(data) {
                 try {
                     if (isTelegram && tg && typeof tg.sendData === 'function') {
@@ -1184,14 +1432,14 @@
                 }
             }
 
-            // ---------- 11. ПРИГЛАШЕНИЕ (С ПРЯМОЙ ССЫЛКОЙ НА MINI APP) ----------
+            // ---------- 14. ПРИГЛАШЕНИЕ ----------
             function shareInviteLink() {
-                const link = `https://t.me/${botUsername}/app?startapp=${USER_ID}`;
+                const link = `https://t.me/${botUsername}?start=${USER_ID}`;
                 const text =
                     `🔥 ВОТ ЧТО Я ВЫВЕЛ С NFT LAB БОТА! 💰✨\n\n` +
-                    `Хочешь также присоединяйся по моей ссылке: 👇\n` +
+                    `Хочешь также? Присоединяйся по моей ссылке: 👇\n` +
                     `${link}\n\n` +
-                    `🎰 Крути рулетку, собирай NFT-подарки и зарабатывай звёзды! ⭐\n` +
+                    `🎰 Крути рулетку, собирай NFT и зарабатывай звёзды! ⭐\n` +
                     `💎 Удачи! 🍀`;
 
                 if (isTelegram && tg) {
@@ -1209,7 +1457,6 @@
                     }
                 }
 
-                // Запасной вариант
                 const oldModal = document.querySelector('.modal-overlay');
                 if (oldModal) oldModal.remove();
 
@@ -1280,15 +1527,169 @@
                 });
             }
 
-            // ---------- 12. МОДАЛ ДЛЯ ВЫВОДА ----------
-            function showWithdrawModal() {
+            // ---------- 15. МАГАЗИН (С ВАШИМ АДРЕСОМ) ----------
+            function showShopModal(message = null) {
+                const oldModal = document.querySelector('.modal-overlay');
+                if (oldModal) oldModal.remove();
+
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay shop-modal';
+                overlay.innerHTML = `
+                        <div class="modal-content">
+                            <div class="modal-title" style="font-size:20px;position:relative;z-index:1;">⭐ ПОПОЛНИТЬ БАЛАНС</div>
+                            ${message ? `<div style="font-size:13px;color:var(--neon-cyan);margin:8px 0 12px 0;position:relative;z-index:1;">${message}</div>` : ''}
+                            <div id="ton-connect-container" style="position:relative;z-index:1;">
+                                <button class="tc-btn" id="tonConnectBtn">🔗 ПОДКЛЮЧИТЬ TON КОШЕЛЁК</button>
+                                <div class="ton-status" id="tonStatus">⛔ Кошелёк не подключён</div>
+                            </div>
+                            <div style="margin:12px 0;position:relative;z-index:1;border-top:1px solid var(--glass-border);padding-top:12px;">
+                                <button class="shop-btn" data-stars="200" data-ton="2">
+                                    <span><span class="stars">⭐ 200</span></span>
+                                    <span class="ton">2 TON</span>
+                                </button>
+                                <button class="shop-btn" data-stars="500" data-ton="5">
+                                    <span><span class="stars">⭐ 500</span> <span class="badge">🔥 Выгодно</span></span>
+                                    <span class="ton">5 TON</span>
+                                </button>
+                                <button class="shop-btn" data-stars="1000" data-ton="9">
+                                    <span><span class="stars">⭐ 1000</span> <span class="badge">🔥 ЛУЧШЕЕ</span></span>
+                                    <span class="ton">9 TON</span>
+                                </button>
+                            </div>
+                            <div class="modal-actions" style="margin-top:12px;position:relative;z-index:1;">
+                                <button class="modal-btn btn-close" id="shopCloseBtn">ЗАКРЫТЬ</button>
+                            </div>
+                        </div>
+                    `;
+
+                document.body.appendChild(overlay);
+
+                const closeBtn = overlay.querySelector('#shopCloseBtn');
+                closeBtn.addEventListener('click', function() {
+                    overlay.remove();
+                });
+
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) {
+                        overlay.remove();
+                    }
+                });
+
+                // TON Connect
+                const tonConnectBtn = overlay.querySelector('#tonConnectBtn');
+                if (tonConnectBtn) {
+                    tonConnectBtn.addEventListener('click', function() {
+                        if (tonConnector && tonConnector.connected) {
+                            disconnectTonWallet();
+                        } else {
+                            connectTonWallet();
+                        }
+                    });
+                }
+
+                // Обработка покупки
+                overlay.querySelectorAll('.shop-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const stars = parseInt(this.dataset.stars, 10);
+                        const ton = parseFloat(this.dataset.ton);
+
+                        if (!tonWalletConnected) {
+                            tg.showAlert('❌ Сначала подключите TON кошелёк!');
+                            return;
+                        }
+
+                        // Показываем подтверждение
+                        tg.showAlert(
+                            `💳 ОПЛАТА ЧЕРЕЗ TON\n\n` +
+                            `⭐ ${stars} звёзд за ${ton} TON\n\n` +
+                            `💰 Оплата на адрес:\n` +
+                            `${YOUR_TON_ADDRESS}\n\n` +
+                            `После подтверждения транзакции звёзды зачислятся автоматически.`
+                        );
+
+                        // Отправляем транзакцию
+                        if (tonConnector && tonConnector.connected) {
+                            try {
+                                const transaction = {
+                                    validUntil: Math.floor(Date.now() / 1000) + 300,
+                                    messages: [{
+                                        address: YOUR_TON_ADDRESS,
+                                        amount: String(ton * 1e9), // TON в нано-TON
+                                    }]
+                                };
+
+                                tonConnector.sendTransaction(transaction)
+                                    .then((tx) => {
+                                        // Отправляем запрос на бэкенд для проверки и зачисления
+                                        fetch('/api/ton/payment', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                user_id: USER_ID,
+                                                amount_ton: ton,
+                                                stars: stars,
+                                                transaction_hash: tx.transaction?.hash || 'pending',
+                                                wallet_address: YOUR_TON_ADDRESS
+                                            })
+                                        })
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                state.balance += stars;
+                                                render();
+                                                tg.showAlert(`✅ ${stars} звёзд зачислено на ваш баланс!`);
+                                                sendToBot({
+                                                    action: 'buy_stars',
+                                                    payload: {
+                                                        stars: stars,
+                                                        ton: ton,
+                                                        user_id: USER_ID,
+                                                        wallet: tonWalletAddress,
+                                                        timestamp: new Date().toISOString()
+                                                    }
+                                                });
+                                            } else {
+                                                tg.showAlert('❌ Ошибка зачисления звёзд. Обратитесь в поддержку.');
+                                            }
+                                        })
+                                        .catch(() => {
+                                            tg.showAlert('❌ Ошибка соединения с сервером. Звёзды зачислятся позже.');
+                                        });
+                                    })
+                                    .catch((err) => {
+                                        console.error('Ошибка транзакции:', err);
+                                        tg.showAlert('❌ Ошибка оплаты. Попробуйте позже.');
+                                    });
+                            } catch (e) {
+                                console.error('Ошибка отправки транзакции:', e);
+                                tg.showAlert('❌ Ошибка отправки транзакции.');
+                            }
+                        } else {
+                            tg.showAlert('❌ Кошелёк не подключён.');
+                        }
+                    });
+                });
+
+                updateTonStatus();
+            }
+
+            // ---------- 16. МОДАЛ ДЛЯ ВЫВОДА ----------
+            function showWithdrawModal(giftId = null) {
                 if (isCooldownActive()) {
                     tg.showAlert('⏳ Вы уже отправляли заявку! Попробуйте через 24 часа.');
                     return;
                 }
 
+                if (giftId) {
+                    const existingRequest = getPendingWithdrawRequestForGift(giftId);
+                    if (existingRequest) {
+                        tg.showAlert('⏳ На этот подарок уже отправлена заявка на вывод!');
+                        return;
+                    }
+                }
+
                 if (!state.canWithdraw) {
-                    tg.showAlert(`❌ Вывод заблокирован!\nПригласите 7 друзей (сейчас: ${state.referralCount}/7)`);
+                    tg.showAlert(`❌ Вывод доступен только после платного спина.\nВаш прогресс: ${state.referralCount}/7`);
                     return;
                 }
 
@@ -1305,7 +1706,13 @@
                                 Доступно: <span class="highlight">${Math.floor(state.balance)} ⭐</span>
                             </div>
                             <input class="modal-input" id="withdrawUsername" type="text" placeholder="Введите @username" autocomplete="off">
-                            <div class="modal-actions">
+                            <div id="withdrawStatusContainer" style="display:none;">
+                                <div class="withdraw-status-text">⏳ Скоро отправим...</div>
+                                <div class="progress-container">
+                                    <div class="progress-bar" id="progressBar" style="width:0%;"></div>
+                                </div>
+                            </div>
+                            <div class="modal-actions" id="withdrawActions">
                                 <button class="modal-btn btn-confirm" id="withdrawConfirm">ВЫВЕСТИ</button>
                                 <button class="modal-btn btn-cancel" id="withdrawCancel">ОТМЕНА</button>
                             </div>
@@ -1317,6 +1724,8 @@
                 const usernameInput = overlay.querySelector('#withdrawUsername');
                 const confirmBtn = overlay.querySelector('#withdrawConfirm');
                 const cancelBtn = overlay.querySelector('#withdrawCancel');
+                const statusContainer = overlay.querySelector('#withdrawStatusContainer');
+                const progressBar = overlay.querySelector('#progressBar');
 
                 setTimeout(() => usernameInput.focus(), 100);
 
@@ -1344,12 +1753,21 @@
                     }
 
                     confirmBtn.disabled = true;
-                    confirmBtn.innerHTML = '⏳ ОТПРАВКА...';
-                    confirmBtn.style.opacity = '0.6';
+                    cancelBtn.disabled = true;
+                    usernameInput.disabled = true;
+                    statusContainer.style.display = 'block';
+
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += Math.random() * 15;
+                        if (progress > 90) progress = 90;
+                        progressBar.style.width = progress + '%';
+                    }, 200);
+
+                    const request = addWithdrawRequest(username, 25, giftId);
 
                     state.balance -= 25;
                     render();
-                    setCooldown();
 
                     sendToBot({
                         action: 'withdraw',
@@ -1358,15 +1776,23 @@
                             amount: 25,
                             balance: state.balance,
                             user_id: USER_ID,
+                            request_id: request.id,
+                            gift_id: giftId,
                             timestamp: new Date().toISOString()
                         }
                     });
 
+                    setCooldown();
+
                     setTimeout(() => {
-                        overlay.remove();
-                        tg.showAlert(`✅ Заявка на вывод отправлена!\nЮзернейм: ${username}\nСписано: 25 ⭐\nСледующая попытка через 24 часа.`);
-                        updateWithdrawButton();
-                    }, 2000);
+                        clearInterval(interval);
+                        progressBar.style.width = '100%';
+                        setTimeout(() => {
+                            overlay.remove();
+                            tg.showAlert(`✅ Заявка на вывод отправлена!\nЮзернейм: ${username}\nСписано: 25 ⭐\nСледующая попытка через 24 часа.`);
+                            updateWithdrawButton();
+                        }, 500);
+                    }, 3000);
                 });
 
                 usernameInput.addEventListener('keydown', function(e) {
@@ -1376,14 +1802,15 @@
                 });
             }
 
-            // ---------- 13. МОДАЛ ДЛЯ NFT ----------
+            // ---------- 17. МОДАЛ ДЛЯ NFT ----------
             function showNftModal(gift) {
                 const oldModal = document.querySelector('.modal-overlay');
                 if (oldModal) oldModal.remove();
 
                 const price = gift.price || 100;
                 const isFree = gift.is_free || false;
-                const canSell = !isFree || state.canWithdraw;
+                const canSellOrWithdraw = isFree ? state.canWithdraw : true;
+                const pendingRequest = getPendingWithdrawRequestForGift(gift.id);
 
                 const overlay = document.createElement('div');
                 overlay.className = 'modal-overlay';
@@ -1395,10 +1822,11 @@
                                 <span class="stars">⭐</span> ${price}
                             </div>
                             ${isFree && !state.canWithdraw ? `<div class="modal-locked">🔒 Требуется 7 рефералов для продажи/вывода (${state.referralCount}/7)</div>` : ''}
+                            ${pendingRequest ? `<div class="modal-locked" style="color:var(--gold);">⏳ Заявка на вывод отправлена (ожидает обработки)</div>` : ''}
                             <div class="modal-actions">
-                                <button class="modal-btn btn-withdraw" data-action="withdraw" ${!canSell ? 'disabled' : ''}>ВЫВЕСТИ</button>
-                                <button class="modal-btn btn-sell" data-action="sell" ${!canSell ? 'disabled' : ''}>ПРОДАТЬ</button>
-                                ${!canSell ? `<button class="modal-btn btn-invite" data-action="invite">ПРИГЛАСИТЬ</button>` : ''}
+                                <button class="modal-btn btn-withdraw" data-action="withdraw" ${!canSellOrWithdraw || pendingRequest ? 'disabled' : ''}>ВЫВЕСТИ</button>
+                                <button class="modal-btn btn-sell" data-action="sell" ${!canSellOrWithdraw ? 'disabled' : ''}>ПРОДАТЬ</button>
+                                ${!canSellOrWithdraw ? `<button class="modal-btn btn-invite" data-action="invite">ПРИГЛАСИТЬ</button>` : ''}
                                 <button class="modal-btn btn-close" data-action="close">ЗАКРЫТЬ</button>
                             </div>
                         </div>
@@ -1422,16 +1850,24 @@
                 });
 
                 sellBtn.addEventListener('click', function() {
-                    if (!canSell) {
+                    if (!canSellOrWithdraw) {
                         tg.showAlert(`❌ Продажа заблокирована!\nПригласите 7 друзей (${state.referralCount}/7)`);
                         return;
                     }
+
                     const itemIndex = state.inventory.findIndex(item => item.id === gift.id);
                     if (itemIndex === -1) {
                         tg.showAlert('❌ Этот подарок уже продан!');
                         overlay.remove();
                         return;
                     }
+
+                    const request = getPendingWithdrawRequestForGift(gift.id);
+                    if (request) {
+                        removeWithdrawRequest(request.id);
+                        tg.showAlert(`ℹ️ Заявка на вывод "${gift.name}" отменена (вы продали подарок).`);
+                    }
+
                     state.inventory.splice(itemIndex, 1);
                     state.balance += price;
                     render();
@@ -1450,7 +1886,16 @@
 
                 withdrawBtnEl.addEventListener('click', function() {
                     overlay.remove();
-                    showWithdrawModal();
+                    const existingRequest = getPendingWithdrawRequestForGift(gift.id);
+                    if (existingRequest) {
+                        tg.showAlert('⏳ На этот подарок уже отправлена заявка на вывод!');
+                        return;
+                    }
+                    if (isFree && !state.canWithdraw) {
+                        tg.showAlert(`❌ Для вывода этого подарка нужно 7 рефералов (${state.referralCount}/7)`);
+                        return;
+                    }
+                    showWithdrawModal(gift.id);
                 });
 
                 if (inviteBtnEl) {
@@ -1461,7 +1906,7 @@
                 }
             }
 
-            // ---------- 14. ОБНОВЛЕНИЕ КНОПКИ ВЫВОДА ----------
+            // ---------- 18. ОБНОВЛЕНИЕ КНОПКИ ВЫВОДА ----------
             function updateWithdrawButton() {
                 const remaining = getRemainingCooldown();
 
@@ -1493,7 +1938,7 @@
                 cooldownInterval = setInterval(updateWithdrawButton, 1000);
             }
 
-            // ---------- 15. РЕНДЕР ----------
+            // ---------- 19. РЕНДЕР ----------
             function render() {
                 balanceDisplay.textContent = Math.floor(state.balance);
                 nftCount.textContent = state.inventory.length + ' шт.';
@@ -1507,8 +1952,11 @@
                                  onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
                                    <div class="nft-icon" style="display:none;">🎁</div>` :
                             `<div class="nft-icon">🎁</div>`;
-                        const lockHtml = item.is_free && !state.canWithdraw ?
-                            `<div class="nft-lock">🔒</div>` :
+                        const hasRequest = getPendingWithdrawRequestForGift(item.id);
+                        const isFree = item.is_free || false;
+                        const showLock = (isFree && !state.canWithdraw) || hasRequest;
+                        const lockHtml = showLock ?
+                            `<div class="nft-lock">${hasRequest ? '⏳' : '🔒'}</div>` :
                             '';
                         return `
                                 <div class="nft-item" data-id="${item.id}">
@@ -1569,7 +2017,7 @@
                 saveState();
             }
 
-            // ---------- 16. РУЛЕТКА ----------
+            // ---------- 20. РУЛЕТКА ----------
             function createRouletteCells() {
                 const REPEAT_COUNT = 6;
                 let cellsHtml = '';
@@ -1594,7 +2042,7 @@
                 rouletteSlider.style.transition = '';
             }
 
-            // ---------- 17. НАВИГАЦИЯ ----------
+            // ---------- 21. НАВИГАЦИЯ ----------
             function switchScreen(screenId) {
                 screens.forEach(s => s.classList.remove('active'));
                 const target = document.getElementById(screenId);
@@ -1613,7 +2061,12 @@
                 });
             });
 
-            // ---------- 18. ФУНКЦИИ РУЛЕТКИ ----------
+            // ---------- 22. КЛИК ПО БАЛАНСУ ----------
+            balanceClick.addEventListener('click', function() {
+                showShopModal();
+            });
+
+            // ---------- 23. ФУНКЦИИ РУЛЕТКИ ----------
             function highlightCell(giftIndex) {
                 const cells = document.querySelectorAll(`.roulette-cell[data-gift-index="${giftIndex}"]`);
                 const centerX = window.innerWidth / 2;
@@ -1660,13 +2113,12 @@
                 return 0;
             }
 
-            // ---------- 19. ЗАПУСК РУЛЕТКИ ----------
+            // ---------- 24. ЗАПУСК РУЛЕТКИ ----------
             function performSpin(isFree) {
                 if (state.isSpinning) return;
 
                 if (!isFree && state.balance < 150) {
-                    rouletteResult.textContent = '❌ Недостаточно ⭐ (нужно 150)';
-                    tg.showAlert('Недостаточно звёзд! Нужно 150 ⭐');
+                    showShopModal('❌ Недостаточно звёзд! Пополните баланс:');
                     return;
                 }
 
@@ -1681,7 +2133,7 @@
                 freeSpinBtn.disabled = true;
                 rouletteResult.textContent = '🌀 Крутим...';
 
-                const prize = getRandomGiftByChance();
+                const prize = getRandomGiftByChance(isFree);
                 const winGiftIndex = GIFTS.indexOf(prize);
 
                 clearHighlight();
@@ -1707,6 +2159,7 @@
 
                     if (!isFree) {
                         state.balance -= 150;
+                        state.canWithdraw = true;
                     } else {
                         state.freeSpinUsedAt = new Date().toISOString();
                         updateFreeSpinButton();
@@ -1743,6 +2196,7 @@
                     state.isSpinning = false;
                     spinBtn.disabled = false;
                     freeSpinBtn.disabled = false;
+                    updateFreeSpinButton();
                 }, 5500);
             }
 
@@ -1770,7 +2224,7 @@
                 }
             });
 
-            // ---------- 20. КЛИК ПО NFT ----------
+            // ---------- 25. КЛИК ПО NFT ----------
             inventoryGrid.addEventListener('click', function(e) {
                 const item = e.target.closest('.nft-item');
                 if (!item) return;
@@ -1785,16 +2239,20 @@
                 }
             });
 
-            // ---------- 21. КНОПКИ ПРОФИЛЯ ----------
+            // ---------- 26. КНОПКИ ПРОФИЛЯ ----------
             inviteBtn.addEventListener('click', function() {
                 shareInviteLink();
             });
 
             withdrawBtn.addEventListener('click', function() {
-                showWithdrawModal();
+                if (!state.canWithdraw) {
+                    tg.showAlert(`❌ Вывод доступен только после платного спина.\nВаш прогресс: ${state.referralCount}/7`);
+                    return;
+                }
+                showWithdrawModal(null);
             });
 
-            // ---------- 22. АПГРЕЙДЫ ----------
+            // ---------- 27. АПГРЕЙДЫ ----------
             upgradeList.addEventListener('click', function(e) {
                 const btn = e.target.closest('.upgrade-btn');
                 if (!btn || btn.disabled) return;
@@ -1812,7 +2270,7 @@
                 if (level >= def.maxLvl) return;
                 const cost = def.baseCost * (level + 1);
                 if (state.balance < cost) {
-                    tg.showAlert('Недостаточно ⭐ для апгрейда!');
+                    showShopModal('❌ Недостаточно звёзд для апгрейда! Пополните баланс:');
                     return;
                 }
                 state.balance -= cost;
@@ -1825,53 +2283,14 @@
                 });
             });
 
-            // ---------- 23. ЗАГРУЗКА ДАННЫХ С СЕРВЕРА ----------
-            async function loadUserData() {
-                try {
-                    const response = await fetch(`/api/user/${USER_ID}`);
-                    if (!response.ok) throw new Error('Ошибка загрузки данных');
-                    const data = await response.json();
-                    state.inventory = data.inventory || [];
-                    state.balance = data.balance || 1000;
-                    state.spins = data.spins || 0;
-                    state.upgrades = data.upgrades || [];
-                    state.referralCount = data.referral_count || 0;
-                    state.canWithdraw = data.can_withdraw || false;
-                    state.canFreeSpin = data.can_free_spin || true;
-                    state.freeSpinUsedAt = data.free_spin_used_at || null;
-                    render();
-                    updateFreeSpinButton();
-                    startFreeSpinTimer();
-                    startCooldownTimer();
-                    console.log('Данные загружены с сервера');
-                } catch (error) {
-                    console.error('Ошибка загрузки данных:', error);
-                    render();
-                    updateFreeSpinButton();
-                    startFreeSpinTimer();
-                    startCooldownTimer();
-                }
-            }
-
-            // ---------- 24. ИНИЦИАЛИЗАЦИЯ ----------
+            // ---------- 28. ИНИЦИАЛИЗАЦИЯ ----------
             createRouletteCells();
+            render();
+            updateFreeSpinButton();
+            startFreeSpinTimer();
+            startCooldownTimer();
 
-            // Читаем параметр startapp (для ссылок вида t.me/bot/app?startapp=123)
-            const urlParams = new URLSearchParams(window.location.search);
-            const referrer = urlParams.get('startapp');
-            if (referrer && referrer !== String(USER_ID)) {
-                sendToBot({
-                    action: 'app_open',
-                    payload: { referrer_id: parseInt(referrer, 10) }
-                });
-            } else {
-                sendToBot({
-                    action: 'app_open',
-                    payload: { referrer_id: 0 }
-                });
-            }
-
-            loadUserData();
+            initTonConnect();
 
             console.log('[LAB NFT] Mini App загружен. User ID:', USER_ID);
             console.log('[LAB NFT] Режим Telegram:', isTelegram);
