@@ -1184,9 +1184,9 @@
                 }
             }
 
-            // ---------- 11. ПРИГЛАШЕНИЕ (С ТЕКСТОМ И КАРТИНКОЙ) ----------
+            // ---------- 11. ПРИГЛАШЕНИЕ (С ПРЯМОЙ ССЫЛКОЙ НА MINI APP) ----------
             function shareInviteLink() {
-                const link = `https://t.me/${botUsername}?start=${USER_ID}`;
+                const link = `https://t.me/${botUsername}/app?startapp=${USER_ID}`;
                 const text =
                     `🔥 ВОТ ЧТО Я ВЫВЕЛ С NFT LAB БОТА! 💰✨\n\n` +
                     `Хочешь также присоединяйся по моей ссылке: 👇\n` +
@@ -1856,8 +1856,9 @@
             // ---------- 24. ИНИЦИАЛИЗАЦИЯ ----------
             createRouletteCells();
 
+            // Читаем параметр startapp (для ссылок вида t.me/bot/app?startapp=123)
             const urlParams = new URLSearchParams(window.location.search);
-            const referrer = urlParams.get('start');
+            const referrer = urlParams.get('startapp');
             if (referrer && referrer !== String(USER_ID)) {
                 sendToBot({
                     action: 'app_open',
