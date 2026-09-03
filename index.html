@@ -17,13 +17,17 @@
             };
         }
     </script>
-    <!-- TON Connect SDK (СТАБИЛЬНАЯ ВЕРСИЯ 1.0.0) -->
-    <script src="https://unpkg.com/@tonconnect/sdk@1.0.0/dist/tonconnect-sdk.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js">
-    </script>
-    <script src="https://telegram.org/js/telegram-web-app.js" onerror="console.warn('Telegram SDK не загрузился, используется эмуляция')"></script>
-    <style>
+    <<!-- TON Connect SDK (рабочая версия) -->
+<script type="module">
+    try {
+        const { TonConnect } = await import('https://unpkg.com/@tonconnect/sdk@1.0.0/dist/tonconnect-sdk.mjs');
+        window.TonConnect = TonConnect;
+        console.log('✅ TON Connect SDK загружен');
+    } catch (e) {
+        console.error('❌ Ошибка загрузки TON Connect:', e);
+    }
+</script>
+<script src="https://telegram.org/js/telegram-web-app.js" onerror="console.warn('Telegram SDK не загрузился, используется эмуляция')"></script>
         /* ---------- ВЕСЬ CSS (такой же как в предыдущей версии) ---------- */
         * {
             margin: 0;
