@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LAB NFT · Mini App</title>
+    <title>NFT LAB · Mini App</title>
     <script>
+        // Эмуляция Telegram WebApp для тестирования в браузере
         if (!window.Telegram) {
             window.Telegram = {
                 WebApp: {
@@ -17,14 +18,9 @@
             };
         }
     </script>
-    <!-- TON Connect SDK (СТАБИЛЬНАЯ ВЕРСИЯ 1.0.0) -->
-    <script src="https://unpkg.com/@tonconnect/sdk@1.0.0/dist/tonconnect-sdk.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@1.0.0/dist/tonconnect-ui.min.js">
-    </script>
     <script src="https://telegram.org/js/telegram-web-app.js" onerror="console.warn('Telegram SDK не загрузился, используется эмуляция')"></script>
     <style>
-        /* ---------- ВЕСЬ CSS (такой же как в предыдущей версии) ---------- */
+        /* ---------- ГЛОБАЛЬНЫЕ СТИЛИ ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -77,6 +73,8 @@
             padding: 8px 12px 8px 12px;
             backdrop-filter: blur(2px);
         }
+
+        /* ---------- ВЕРХНИЙ БАР ---------- */
         .header {
             display: flex;
             justify-content: space-between;
@@ -106,17 +104,13 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .balance:hover {
-            border-color: var(--gold);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
         }
         .balance span {
             color: var(--text-secondary);
             font-weight: 400;
         }
+
+        /* ---------- КОНТЕНТ ---------- */
         .content {
             flex: 1;
             overflow-y: auto;
@@ -137,6 +131,7 @@
             background: var(--neon-green);
             border-radius: 10px;
         }
+
         .screen {
             display: none;
             animation: fadeSlide 0.25s ease-out;
@@ -154,6 +149,7 @@
                 transform: translateY(0);
             }
         }
+
         .glass-card {
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
@@ -163,6 +159,8 @@
             backdrop-filter: blur(10px);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
+
+        /* ---------- ИНВЕНТАРЬ ---------- */
         .nft-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -228,17 +226,14 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
-        .nft-item .nft-lock {
-            font-size: 10px;
-            color: var(--neon-cyan);
-            margin-top: 2px;
-        }
         .empty-inventory {
             color: var(--text-secondary);
             text-align: center;
             padding: 30px 0;
             font-size: 14px;
         }
+
+        /* ---------- РУЛЕТКА ---------- */
         .roulette-container {
             display: flex;
             flex-direction: column;
@@ -393,59 +388,8 @@
             text-align: center;
             margin-top: 0;
         }
-        .upgrade-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-        }
-        .upgrade-item:last-child {
-            border-bottom: none;
-        }
-        .upgrade-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .upgrade-info .title {
-            font-weight: 500;
-        }
-        .upgrade-info .desc {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        .upgrade-level {
-            font-size: 13px;
-            color: var(--neon-cyan);
-            background: rgba(0, 212, 255, 0.1);
-            padding: 2px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 212, 255, 0.2);
-        }
-        .upgrade-cost {
-            font-size: 12px;
-            color: var(--neon-green);
-            margin-right: 12px;
-        }
-        .upgrade-btn {
-            background: rgba(0, 255, 136, 0.12);
-            border: 1px solid var(--neon-green);
-            color: var(--neon-green);
-            padding: 6px 18px;
-            border-radius: 20px;
-            font-family: var(--font-mono);
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .upgrade-btn:active {
-            transform: scale(0.94);
-        }
-        .upgrade-btn:disabled {
-            opacity: 0.3;
-            pointer-events: none;
-        }
+
+        /* ---------- ПРОФИЛЬ ---------- */
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -481,19 +425,14 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
+        /* ---------- НАВИГАЦИЯ ---------- */
         .nav-center {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 8px;
             flex-shrink: 0;
             padding: 6px 0 4px 0;
-        }
-        .nav-bottom {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            flex-shrink: 0;
-            padding: 4px 0 8px 0;
         }
         .nav-btn {
             background: var(--glass-bg);
@@ -527,6 +466,8 @@
             box-shadow: 0 0 25px rgba(0, 255, 136, 0.08);
             background: rgba(0, 255, 136, 0.05);
         }
+
+        /* ---------- АДАПТИВ ---------- */
         @media (max-width: 380px) {
             .header h1 {
                 font-size: 15px;
@@ -557,21 +498,6 @@
                 width: 48px;
                 height: 48px;
             }
-            .modal-content img {
-                width: 100px;
-                height: 100px;
-            }
-            .modal-actions {
-                flex-direction: column;
-                gap: 8px;
-            }
-            .modal-actions .modal-btn {
-                max-width: 100%;
-            }
-            .shop-btn {
-                font-size: 16px !important;
-                padding: 14px !important;
-            }
         }
         @media (min-width: 600px) {
             .roulette-cell {
@@ -595,374 +521,23 @@
         .nft-item:hover .glow-pulse {
             opacity: 1;
         }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(12px);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s ease-out;
-            padding: 20px;
-        }
-        @keyframes fadeIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        .modal-content {
-            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
-            border: 2px solid var(--neon-green);
-            border-radius: 24px;
-            padding: 30px 24px 24px 24px;
-            max-width: 360px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 0 60px rgba(0, 255, 136, 0.15);
-            position: relative;
-            overflow: hidden;
-        }
-        .modal-content::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(from 0deg, transparent, rgba(0, 255, 136, 0.03), transparent, rgba(0, 212, 255, 0.03), transparent);
-            animation: rotateGlow 8s linear infinite;
-        }
-        .modal-content .modal-gif {
-            width: 140px;
-            height: 140px;
-            object-fit: contain;
-            margin: 0 auto 12px auto;
-            display: block;
-            position: relative;
-            z-index: 1;
-            filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.3));
-        }
-        .modal-content .modal-title {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text-primary);
-            position: relative;
-            z-index: 1;
-            margin-bottom: 4px;
-        }
-        .modal-content .modal-price {
-            font-size: 18px;
-            color: var(--gold);
-            position: relative;
-            z-index: 1;
-            margin-bottom: 16px;
-            letter-spacing: 1px;
-        }
-        .modal-content .modal-locked {
-            font-size: 12px;
-            color: var(--neon-cyan);
-            margin-bottom: 12px;
-            position: relative;
-            z-index: 1;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            position: relative;
-            z-index: 1;
-        }
-        .modal-actions .modal-btn {
-            padding: 12px 20px;
-            border-radius: 30px;
-            border: none;
-            font-weight: 700;
-            font-size: 14px;
-            font-family: var(--font-mono);
-            cursor: pointer;
-            transition: 0.15s;
-            flex: 1;
-            min-width: 80px;
-            max-width: 140px;
-        }
-        .modal-actions .modal-btn:active {
-            transform: scale(0.94);
-            opacity: 0.8;
-        }
-        .modal-actions .btn-sell {
-            background: var(--gold);
-            color: #0a0e1a;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        }
-        .modal-actions .btn-sell:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        .modal-actions .btn-withdraw {
-            background: var(--neon-cyan);
-            color: #0a0e1a;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-        }
-        .modal-actions .btn-withdraw:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        .modal-actions .btn-close {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-secondary);
-            border: 1px solid var(--glass-border);
-        }
-        .modal-actions .btn-invite {
-            background: var(--neon-green);
-            color: #0a0e1a;
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-        }
-
-        /* ---------- МАГАЗИН ---------- */
-        .shop-modal .modal-content {
-            max-width: 340px;
-        }
-        .shop-modal .modal-title {
-            font-size: 20px;
-        }
-        .shop-btn {
-            width: 100%;
-            padding: 16px 20px;
-            border: 2px solid var(--gold);
-            border-radius: 16px;
-            background: rgba(255, 215, 0, 0.05);
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
-            z-index: 1;
-        }
-        .shop-btn:active {
-            transform: scale(0.96);
-        }
-        .shop-btn .stars {
-            color: var(--gold);
-        }
-        .shop-btn .ton {
-            color: var(--neon-cyan);
-            font-weight: 400;
-            font-size: 14px;
-        }
-        .shop-btn .badge {
-            font-size: 12px;
-            background: rgba(0, 255, 136, 0.15);
-            color: var(--neon-green);
-            padding: 2px 10px;
-            border-radius: 20px;
-        }
-
-        /* ---------- ВЫВОД ---------- */
-        .withdraw-modal .modal-content {
-            max-width: 340px;
-        }
-        .withdraw-modal .modal-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-            background: rgba(0, 0, 0, 0.3);
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-            font-size: 14px;
-            margin-bottom: 16px;
-            outline: none;
-            transition: border-color 0.2s;
-            position: relative;
-            z-index: 1;
-        }
-        .withdraw-modal .modal-input:focus {
-            border-color: var(--neon-green);
-        }
-        .withdraw-modal .modal-input::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.6;
-        }
-        .withdraw-modal .modal-info {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-            position: relative;
-            z-index: 1;
-        }
-        .withdraw-modal .modal-info .highlight {
-            color: var(--gold);
-        }
-        .withdraw-modal .modal-actions {
-            gap: 8px;
-        }
-        .withdraw-modal .modal-btn {
-            max-width: 100%;
-            flex: 1;
-        }
-        .withdraw-modal .btn-confirm {
-            background: var(--neon-green);
-            color: #0a0e1a;
-        }
-        .withdraw-modal .btn-confirm:disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-        .withdraw-modal .btn-cancel {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-secondary);
-            border: 1px solid var(--glass-border);
-        }
-
-        /* ---------- ПРОГРЕСС-БАР ---------- */
-        .progress-container {
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            margin-top: 12px;
-            overflow: hidden;
-            position: relative;
-            z-index: 1;
-        }
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
-            border-radius: 10px;
-            transition: width 0.3s ease;
-            animation: progressPulse 1.5s ease-in-out infinite;
-        }
-        @keyframes progressPulse {
-            0% {
-                opacity: 0.6;
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0.6;
-            }
-        }
-        .withdraw-status-text {
-            font-size: 14px;
-            color: var(--neon-cyan);
-            margin-top: 8px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* ---------- КУЛДАУН ---------- */
-        .cooldown-text {
-            color: var(--text-secondary);
-            font-size: 14px;
-            text-align: center;
-            margin-top: 12px;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-        }
-        .cooldown-text .time {
-            color: var(--gold);
-            font-weight: 700;
-            font-size: 18px;
-        }
-        .referral-progress {
-            margin-top: 8px;
-            padding: 8px 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            border: 1px solid var(--glass-border);
-        }
-        .referral-progress .count {
-            color: var(--gold);
-            font-weight: 700;
-        }
-        .referral-progress .unlocked {
-            color: var(--neon-green);
-            font-weight: 700;
-        }
-        .roulette-buttons {
-            display: flex;
-            gap: 8px;
-            width: 100%;
-            max-width: 280px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .roulette-buttons .roulette-btn {
-            flex: 1;
-            min-width: 120px;
-            margin-top: 0;
-        }
-
-        /* ---------- TON CONNECT ---------- */
-        #ton-connect-container {
-            position: relative;
-            z-index: 1;
-            margin: 8px 0;
-        }
-        #ton-connect-container .tc-btn {
-            background: var(--neon-cyan);
-            color: #0a0e1a;
-            border: none;
-            border-radius: 30px;
-            padding: 12px 20px;
-            font-weight: 700;
-            font-size: 14px;
-            font-family: var(--font-mono);
-            cursor: pointer;
-            transition: 0.15s;
-            width: 100%;
-        }
-        #ton-connect-container .tc-btn:active {
-            transform: scale(0.96);
-            opacity: 0.8;
-        }
-        #ton-connect-container .tc-btn:disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-        .ton-status {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
     </style>
 </head>
 <body>
     <div id="app">
 
+        <!-- ВЕРХНИЙ БАР -->
         <div class="header">
             <h1>🧪 LAB NFT</h1>
-            <div class="balance" id="balanceClick">
+            <div class="balance">
                 <span>⭐</span> <span id="balanceDisplay">1,000</span>
             </div>
         </div>
 
+        <!-- КОНТЕНТ -->
         <div class="content" id="contentArea">
 
+            <!-- ИНВЕНТАРЬ -->
             <div class="screen active" id="screenInventory">
                 <div class="glass-card">
                     <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
@@ -973,6 +548,7 @@
                 </div>
             </div>
 
+            <!-- РУЛЕТКА -->
             <div class="screen" id="screenRoulette">
                 <div class="glass-card">
                     <div class="roulette-container">
@@ -981,25 +557,13 @@
                             <div class="roulette-slider" id="rouletteSlider"></div>
                         </div>
                         <div id="rouletteResult" class="roulette-result">Нажмите "РАСКРУТИТЬ"</div>
-                        <div class="roulette-buttons">
-                            <button class="roulette-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150 ⭐</button>
-                            <button class="roulette-btn roulette-btn-free" id="freeSpinBtn">🎁 БЕСПЛАТНО</button>
-                        </div>
+                        <button class="roulette-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150 ⭐</button>
                         <div class="roulette-hint">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
-                        <div id="freeSpinTimer" style="margin-top:8px;font-size:12px;color:var(--text-secondary);display:none;">
-                            ⏳ Следующая бесплатная рулетка через: <span id="freeSpinCountdown" style="color:var(--gold);font-weight:700;">--:--:--</span>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="screen" id="screenUpgrade">
-                <div class="glass-card">
-                    <div style="margin-bottom:10px; font-weight:500;">🔧 Улучшения лаборатории</div>
-                    <div id="upgradeList"></div>
-                </div>
-            </div>
-
+            <!-- ПРОФИЛЬ -->
             <div class="screen" id="screenProfile">
                 <div class="glass-card" style="text-align:center;">
                     <div class="profile-avatar" id="profileAvatar">👤</div>
@@ -1009,28 +573,13 @@
                         <div class="stat-box"><div class="value" id="statNFT">0</div><div class="label">NFT</div></div>
                         <div class="stat-box"><div class="value" id="statBalance">0 ⭐</div><div class="label">Баланс</div></div>
                         <div class="stat-box"><div class="value" id="statSpins">0</div><div class="label">Спинов</div></div>
-                        <div class="stat-box"><div class="value" id="statUpgrades">0</div><div class="label">Апгрейдов</div></div>
                     </div>
-                    <div class="referral-progress" id="referralProgress">
-                        👥 Приглашено: <span class="count" id="referralCount">0</span> / 7
-                        <span id="referralStatus" style="display:block;margin-top:4px;color:var(--neon-cyan);font-size:11px;">
-                            ❌ Вывод заблокирован
-                        </span>
-                    </div>
-                    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
-                        <button class="roulette-btn" id="inviteBtn" style="max-width:160px;background:var(--neon-green);box-shadow:0 0 30px rgba(0,255,136,0.3);font-size:14px;padding:10px 16px;">
-                            🔗 ПРИГЛАСИТЬ
-                        </button>
-                        <button class="roulette-btn" id="withdrawBtn" style="max-width:160px;background:var(--neon-cyan);box-shadow:0 0 30px rgba(0,212,255,0.3);font-size:14px;padding:10px 16px;">
-                            💸 ВЫВЕСТИ
-                        </button>
-                    </div>
-                    <div id="withdrawCooldownContainer" style="margin-top:12px;"></div>
                 </div>
             </div>
 
         </div>
 
+        <!-- НАВИГАЦИЯ (3 КНОПКИ) -->
         <div class="nav-center">
             <div class="nav-btn active" data-screen="screenInventory">
                 <span class="icon">📦</span> ИНВЕНТАРЬ
@@ -1038,11 +587,6 @@
             <div class="nav-btn" data-screen="screenRoulette">
                 <span class="icon">🎰</span> РУЛЕТКА
             </div>
-            <div class="nav-btn" data-screen="screenUpgrade">
-                <span class="icon">🔧</span> АПГРЕЙД
-            </div>
-        </div>
-        <div class="nav-bottom">
             <div class="nav-btn" data-screen="screenProfile">
                 <span class="icon">👤</span> ПРОФИЛЬ
             </div>
@@ -1057,7 +601,6 @@
             // ---------- 1. TELEGRAM SDK ----------
             let tg = null;
             let isTelegram = false;
-            let botUsername = 'lab_game_bot';
 
             try {
                 if (window.Telegram && window.Telegram.WebApp) {
@@ -1087,118 +630,10 @@
                 };
             }
 
-            // ---------- 2. TON CONNECT (ИСПРАВЛЕННАЯ ВЕРСИЯ) ----------
-            const YOUR_TON_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
-
-            let tonConnector = null;
-            let tonWalletConnected = false;
-            let tonWalletAddress = '';
-
-            function initTonConnect() {
-                try {
-                    // Проверяем, что библиотека загружена
-                    if (typeof TonConnect === 'undefined') {
-                        console.warn('TON Connect SDK не загружен. Пропускаем инициализацию.');
-                        const statusEl = document.getElementById('tonStatus');
-                        if (statusEl) statusEl.textContent = '⚠️ TON Connect недоступен';
-                        return;
-                    }
-
-                    tonConnector = new TonConnect({
-                        manifestUrl: window.location.origin + '/tonconnect-manifest.json'
-                    });
-
-                    if (tonConnector.connected) {
-                        tonWalletConnected = true;
-                        tonWalletAddress = tonConnector.wallet?.account?.address || '';
-                        console.log('TON Wallet уже подключён:', tonWalletAddress);
-                    }
-
-                    tonConnector.on('connect', (wallet) => {
-                        tonWalletConnected = true;
-                        tonWalletAddress = wallet.account.address;
-                        console.log('TON Wallet подключён:', tonWalletAddress);
-                        updateTonStatus();
-                    });
-
-                    tonConnector.on('disconnect', () => {
-                        tonWalletConnected = false;
-                        tonWalletAddress = '';
-                        console.log('TON Wallet отключён');
-                        updateTonStatus();
-                    });
-
-                    updateTonStatus();
-                } catch (e) {
-                    console.error('Ошибка инициализации TON Connect:', e);
-                    const statusEl = document.getElementById('tonStatus');
-                    if (statusEl) statusEl.textContent = '⚠️ TON Connect недоступен';
-                }
-            }
-
-            function updateTonStatus() {
-                const statusEl = document.getElementById('tonStatus');
-                if (statusEl) {
-                    if (tonWalletConnected && tonWalletAddress) {
-                        const short = tonWalletAddress.slice(0, 6) + '...' + tonWalletAddress.slice(-4);
-                        statusEl.textContent = `✅ Подключён: ${short}`;
-                        statusEl.style.color = 'var(--neon-green)';
-                    } else {
-                        statusEl.textContent = '⛔ Кошелёк не подключён';
-                        statusEl.style.color = 'var(--text-secondary)';
-                    }
-                }
-            }
-
-            async function connectTonWallet() {
-                if (!tonConnector) {
-                    initTonConnect();
-                    if (!tonConnector) {
-                        tg.showAlert('❌ Ошибка инициализации TON Connect');
-                        return;
-                    }
-                }
-
-                if (tonConnector.connected) {
-                    tg.showAlert('✅ Кошелёк уже подключён');
-                    return;
-                }
-
-                try {
-                    const wallet = await tonConnector.connect({
-                        bridgeUrl: 'https://bridge.tonapi.io/bridge'
-                    });
-
-                    if (wallet) {
-                        tonWalletConnected = true;
-                        tonWalletAddress = wallet.account.address;
-                        updateTonStatus();
-                        tg.showAlert('✅ Кошелёк успешно подключён!');
-                    }
-                } catch (e) {
-                    console.error('Ошибка подключения кошелька:', e);
-                    tg.showAlert('❌ Ошибка подключения кошелька. Попробуйте позже.');
-                }
-            }
-
-            async function disconnectTonWallet() {
-                if (tonConnector) {
-                    try {
-                        await tonConnector.disconnect();
-                        tonWalletConnected = false;
-                        tonWalletAddress = '';
-                        updateTonStatus();
-                        tg.showAlert('✅ Кошелёк отключён');
-                    } catch (e) {
-                        console.error('Ошибка отключения кошелька:', e);
-                    }
-                }
-            }
-
-            // ---------- 3. ПОЛУЧЕНИЕ USER_ID ----------
+            // ---------- 2. USER ID ----------
             const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-            // ---------- 4. СПИСОК ПОДАРКОВ ----------
+            // ---------- 3. СПИСОК ПОДАРКОВ ----------
             const BASE_URL = 'https://judepip.github.io/NFT-LAB';
             const GIFTS = [
                 { name: 'Bow Tie', price: 800, image: BASE_URL + '/images/BowTie.gif' },
@@ -1213,17 +648,14 @@
                 { name: 'Мишка', price: 15, image: BASE_URL + '/images/Мишка.gif' },
             ];
 
-            // ---------- 5. ШАНСЫ ----------
+            // ---------- 4. ШАНСЫ ----------
             const PAID_CHANCES = [10, 8, 6, 5, 4, 3, 1, 18, 20, 25];
-            const FREE_CHANCES = [12, 25, 10, 8, 7, 6, 5, 22, 3, 2];
 
-            // ---------- 6. ФУНКЦИЯ ВЫБОРА ПО ШАНСАМ ----------
-            function getRandomGiftByChance(isFree) {
-                const chances = isFree ? FREE_CHANCES : PAID_CHANCES;
-                const totalChance = chances.reduce((sum, c) => sum + c, 0);
+            function getRandomGiftByChance() {
+                const totalChance = PAID_CHANCES.reduce((sum, c) => sum + c, 0);
                 let random = Math.random() * totalChance;
                 for (let i = 0; i < GIFTS.length; i++) {
-                    random -= chances[i];
+                    random -= PAID_CHANCES[i];
                     if (random <= 0) {
                         return GIFTS[i];
                     }
@@ -1231,25 +663,15 @@
                 return GIFTS[0];
             }
 
-            // ---------- 7. СОСТОЯНИЕ ----------
-            const STORAGE_KEY = 'lab_nft_state';
-            const COOLDOWN_KEY = 'withdraw_cooldown';
-            const WITHDRAW_REQUESTS_KEY = 'withdraw_requests';
+            // ---------- 5. СОСТОЯНИЕ ----------
+            const STORAGE_KEY = 'lab_nft_simple';
 
             function getDefaultState() {
                 return {
                     inventory: [],
                     balance: 1000,
                     spins: 0,
-                    upgrades: [
-                        { id: 'up1', level: 0 },
-                        { id: 'up2', level: 0 },
-                        { id: 'up3', level: 0 }
-                    ],
                     isSpinning: false,
-                    referralCount: 0,
-                    canWithdraw: false,
-                    freeSpinUsedAt: null,
                 };
             }
 
@@ -1278,158 +700,23 @@
                 }
             }
 
-            // ---------- 8. ЗАЯВКИ ----------
-            function getWithdrawRequests() {
-                try {
-                    const saved = localStorage.getItem(WITHDRAW_REQUESTS_KEY);
-                    if (saved) {
-                        return JSON.parse(saved);
-                    }
-                } catch (e) {
-                    console.warn('Ошибка загрузки заявок:', e);
-                }
-                return [];
-            }
-
-            function saveWithdrawRequests(requests) {
-                try {
-                    localStorage.setItem(WITHDRAW_REQUESTS_KEY, JSON.stringify(requests));
-                } catch (e) {
-                    console.warn('Ошибка сохранения заявок:', e);
-                }
-            }
-
-            function addWithdrawRequest(username, amount, giftId = null) {
-                const requests = getWithdrawRequests();
-                const newRequest = {
-                    id: Date.now(),
-                    user_id: USER_ID,
-                    username: username,
-                    amount: amount,
-                    status: 'pending',
-                    created_at: new Date().toISOString(),
-                    gift_id: giftId
-                };
-                requests.push(newRequest);
-                saveWithdrawRequests(requests);
-                return newRequest;
-            }
-
-            function removeWithdrawRequest(requestId) {
-                let requests = getWithdrawRequests();
-                requests = requests.filter(req => req.id !== requestId);
-                saveWithdrawRequests(requests);
-            }
-
-            function getPendingWithdrawRequestForGift(giftId) {
-                if (!giftId) return null;
-                const requests = getWithdrawRequests();
-                return requests.find(req => req.gift_id === giftId && req.status === 'pending');
-            }
-
-            // ---------- 9. КУЛДАУН ----------
-            const COOLDOWN_HOURS = 24;
-            const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000;
-
-            function getCooldownEnd() {
-                const saved = localStorage.getItem(COOLDOWN_KEY);
-                if (saved) {
-                    return parseInt(saved, 10);
-                }
-                return 0;
-            }
-
-            function setCooldown() {
-                const endTime = Date.now() + COOLDOWN_MS;
-                localStorage.setItem(COOLDOWN_KEY, String(endTime));
-                return endTime;
-            }
-
-            function getRemainingCooldown() {
-                const end = getCooldownEnd();
-                const remaining = end - Date.now();
-                return remaining > 0 ? remaining : 0;
-            }
-
-            function isCooldownActive() {
-                return getRemainingCooldown() > 0;
-            }
-
-            // ---------- 10. БЕСПЛАТНАЯ РУЛЕТКА ----------
-            function canUseFreeSpin() {
-                if (!state.freeSpinUsedAt) return true;
-                const usedTime = new Date(state.freeSpinUsedAt).getTime();
-                return Date.now() > usedTime + 24 * 60 * 60 * 1000;
-            }
-
-            function getFreeSpinRemaining() {
-                if (!state.freeSpinUsedAt) return 0;
-                const usedTime = new Date(state.freeSpinUsedAt).getTime();
-                const remaining = usedTime + 24 * 60 * 60 * 1000 - Date.now();
-                return remaining > 0 ? remaining : 0;
-            }
-
-            // ---------- 11. ОБНОВЛЕНИЕ UI ----------
-            function updateFreeSpinButton() {
-                const btn = document.getElementById('freeSpinBtn');
-                const timer = document.getElementById('freeSpinTimer');
-                const countdown = document.getElementById('freeSpinCountdown');
-                if (!btn) return;
-
-                if (canUseFreeSpin()) {
-                    btn.disabled = false;
-                    btn.textContent = '🎁 БЕСПЛАТНО';
-                    timer.style.display = 'none';
-                } else {
-                    btn.disabled = true;
-                    btn.textContent = '⏳ БЕСПЛАТНО';
-                    timer.style.display = 'block';
-                    const remaining = getFreeSpinRemaining();
-                    const hours = Math.floor(remaining / (60 * 60 * 1000));
-                    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-                    const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
-                    countdown.textContent =
-                        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                }
-            }
-
-            let freeSpinInterval = null;
-
-            function startFreeSpinTimer() {
-                if (freeSpinInterval) {
-                    clearInterval(freeSpinInterval);
-                    freeSpinInterval = null;
-                }
-                updateFreeSpinButton();
-                freeSpinInterval = setInterval(updateFreeSpinButton, 1000);
-            }
-
-            // ---------- 12. DOM ----------
+            // ---------- 6. DOM ----------
             const $ = (id) => document.getElementById(id);
             const balanceDisplay = $('balanceDisplay');
-            const balanceClick = $('balanceClick');
             const nftCount = $('nftCount');
             const screens = document.querySelectorAll('.screen');
             const navBtns = document.querySelectorAll('.nav-btn');
             const inventoryGrid = $('inventoryGrid');
-            const upgradeList = $('upgradeList');
             const rouletteSlider = $('rouletteSlider');
             const spinBtn = $('spinBtn');
-            const freeSpinBtn = $('freeSpinBtn');
             const rouletteResult = $('rouletteResult');
             const profileName = $('profileName');
             const profileId = $('profileId');
             const statNFT = $('statNFT');
             const statBalance = $('statBalance');
             const statSpins = $('statSpins');
-            const statUpgrades = $('statUpgrades');
-            const withdrawBtn = $('withdrawBtn');
-            const inviteBtn = $('inviteBtn');
-            const referralCount = $('referralCount');
-            const referralStatus = $('referralStatus');
-            const withdrawCooldownContainer = $('withdrawCooldownContainer');
 
-            // ---------- 13. ОТПРАВКА В БОТА ----------
+            // ---------- 7. ОТПРАВКА В БОТА ----------
             function sendToBot(data) {
                 try {
                     if (isTelegram && tg && typeof tg.sendData === 'function') {
@@ -1442,622 +729,42 @@
                 }
             }
 
-            // ---------- 14. ПРИГЛАШЕНИЕ ----------
-            function shareInviteLink() {
-                const link = `https://t.me/${botUsername}?start=${USER_ID}`;
-                const text =
-                    `🔥 ВОТ ЧТО Я ВЫВЕЛ С NFT LAB БОТА! 💰✨\n\n` +
-                    `Хочешь также? Присоединяйся по моей ссылке: 👇\n` +
-                    `${link}\n\n` +
-                    `🎰 Крути рулетку, собирай NFT и зарабатывай звёзды! ⭐\n` +
-                    `💎 Удачи! 🍀`;
-
-                if (isTelegram && tg) {
-                    try {
-                        const shareUrl =
-                            `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
-                        tg.openTelegramLink(shareUrl);
-                        sendToBot({
-                            action: 'get_referral_link',
-                            payload: {}
-                        });
-                        return;
-                    } catch (e) {
-                        console.warn('Ошибка openTelegramLink:', e);
-                    }
-                }
-
-                const oldModal = document.querySelector('.modal-overlay');
-                if (oldModal) oldModal.remove();
-
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay';
-                overlay.innerHTML = `
-                        <div class="modal-content" style="max-width:340px;">
-                            <div style="font-size:20px;font-weight:700;position:relative;z-index:1;">🔗 ПРИГЛАСИТЬ</div>
-                            <div style="margin:8px 0;position:relative;z-index:1;">
-                                <img src="${BASE_URL}/images/ref.png" alt="Ref" style="width:100%;max-width:280px;border-radius:12px;border:1px solid var(--glass-border);">
-                            </div>
-                            <div style="font-size:13px;color:var(--text-secondary);margin:8px 0;position:relative;z-index:1;text-align:left;padding:0 8px;">
-                                ${text.replace(/\n/g, '<br>')}
-                            </div>
-                            <div class="modal-actions" style="position:relative;z-index:1;">
-                                <button class="modal-btn btn-sell" id="copyLinkBtn" style="max-width:100%;flex:1;">📋 КОПИРОВАТЬ</button>
-                                <button class="modal-btn btn-close" id="closeShareBtn" style="max-width:100%;flex:1;">ЗАКРЫТЬ</button>
-                            </div>
-                        </div>
-                    `;
-
-                document.body.appendChild(overlay);
-
-                const copyBtn = overlay.querySelector('#copyLinkBtn');
-                const closeBtn = overlay.querySelector('#closeShareBtn');
-
-                copyBtn.addEventListener('click', function() {
-                    const fullText = text + '\n\n' + link;
-                    if (navigator.clipboard) {
-                        navigator.clipboard.writeText(fullText).then(() => {
-                            tg.showAlert('✅ Текст скопирован! Отправьте его друзьям вместе с картинкой.');
-                            overlay.remove();
-                        }).catch(() => {
-                            const textarea = document.createElement('textarea');
-                            textarea.value = fullText;
-                            document.body.appendChild(textarea);
-                            textarea.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(textarea);
-                            tg.showAlert('✅ Текст скопирован!');
-                            overlay.remove();
-                        });
-                    } else {
-                        const textarea = document.createElement('textarea');
-                        textarea.value = fullText;
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textarea);
-                        tg.showAlert('✅ Текст скопирован!');
-                        overlay.remove();
-                    }
-                });
-
-                closeBtn.addEventListener('click', function() {
-                    overlay.remove();
-                });
-
-                overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) {
-                        overlay.remove();
-                    }
-                });
-
-                sendToBot({
-                    action: 'get_referral_link',
-                    payload: {}
-                });
-            }
-
-            // ---------- 15. МАГАЗИН ----------
-            function showShopModal(message = null) {
-                const oldModal = document.querySelector('.modal-overlay');
-                if (oldModal) oldModal.remove();
-
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay shop-modal';
-                overlay.innerHTML = `
-                        <div class="modal-content">
-                            <div class="modal-title" style="font-size:20px;position:relative;z-index:1;">⭐ ПОПОЛНИТЬ БАЛАНС</div>
-                            ${message ? `<div style="font-size:13px;color:var(--neon-cyan);margin:8px 0 12px 0;position:relative;z-index:1;">${message}</div>` : ''}
-                            <div id="ton-connect-container" style="position:relative;z-index:1;">
-                                <button class="tc-btn" id="tonConnectBtn">🔗 ПОДКЛЮЧИТЬ TON КОШЕЛЁК</button>
-                                <div class="ton-status" id="tonStatus">⛔ Кошелёк не подключён</div>
-                            </div>
-                            <div style="margin:12px 0;position:relative;z-index:1;border-top:1px solid var(--glass-border);padding-top:12px;">
-                                <button class="shop-btn" data-stars="200" data-ton="2">
-                                    <span><span class="stars">⭐ 200</span></span>
-                                    <span class="ton">2 TON</span>
-                                </button>
-                                <button class="shop-btn" data-stars="500" data-ton="5">
-                                    <span><span class="stars">⭐ 500</span> <span class="badge">🔥 Выгодно</span></span>
-                                    <span class="ton">5 TON</span>
-                                </button>
-                                <button class="shop-btn" data-stars="1000" data-ton="9">
-                                    <span><span class="stars">⭐ 1000</span> <span class="badge">🔥 ЛУЧШЕЕ</span></span>
-                                    <span class="ton">9 TON</span>
-                                </button>
-                            </div>
-                            <div class="modal-actions" style="margin-top:12px;position:relative;z-index:1;">
-                                <button class="modal-btn btn-close" id="shopCloseBtn">ЗАКРЫТЬ</button>
-                            </div>
-                        </div>
-                    `;
-
-                document.body.appendChild(overlay);
-
-                const closeBtn = overlay.querySelector('#shopCloseBtn');
-                closeBtn.addEventListener('click', function() {
-                    overlay.remove();
-                });
-
-                overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) {
-                        overlay.remove();
-                    }
-                });
-
-                // TON Connect
-                const tonConnectBtn = overlay.querySelector('#tonConnectBtn');
-                if (tonConnectBtn) {
-                    tonConnectBtn.addEventListener('click', function() {
-                        if (tonConnector && tonConnector.connected) {
-                            disconnectTonWallet();
-                        } else {
-                            connectTonWallet();
-                        }
-                    });
-                }
-
-                // Обработка покупки
-                overlay.querySelectorAll('.shop-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const stars = parseInt(this.dataset.stars, 10);
-                        const ton = parseFloat(this.dataset.ton);
-
-                        if (!tonWalletConnected) {
-                            tg.showAlert('❌ Сначала подключите TON кошелёк!');
-                            return;
-                        }
-
-                        tg.showAlert(
-                            `💳 ОПЛАТА ЧЕРЕЗ TON\n\n` +
-                            `⭐ ${stars} звёзд за ${ton} TON\n\n` +
-                            `💰 Оплата на адрес:\n` +
-                            `${YOUR_TON_ADDRESS}\n\n` +
-                            `После подтверждения транзакции звёзды зачислятся автоматически.`
-                        );
-
-                        if (tonConnector && tonConnector.connected) {
-                            try {
-                                const transaction = {
-                                    validUntil: Math.floor(Date.now() / 1000) + 300,
-                                    messages: [{
-                                        address: YOUR_TON_ADDRESS,
-                                        amount: String(ton * 1e9),
-                                    }]
-                                };
-
-                                tonConnector.sendTransaction(transaction)
-                                    .then((tx) => {
-                                        fetch('/api/ton/payment', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({
-                                                user_id: USER_ID,
-                                                amount_ton: ton,
-                                                stars: stars,
-                                                transaction_hash: tx.transaction?.hash ||
-                                                    'pending',
-                                                wallet_address: YOUR_TON_ADDRESS
-                                            })
-                                        })
-                                        .then(res => res.json())
-                                        .then(data => {
-                                            if (data.success) {
-                                                state.balance += stars;
-                                                render();
-                                                tg.showAlert(
-                                                    `✅ ${stars} звёзд зачислено на ваш баланс!`
-                                                    );
-                                                sendToBot({
-                                                    action: 'buy_stars',
-                                                    payload: {
-                                                        stars: stars,
-                                                        ton: ton,
-                                                        user_id: USER_ID,
-                                                        wallet: tonWalletAddress,
-                                                        timestamp: new Date()
-                                                            .toISOString()
-                                                    }
-                                                });
-                                            } else {
-                                                tg.showAlert(
-                                                    '❌ Ошибка зачисления звёзд. Обратитесь в поддержку.'
-                                                    );
-                                            }
-                                        })
-                                        .catch(() => {
-                                            tg.showAlert(
-                                                '❌ Ошибка соединения с сервером. Звёзды зачислятся позже.'
-                                                );
-                                        });
-                                    })
-                                    .catch((err) => {
-                                        console.error('Ошибка транзакции:', err);
-                                        tg.showAlert('❌ Ошибка оплаты. Попробуйте позже.');
-                                    });
-                            } catch (e) {
-                                console.error('Ошибка отправки транзакции:', e);
-                                tg.showAlert('❌ Ошибка отправки транзакции.');
-                            }
-                        } else {
-                            tg.showAlert('❌ Кошелёк не подключён.');
-                        }
-                    });
-                });
-
-                updateTonStatus();
-            }
-
-            // ---------- 16. МОДАЛ ДЛЯ ВЫВОДА ----------
-            function showWithdrawModal(giftId = null) {
-                if (isCooldownActive()) {
-                    tg.showAlert('⏳ Вы уже отправляли заявку! Попробуйте через 24 часа.');
-                    return;
-                }
-
-                if (giftId) {
-                    const existingRequest = getPendingWithdrawRequestForGift(giftId);
-                    if (existingRequest) {
-                        tg.showAlert('⏳ На этот подарок уже отправлена заявка на вывод!');
-                        return;
-                    }
-                }
-
-                if (!state.canWithdraw) {
-                    tg.showAlert(`❌ Вывод доступен только после платного спина.\nВаш прогресс: ${state.referralCount}/7`);
-                    return;
-                }
-
-                const oldModal = document.querySelector('.modal-overlay');
-                if (oldModal) oldModal.remove();
-
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay withdraw-modal';
-                overlay.innerHTML = `
-                        <div class="modal-content">
-                            <div class="modal-title" style="font-size:20px;">💸 ВЫВОД</div>
-                            <div class="modal-info">
-                                Комиссия: <span class="highlight">25 ⭐</span><br>
-                                Доступно: <span class="highlight">${Math.floor(state.balance)} ⭐</span>
-                            </div>
-                            <input class="modal-input" id="withdrawUsername" type="text" placeholder="Введите @username" autocomplete="off">
-                            <div id="withdrawStatusContainer" style="display:none;">
-                                <div class="withdraw-status-text">⏳ Скоро отправим...</div>
-                                <div class="progress-container">
-                                    <div class="progress-bar" id="progressBar" style="width:0%;"></div>
-                                </div>
-                            </div>
-                            <div class="modal-actions" id="withdrawActions">
-                                <button class="modal-btn btn-confirm" id="withdrawConfirm">ВЫВЕСТИ</button>
-                                <button class="modal-btn btn-cancel" id="withdrawCancel">ОТМЕНА</button>
-                            </div>
-                        </div>
-                    `;
-
-                document.body.appendChild(overlay);
-
-                const usernameInput = overlay.querySelector('#withdrawUsername');
-                const confirmBtn = overlay.querySelector('#withdrawConfirm');
-                const cancelBtn = overlay.querySelector('#withdrawCancel');
-                const statusContainer = overlay.querySelector('#withdrawStatusContainer');
-                const progressBar = overlay.querySelector('#progressBar');
-
-                setTimeout(() => usernameInput.focus(), 100);
-
-                cancelBtn.addEventListener('click', function() {
-                    overlay.remove();
-                });
-
-                overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) {
-                        overlay.remove();
-                    }
-                });
-
-                confirmBtn.addEventListener('click', function() {
-                    const username = usernameInput.value.trim();
-
-                    if (!username) {
-                        tg.showAlert('❌ Введите @username для вывода!');
-                        return;
-                    }
-
-                    if (state.balance < 25) {
-                        tg.showAlert('❌ Недостаточно звёзд! Нужно минимум 25 ⭐');
-                        return;
-                    }
-
-                    confirmBtn.disabled = true;
-                    cancelBtn.disabled = true;
-                    usernameInput.disabled = true;
-                    statusContainer.style.display = 'block';
-
-                    let progress = 0;
-                    const interval = setInterval(() => {
-                        progress += Math.random() * 15;
-                        if (progress > 90) progress = 90;
-                        progressBar.style.width = progress + '%';
-                    }, 200);
-
-                    const request = addWithdrawRequest(username, 25, giftId);
-
-                    state.balance -= 25;
-                    render();
-
-                    sendToBot({
-                        action: 'withdraw',
-                        payload: {
-                            username: username,
-                            amount: 25,
-                            balance: state.balance,
-                            user_id: USER_ID,
-                            request_id: request.id,
-                            gift_id: giftId,
-                            timestamp: new Date().toISOString()
-                        }
-                    });
-
-                    setCooldown();
-
-                    setTimeout(() => {
-                        clearInterval(interval);
-                        progressBar.style.width = '100%';
-                        setTimeout(() => {
-                            overlay.remove();
-                            tg.showAlert(`✅ Заявка на вывод отправлена!\nЮзернейм: ${username}\nСписано: 25 ⭐\nСледующая попытка через 24 часа.`);
-                            updateWithdrawButton();
-                        }, 500);
-                    }, 3000);
-                });
-
-                usernameInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        confirmBtn.click();
-                    }
-                });
-            }
-
-            // ---------- 17. МОДАЛ ДЛЯ NFT ----------
-            function showNftModal(gift) {
-                const oldModal = document.querySelector('.modal-overlay');
-                if (oldModal) oldModal.remove();
-
-                const price = gift.price || 100;
-                const isFree = gift.is_free || false;
-                const canSellOrWithdraw = isFree ? state.canWithdraw : true;
-                const pendingRequest = getPendingWithdrawRequestForGift(gift.id);
-
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay';
-                overlay.innerHTML = `
-                        <div class="modal-content">
-                            <img class="modal-gif" src="${gift.image}" alt="${gift.name}" loading="lazy">
-                            <div class="modal-title">${gift.name}</div>
-                            <div class="modal-price">
-                                <span class="stars">⭐</span> ${price}
-                            </div>
-                            ${isFree && !state.canWithdraw ? `<div class="modal-locked">🔒 Требуется 7 рефералов для продажи/вывода (${state.referralCount}/7)</div>` : ''}
-                            ${pendingRequest ? `<div class="modal-locked" style="color:var(--gold);">⏳ Заявка на вывод отправлена (ожидает обработки)</div>` : ''}
-                            <div class="modal-actions">
-                                <button class="modal-btn btn-withdraw" data-action="withdraw" ${!canSellOrWithdraw || pendingRequest ? 'disabled' : ''}>ВЫВЕСТИ</button>
-                                <button class="modal-btn btn-sell" data-action="sell" ${!canSellOrWithdraw ? 'disabled' : ''}>ПРОДАТЬ</button>
-                                ${!canSellOrWithdraw ? `<button class="modal-btn btn-invite" data-action="invite">ПРИГЛАСИТЬ</button>` : ''}
-                                <button class="modal-btn btn-close" data-action="close">ЗАКРЫТЬ</button>
-                            </div>
-                        </div>
-                    `;
-
-                document.body.appendChild(overlay);
-
-                const closeBtn = overlay.querySelector('[data-action="close"]');
-                const sellBtn = overlay.querySelector('[data-action="sell"]');
-                const withdrawBtnEl = overlay.querySelector('[data-action="withdraw"]');
-                const inviteBtnEl = overlay.querySelector('[data-action="invite"]');
-
-                closeBtn.addEventListener('click', function() {
-                    overlay.remove();
-                });
-
-                overlay.addEventListener('click', function(e) {
-                    if (e.target === overlay) {
-                        overlay.remove();
-                    }
-                });
-
-                sellBtn.addEventListener('click', function() {
-                    if (!canSellOrWithdraw) {
-                        tg.showAlert(`❌ Продажа заблокирована!\nПригласите 7 друзей (${state.referralCount}/7)`);
-                        return;
-                    }
-
-                    const itemIndex = state.inventory.findIndex(item => item.id === gift.id);
-                    if (itemIndex === -1) {
-                        tg.showAlert('❌ Этот подарок уже продан!');
-                        overlay.remove();
-                        return;
-                    }
-
-                    const request = getPendingWithdrawRequestForGift(gift.id);
-                    if (request) {
-                        removeWithdrawRequest(request.id);
-                        tg.showAlert(`ℹ️ Заявка на вывод "${gift.name}" отменена (вы продали подарок).`);
-                    }
-
-                    state.inventory.splice(itemIndex, 1);
-                    state.balance += price;
-                    render();
-                    overlay.remove();
-                    tg.showAlert(`✅ Вы продали ${gift.name} за ⭐${price}!`);
-                    sendToBot({
-                        action: 'sell_nft',
-                        payload: {
-                            name: gift.name,
-                            price: price,
-                            balance: state.balance,
-                            is_free_gift: isFree
-                        }
-                    });
-                });
-
-                withdrawBtnEl.addEventListener('click', function() {
-                    overlay.remove();
-                    const existingRequest = getPendingWithdrawRequestForGift(gift.id);
-                    if (existingRequest) {
-                        tg.showAlert('⏳ На этот подарок уже отправлена заявка на вывод!');
-                        return;
-                    }
-                    if (isFree && !state.canWithdraw) {
-                        tg.showAlert(`❌ Для вывода этого подарка нужно 7 рефералов (${state.referralCount}/7)`);
-                        return;
-                    }
-                    showWithdrawModal(gift.id);
-                });
-
-                if (inviteBtnEl) {
-                    inviteBtnEl.addEventListener('click', function() {
-                        overlay.remove();
-                        shareInviteLink();
-                    });
-                }
-            }
-
-            // ---------- 18. ОБНОВЛЕНИЕ КНОПКИ ВЫВОДА ----------
-            function updateWithdrawButton() {
-                const remaining = getRemainingCooldown();
-
-                if (remaining > 0) {
-                    const hours = Math.floor(remaining / (60 * 60 * 1000));
-                    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-                    const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
-                    const timeStr =
-                        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                    withdrawCooldownContainer.innerHTML = `
-                            <div class="cooldown-text">
-                                ⏳ Попробуйте вывести снова через<br>
-                                <span class="time">${timeStr}</span>
-                            </div>
-                        `;
-                } else {
-                    withdrawCooldownContainer.innerHTML = '';
-                }
-            }
-
-            let cooldownInterval = null;
-
-            function startCooldownTimer() {
-                if (cooldownInterval) {
-                    clearInterval(cooldownInterval);
-                    cooldownInterval = null;
-                }
-                updateWithdrawButton();
-                cooldownInterval = setInterval(updateWithdrawButton, 1000);
-            }
-
-            // ---------- 19. РЕНДЕР ----------
+            // ---------- 8. РЕНДЕР ----------
             function render() {
                 balanceDisplay.textContent = Math.floor(state.balance);
                 nftCount.textContent = state.inventory.length + ' шт.';
 
+                // Инвентарь
                 if (state.inventory.length === 0) {
-                    inventoryGrid.innerHTML = `<div class="empty-inventory">🧪 Нет подарков. Крутите рулетку!</div>`;
+                    inventoryGrid.innerHTML = '<div class="empty-inventory">🧪 Нет подарков. Крутите рулетку!</div>';
                 } else {
                     inventoryGrid.innerHTML = state.inventory.map(item => {
                         const iconHtml = item.image ?
-                            `<img class="nft-image" src="${item.image}" alt="${item.name}" loading="lazy" 
-                                 onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-                                   <div class="nft-icon" style="display:none;">🎁</div>` :
-                            `<div class="nft-icon">🎁</div>`;
-                        const hasRequest = getPendingWithdrawRequestForGift(item.id);
-                        const isFree = item.is_free || false;
-                        const showLock = (isFree && !state.canWithdraw) || hasRequest;
-                        const lockHtml = showLock ?
-                            `<div class="nft-lock">${hasRequest ? '⏳' : '🔒'}</div>` :
-                            '';
+                            '<img class="nft-image" src="' + item.image + '" alt="' + item.name +
+                            '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">' +
+                            '<div class="nft-icon" style="display:none;">🎁</div>' :
+                            '<div class="nft-icon">🎁</div>';
                         return `
                                 <div class="nft-item" data-id="${item.id}">
                                     <div class="glow-pulse"></div>
                                     ${iconHtml}
                                     <div class="nft-name">${item.name}</div>
-                                    ${lockHtml}
                                 </div>
                             `;
                     }).join('');
                 }
 
-                const upgradeDefs = [
-                    { id: 'up1', name: 'Генератор ⭐', desc: '+5 ⭐/час', maxLvl: 5, baseCost: 150 },
-                    { id: 'up2', name: 'Сканер редкости', desc: 'Шанс NFT +3%', maxLvl: 4, baseCost: 200 },
-                    { id: 'up3', name: 'Ускоритель спина', desc: 'Спин стоит -2 ⭐', maxLvl: 6, baseCost: 100 },
-                ];
-
-                upgradeList.innerHTML = upgradeDefs.map(u => {
-                    const current = state.upgrades.find(up => up.id === u.id) || { level: 0 };
-                    const level = current.level || 0;
-                    const isMax = level >= u.maxLvl;
-                    const cost = u.baseCost * (level + 1);
-                    const canAfford = state.balance >= cost && !isMax;
-                    return `
-                            <div class="upgrade-item" data-id="${u.id}">
-                                <div class="upgrade-info">
-                                    <div class="title">${u.name}</div>
-                                    <div class="desc">${u.desc}</div>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span class="upgrade-level">Ур.${level}/${u.maxLvl}</span>
-                                    <span class="upgrade-cost">${isMax ? 'MAX' : cost + ' ⭐'}</span>
-                                    <button class="upgrade-btn" data-id="${u.id}" ${!canAfford ? 'disabled' : ''}>
-                                        ${isMax ? '✔' : '↑'}
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                }).join('');
-
+                // Профиль
                 profileName.textContent = tg.initDataUnsafe?.user?.first_name || 'Аноним';
-                profileId.textContent = `ID: ${USER_ID}`;
+                profileId.textContent = 'ID: ' + USER_ID;
                 statNFT.textContent = state.inventory.length;
                 statBalance.textContent = Math.floor(state.balance) + ' ⭐';
                 statSpins.textContent = state.spins;
-                statUpgrades.textContent = state.upgrades.filter(u => u.level > 0).length;
-
-                referralCount.textContent = state.referralCount || 0;
-                if (state.canWithdraw) {
-                    referralStatus.textContent = '✅ Вывод разблокирован!';
-                    referralStatus.style.color = 'var(--neon-green)';
-                } else {
-                    referralStatus.textContent = `❌ Вывод заблокирован. Пригласите ещё ${7 - (state.referralCount || 0)} друзей`;
-                    referralStatus.style.color = 'var(--neon-cyan)';
-                }
 
                 saveState();
             }
 
-            // ---------- 20. РУЛЕТКА ----------
-            function createRouletteCells() {
-                const REPEAT_COUNT = 6;
-                let cellsHtml = '';
-                for (let rep = 0; rep < REPEAT_COUNT; rep++) {
-                    GIFTS.forEach((cell, index) => {
-                        cellsHtml += `
-                                <div class="roulette-cell" data-gift-index="${index}">
-                                    <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
-                                         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-                                    <div style="font-size:28px; display:none;">🎁</div>
-                                    <div class="cell-name">${cell.name}</div>
-                                </div>
-                            `;
-                    });
-                }
-                rouletteSlider.innerHTML = cellsHtml;
-                const startRepeat = 3;
-                const startOffset = startRepeat * GIFTS.length * 20;
-                rouletteSlider.style.transition = 'none';
-                rouletteSlider.style.transform = `translateX(-${startOffset}%)`;
-                void rouletteSlider.offsetWidth;
-                rouletteSlider.style.transition = '';
-            }
-
-            // ---------- 21. НАВИГАЦИЯ ----------
+            // ---------- 9. НАВИГАЦИЯ ----------
             function switchScreen(screenId) {
                 screens.forEach(s => s.classList.remove('active'));
                 const target = document.getElementById(screenId);
@@ -2076,14 +783,9 @@
                 });
             });
 
-            // ---------- 22. КЛИК ПО БАЛАНСУ ----------
-            balanceClick.addEventListener('click', function() {
-                showShopModal();
-            });
-
-            // ---------- 23. ФУНКЦИИ РУЛЕТКИ ----------
+            // ---------- 10. ФУНКЦИИ РУЛЕТКИ ----------
             function highlightCell(giftIndex) {
-                const cells = document.querySelectorAll(`.roulette-cell[data-gift-index="${giftIndex}"]`);
+                const cells = document.querySelectorAll('.roulette-cell[data-gift-index="' + giftIndex + '"]');
                 const centerX = window.innerWidth / 2;
                 let closestCell = null;
                 let closestDist = Infinity;
@@ -2128,27 +830,46 @@
                 return 0;
             }
 
-            // ---------- 24. ЗАПУСК РУЛЕТКИ ----------
-            function performSpin(isFree) {
+            // ---------- 11. СОЗДАНИЕ РУЛЕТКИ ----------
+            function createRouletteCells() {
+                const REPEAT_COUNT = 6;
+                let cellsHtml = '';
+                for (let rep = 0; rep < REPEAT_COUNT; rep++) {
+                    GIFTS.forEach((cell, index) => {
+                        cellsHtml += `
+                                <div class="roulette-cell" data-gift-index="${index}">
+                                    <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
+                                         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                                    <div style="font-size:28px; display:none;">🎁</div>
+                                    <div class="cell-name">${cell.name}</div>
+                                </div>
+                            `;
+                    });
+                }
+                rouletteSlider.innerHTML = cellsHtml;
+                const startRepeat = 3;
+                const startOffset = startRepeat * GIFTS.length * 20;
+                rouletteSlider.style.transition = 'none';
+                rouletteSlider.style.transform = 'translateX(-' + startOffset + '%)';
+                void rouletteSlider.offsetWidth;
+                rouletteSlider.style.transition = '';
+            }
+
+            // ---------- 12. ЗАПУСК РУЛЕТКИ ----------
+            function performSpin() {
                 if (state.isSpinning) return;
 
-                if (!isFree && state.balance < 150) {
-                    showShopModal('❌ Недостаточно звёзд! Пополните баланс:');
-                    return;
-                }
-
-                if (isFree && !canUseFreeSpin()) {
-                    rouletteResult.textContent = '⏳ Бесплатная рулетка ещё не доступна';
-                    tg.showAlert('⏳ Бесплатная рулетка будет доступна через 24 часа');
+                if (state.balance < 150) {
+                    rouletteResult.textContent = '❌ Недостаточно ⭐ (нужно 150)';
+                    tg.showAlert('Недостаточно звёзд! Нужно 150 ⭐');
                     return;
                 }
 
                 state.isSpinning = true;
                 spinBtn.disabled = true;
-                freeSpinBtn.disabled = true;
                 rouletteResult.textContent = '🌀 Крутим...';
 
-                const prize = getRandomGiftByChance(isFree);
+                const prize = getRandomGiftByChance();
                 const winGiftIndex = GIFTS.indexOf(prize);
 
                 clearHighlight();
@@ -2164,7 +885,7 @@
                 rouletteSlider.style.transition = 'none';
                 void rouletteSlider.offsetWidth;
                 rouletteSlider.style.transition = 'transform 5s cubic-bezier(0.1, 0.6, 0.2, 1)';
-                rouletteSlider.style.transform = `translateX(-${offsetPercent}%)`;
+                rouletteSlider.style.transform = 'translateX(-' + offsetPercent + '%)';
 
                 if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
@@ -2172,37 +893,25 @@
                     const actualWinIndex = getGiftUnderIndicator();
                     const actualPrize = GIFTS[actualWinIndex];
 
-                    if (!isFree) {
-                        state.balance -= 150;
-                        state.canWithdraw = true;
-                    } else {
-                        state.freeSpinUsedAt = new Date().toISOString();
-                        updateFreeSpinButton();
-                        startFreeSpinTimer();
-                    }
-
+                    state.balance -= 150;
                     state.spins += 1;
                     const newGift = {
                         id: 'gift_' + Date.now(),
                         name: actualPrize.name,
                         image: actualPrize.image,
                         price: actualPrize.price,
-                        is_free: isFree
                     };
                     state.inventory.push(newGift);
 
                     highlightCell(actualWinIndex);
-                    rouletteResult.textContent = `🎉 Вы выиграли: ${actualPrize.name}!${isFree ? ' (Бесплатно!)' : ''}`;
+                    rouletteResult.textContent = '🎉 Вы выиграли: ' + actualPrize.name + '!';
 
                     render();
-                    showNftModal(newGift);
-
                     sendToBot({
                         action: 'roulette_spin',
                         payload: {
                             prize: actualPrize.name,
                             balance: state.balance,
-                            is_free: isFree
                         }
                     });
                 }, 4800);
@@ -2210,17 +919,11 @@
                 setTimeout(() => {
                     state.isSpinning = false;
                     spinBtn.disabled = false;
-                    freeSpinBtn.disabled = false;
-                    updateFreeSpinButton();
                 }, 5500);
             }
 
             spinBtn.addEventListener('click', function() {
-                performSpin(false);
-            });
-
-            freeSpinBtn.addEventListener('click', function() {
-                performSpin(true);
+                performSpin();
             });
 
             spinBtn.addEventListener('dblclick', function(e) {
@@ -2231,22 +934,14 @@
                 }
             });
 
-            freeSpinBtn.addEventListener('dblclick', function(e) {
-                e.preventDefault();
-                if (!state.isSpinning) {
-                    freeSpinBtn.click();
-                    tg.showAlert('⚡ БЫСТРОЕ КРУЧЕНИЕ!');
-                }
-            });
-
-            // ---------- 25. КЛИК ПО NFT ----------
+            // ---------- 13. КЛИК ПО NFT ----------
             inventoryGrid.addEventListener('click', function(e) {
                 const item = e.target.closest('.nft-item');
                 if (!item) return;
                 const id = item.dataset.id;
                 const gift = state.inventory.find(n => n.id === id);
                 if (gift) {
-                    showNftModal(gift);
+                    tg.showAlert('📦 ' + gift.name + '\nЦена: ' + gift.price + ' ⭐');
                     sendToBot({
                         action: 'view_nft',
                         payload: { nftId: gift.id, name: gift.name }
@@ -2254,61 +949,11 @@
                 }
             });
 
-            // ---------- 26. КНОПКИ ПРОФИЛЯ ----------
-            inviteBtn.addEventListener('click', function() {
-                shareInviteLink();
-            });
-
-            withdrawBtn.addEventListener('click', function() {
-                if (!state.canWithdraw) {
-                    tg.showAlert(`❌ Вывод доступен только после платного спина.\nВаш прогресс: ${state.referralCount}/7`);
-                    return;
-                }
-                showWithdrawModal(null);
-            });
-
-            // ---------- 27. АПГРЕЙДЫ ----------
-            upgradeList.addEventListener('click', function(e) {
-                const btn = e.target.closest('.upgrade-btn');
-                if (!btn || btn.disabled) return;
-                const id = btn.dataset.id;
-                const upgradeDefs = {
-                    'up1': { maxLvl: 5, baseCost: 150 },
-                    'up2': { maxLvl: 4, baseCost: 200 },
-                    'up3': { maxLvl: 6, baseCost: 100 }
-                };
-                const def = upgradeDefs[id];
-                if (!def) return;
-                const current = state.upgrades.find(u => u.id === id);
-                if (!current) return;
-                const level = current.level || 0;
-                if (level >= def.maxLvl) return;
-                const cost = def.baseCost * (level + 1);
-                if (state.balance < cost) {
-                    showShopModal('❌ Недостаточно звёзд для апгрейда! Пополните баланс:');
-                    return;
-                }
-                state.balance -= cost;
-                current.level += 1;
-                render();
-                tg.showAlert('✅ Улучшение повышено!');
-                sendToBot({
-                    action: 'upgrade',
-                    payload: { id: id, newLevel: current.level }
-                });
-            });
-
-            // ---------- 28. ИНИЦИАЛИЗАЦИЯ ----------
+            // ---------- 14. ИНИЦИАЛИЗАЦИЯ ----------
             createRouletteCells();
             render();
-            updateFreeSpinButton();
-            startFreeSpinTimer();
-            startCooldownTimer();
-
-            initTonConnect();
 
             console.log('[LAB NFT] Mini App загружен. User ID:', USER_ID);
-            console.log('[LAB NFT] Режим Telegram:', isTelegram);
             console.log('[LAB NFT] Всего подарков:', GIFTS.length);
         })();
     </script>
