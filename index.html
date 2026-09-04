@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NFT LAB · Mini App</title>
     <script>
-        // Эмуляция Telegram WebApp для тестирования в браузере
         if (!window.Telegram) {
             window.Telegram = {
                 WebApp: {
@@ -20,7 +19,6 @@
     </script>
     <script src="https://telegram.org/js/telegram-web-app.js" onerror="console.warn('Telegram SDK не загрузился, используется эмуляция')"></script>
     <style>
-        /* ---------- ГЛОБАЛЬНЫЕ СТИЛИ ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -74,7 +72,6 @@
             backdrop-filter: blur(2px);
         }
 
-        /* ---------- ВЕРХНИЙ БАР ---------- */
         .header {
             display: flex;
             justify-content: space-between;
@@ -110,7 +107,6 @@
             font-weight: 400;
         }
 
-        /* ---------- КОНТЕНТ ---------- */
         .content {
             flex: 1;
             overflow-y: auto;
@@ -160,7 +156,7 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        /* ---------- ИНВЕНТАРЬ ---------- */
+        /* ИНВЕНТАРЬ */
         .nft-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -233,7 +229,7 @@
             font-size: 14px;
         }
 
-        /* ---------- РУЛЕТКА ---------- */
+        /* РУЛЕТКА */
         .roulette-container {
             display: flex;
             flex-direction: column;
@@ -364,16 +360,6 @@
             transform: scale(1);
             pointer-events: none;
         }
-        .roulette-btn-free {
-            background: var(--neon-cyan);
-            color: #0a0e1a;
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
-        }
-        .roulette-btn-free:disabled {
-            opacity: 0.4;
-            transform: scale(1);
-            pointer-events: none;
-        }
         .roulette-result {
             text-align: center;
             font-size: 14px;
@@ -389,7 +375,7 @@
             margin-top: 0;
         }
 
-        /* ---------- ПРОФИЛЬ ---------- */
+        /* ПРОФИЛЬ */
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -426,7 +412,7 @@
             letter-spacing: 0.5px;
         }
 
-        /* ---------- НАВИГАЦИЯ ---------- */
+        /* НАВИГАЦИЯ */
         .nav-center {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -467,7 +453,138 @@
             background: rgba(0, 255, 136, 0.05);
         }
 
-        /* ---------- АДАПТИВ ---------- */
+        /* ---------- МОДАЛЬНОЕ ОКНО ---------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease-out;
+            padding: 20px;
+        }
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .modal-content {
+            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
+            border: 2px solid var(--neon-green);
+            border-radius: 24px;
+            padding: 30px 24px 24px 24px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(0, 255, 136, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 255, 136, 0.03), transparent, rgba(0, 212, 255, 0.03), transparent);
+            animation: rotateGlow 8s linear infinite;
+        }
+        .modal-content .modal-gif {
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            margin: 0 auto 12px auto;
+            display: block;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.3));
+        }
+        .modal-content .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 4px;
+        }
+        .modal-content .modal-price {
+            font-size: 16px;
+            color: var(--gold);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 16px;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            margin-top: 4px;
+        }
+        .modal-actions .modal-btn {
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 700;
+            font-size: 14px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: 0.15s;
+            flex: 1;
+            min-width: 80px;
+            max-width: 140px;
+        }
+        .modal-actions .modal-btn:active {
+            transform: scale(0.94);
+            opacity: 0.8;
+        }
+        .modal-actions .btn-sell {
+            background: var(--gold);
+            color: #0a0e1a;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        .modal-actions .btn-inventory {
+            background: var(--neon-cyan);
+            color: #0a0e1a;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        .modal-actions .btn-close {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            border: 1px solid var(--glass-border);
+        }
+        .modal-close-icon {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 22px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            z-index: 2;
+            transition: 0.15s;
+            background: none;
+            border: none;
+            font-family: var(--font-mono);
+        }
+        .modal-close-icon:hover {
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+
         @media (max-width: 380px) {
             .header h1 {
                 font-size: 15px;
@@ -498,6 +615,17 @@
                 width: 48px;
                 height: 48px;
             }
+            .modal-content img {
+                width: 100px;
+                height: 100px;
+            }
+            .modal-actions {
+                flex-direction: column;
+                gap: 6px;
+            }
+            .modal-actions .modal-btn {
+                max-width: 100%;
+            }
         }
         @media (min-width: 600px) {
             .roulette-cell {
@@ -526,7 +654,6 @@
 <body>
     <div id="app">
 
-        <!-- ВЕРХНИЙ БАР -->
         <div class="header">
             <h1>🧪 LAB NFT</h1>
             <div class="balance">
@@ -534,10 +661,8 @@
             </div>
         </div>
 
-        <!-- КОНТЕНТ -->
         <div class="content" id="contentArea">
 
-            <!-- ИНВЕНТАРЬ -->
             <div class="screen active" id="screenInventory">
                 <div class="glass-card">
                     <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
@@ -548,7 +673,6 @@
                 </div>
             </div>
 
-            <!-- РУЛЕТКА -->
             <div class="screen" id="screenRoulette">
                 <div class="glass-card">
                     <div class="roulette-container">
@@ -563,7 +687,6 @@
                 </div>
             </div>
 
-            <!-- ПРОФИЛЬ -->
             <div class="screen" id="screenProfile">
                 <div class="glass-card" style="text-align:center;">
                     <div class="profile-avatar" id="profileAvatar">👤</div>
@@ -579,7 +702,6 @@
 
         </div>
 
-        <!-- НАВИГАЦИЯ (3 КНОПКИ) -->
         <div class="nav-center">
             <div class="nav-btn active" data-screen="screenInventory">
                 <span class="icon">📦</span> ИНВЕНТАРЬ
@@ -729,7 +851,96 @@
                 }
             }
 
-            // ---------- 8. РЕНДЕР ----------
+            // ---------- 8. МОДАЛЬНОЕ ОКНО ----------
+            function showModal(gift, showSell = false) {
+                const oldModal = document.querySelector('.modal-overlay');
+                if (oldModal) oldModal.remove();
+
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+
+                let buttonsHtml = '';
+                if (showSell) {
+                    // Модал из инвентаря — показываем продажу и вывод
+                    buttonsHtml = `
+                        <button class="modal-btn btn-sell" data-action="sell">💸 ПРОДАТЬ</button>
+                        <button class="modal-btn btn-close" data-action="close">ЗАКРЫТЬ</button>
+                    `;
+                } else {
+                    // Модал после выигрыша — показываем "В ИНВЕНТАРЬ" и "ЗАКРЫТЬ"
+                    buttonsHtml = `
+                        <button class="modal-btn btn-inventory" data-action="inventory">📦 В ИНВЕНТАРЬ</button>
+                        <button class="modal-btn btn-close" data-action="close">ЗАКРЫТЬ</button>
+                    `;
+                }
+
+                overlay.innerHTML = `
+                    <div class="modal-content">
+                        <button class="modal-close-icon" id="modalCloseIcon">✕</button>
+                        <img class="modal-gif" src="${gift.image}" alt="${gift.name}" loading="lazy">
+                        <div class="modal-title">${gift.name}</div>
+                        <div class="modal-price">⭐ ${gift.price}</div>
+                        <div class="modal-actions">
+                            ${buttonsHtml}
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(overlay);
+
+                // Обработчики
+                const closeBtn = overlay.querySelector('#modalCloseIcon');
+                const closeActionBtn = overlay.querySelector('[data-action="close"]');
+                const inventoryBtn = overlay.querySelector('[data-action="inventory"]');
+                const sellBtn = overlay.querySelector('[data-action="sell"]');
+
+                // Закрытие
+                const closeModal = () => overlay.remove();
+
+                closeBtn.addEventListener('click', closeModal);
+                if (closeActionBtn) closeActionBtn.addEventListener('click', closeModal);
+
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) closeModal();
+                });
+
+                // Кнопка "В ИНВЕНТАРЬ" — просто закрываем, подарок уже в инвентаре
+                if (inventoryBtn) {
+                    inventoryBtn.addEventListener('click', function() {
+                        closeModal();
+                        switchScreen('screenInventory');
+                    });
+                }
+
+                // Кнопка "ПРОДАТЬ"
+                if (sellBtn) {
+                    sellBtn.addEventListener('click', function() {
+                        // Находим подарок в инвентаре
+                        const itemIndex = state.inventory.findIndex(item => item.id === gift.id);
+                        if (itemIndex === -1) {
+                            tg.showAlert('❌ Этот подарок уже продан!');
+                            closeModal();
+                            return;
+                        }
+
+                        // Удаляем из инвентаря, добавляем звёзды                        state.inventory.splice(itemIndex, 1);
+                        state.balance += gift.price;
+                        render();
+                        closeModal();
+                        tg.showAlert('✅ Вы продали ' + gift.name + ' за ⭐' + gift.price + '!');
+                        sendToBot({
+                            action: 'sell_nft',
+                            payload: {
+                                name: gift.name,
+                                price: gift.price,
+                                balance: state.balance
+                            }
+                        });
+                    });
+                }
+            }
+
+            // ---------- 9. РЕНДЕР ----------
             function render() {
                 balanceDisplay.textContent = Math.floor(state.balance);
                 nftCount.textContent = state.inventory.length + ' шт.';
@@ -764,7 +975,7 @@
                 saveState();
             }
 
-            // ---------- 9. НАВИГАЦИЯ ----------
+            // ---------- 10. НАВИГАЦИЯ ----------
             function switchScreen(screenId) {
                 screens.forEach(s => s.classList.remove('active'));
                 const target = document.getElementById(screenId);
@@ -783,7 +994,7 @@
                 });
             });
 
-            // ---------- 10. ФУНКЦИИ РУЛЕТКИ ----------
+            // ---------- 11. ФУНКЦИИ РУЛЕТКИ ----------
             function highlightCell(giftIndex) {
                 const cells = document.querySelectorAll('.roulette-cell[data-gift-index="' + giftIndex + '"]');
                 const centerX = window.innerWidth / 2;
@@ -830,7 +1041,7 @@
                 return 0;
             }
 
-            // ---------- 11. СОЗДАНИЕ РУЛЕТКИ ----------
+            // ---------- 12. СОЗДАНИЕ РУЛЕТКИ ----------
             function createRouletteCells() {
                 const REPEAT_COUNT = 6;
                 let cellsHtml = '';
@@ -855,7 +1066,7 @@
                 rouletteSlider.style.transition = '';
             }
 
-            // ---------- 12. ЗАПУСК РУЛЕТКИ ----------
+            // ---------- 13. ЗАПУСК РУЛЕТКИ ----------
             function performSpin() {
                 if (state.isSpinning) return;
 
@@ -907,6 +1118,9 @@
                     rouletteResult.textContent = '🎉 Вы выиграли: ' + actualPrize.name + '!';
 
                     render();
+                    // Показываем модал с кнопками "В ИНВЕНТАРЬ" и "ЗАКРЫТЬ"
+                    showModal(newGift, false);
+
                     sendToBot({
                         action: 'roulette_spin',
                         payload: {
@@ -934,14 +1148,15 @@
                 }
             });
 
-            // ---------- 13. КЛИК ПО NFT ----------
+            // ---------- 14. КЛИК ПО NFT В ИНВЕНТАРЕ ----------
             inventoryGrid.addEventListener('click', function(e) {
                 const item = e.target.closest('.nft-item');
                 if (!item) return;
                 const id = item.dataset.id;
                 const gift = state.inventory.find(n => n.id === id);
                 if (gift) {
-                    tg.showAlert('📦 ' + gift.name + '\nЦена: ' + gift.price + ' ⭐');
+                    // Показываем модал с кнопками "ПРОДАТЬ" и "ЗАКРЫТЬ"
+                    showModal(gift, true);
                     sendToBot({
                         action: 'view_nft',
                         payload: { nftId: gift.id, name: gift.name }
@@ -949,7 +1164,7 @@
                 }
             });
 
-            // ---------- 14. ИНИЦИАЛИЗАЦИЯ ----------
+            // ---------- 15. ИНИЦИАЛИЗАЦИЯ ----------
             createRouletteCells();
             render();
 
