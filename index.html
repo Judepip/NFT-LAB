@@ -249,15 +249,13 @@
             border: 1px solid var(--glass-border);
             background: var(--glass-bg);
             padding: 8px 0;
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
         }
         .roulette-slider {
             display: flex;
             gap: 8px;
             padding: 0 8px;
             will-change: transform;
-            transition: transform 5s cubic-bezier(0.1, 0.6, 0.2, 1);
+            transition: transform 6s cubic-bezier(0.1, 0.6, 0.2, 1);
         }
         .roulette-cell {
             flex: 0 0 calc(20% - 8px);
@@ -997,15 +995,62 @@
                 });
             });
 
-            // ---------- 11. ФУНКЦИИ РУЛЕТКИ ----------
-            function getCellWidth() {
-                const cells = document.querySelectorAll('.roulette-cell');
-                if (cells.length === 0) return 60;
-                const firstCell = cells[0];
-                return firstCell.offsetWidth + 8;
+            // ---------- 11. ФУНКЦИИ РУЛЕТКИ (НОВЫЙ ПОДХОД) ----------
+            let currentIndex = 0;
+            const ITEMS_PER_VIEW = 5; // сколько видно на экране
+            const REPEAT = 8; // количество повторов
+            
+            function getTotalWidth() {
+                const track = document.querySelector('.roulette-track');
+                if (!track) return window.innerWidth - 40;
+                return track.offsetWidth;
             }
 
-            function highlightCell(giftIndex) {
+            function getVisibleCount() {
+                const width = getTotalWidth();
+                const cellWidth = 60 + 8; // ширина + gap
+                return Math.max(3, Math.floor(width / cellWidth));
+            }
+
+            function getCellWidthReal() {
+                const cells = document.querySelectorAll('.roulette-cell');
+                if (cells.length === 0) return 60;
+                return cells[0].offsetWidth + 8;
+            }
+
+            function createRouletteCells() {
+                const REPEAT_COUNT = 8;
+                let cellsHtml = '';
+                for (let rep = 0; rep < REPEAT_COUNT; rep++) {
+                    GIFTS.forEach((cell, index) => {
+                        cellsHtml += `
+                                <div class="roulette-cell" data-gift-index="${index}">
+                                    <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
+                                         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                                    <div style="font-size:28px; display:none;">🎁</div>
+                                    <div class="cell-name">${cell.name}</div>
+                                </div>
+                            `;
+                    });
+                }
+                rouletteSlider.innerHTML = cellsHtml;
+                
+                // Начальное положение - показываем середину
+                const totalItems = GIFTS.length * REPEAT_COUNT;
+                const visible = getVisibleCount();
+                const startIndex = Math.floor(totalItems / 2) - Math.floor(visible / 2);
+                const cellWidth = getCellWidthReal();
+                const offset = startIndex * cellWidth;
+                
+                rouletteSlider.style.transition = 'none';
+                rouletteSlider.style.transform = 'translateX(-' + offset + 'px)';
+                void rouletteSlider.offsetWidth;
+                rouletteSlider.style.transition = '';
+                
+                currentIndex = startIndex;
+            }
+
+            function highlightWinningCell(giftIndex) {
                 const cells = document.querySelectorAll('.roulette-cell[data-gift-index="' + giftIndex + '"]');
                 const centerX = window.innerWidth / 2;
                 let closestCell = null;
@@ -1030,53 +1075,6 @@
                 });
             }
 
-            function getGiftUnderIndicator() {
-                const cells = document.querySelectorAll('.roulette-cell');
-                const centerX = window.innerWidth / 2;
-                let closestCell = null;
-                let closestDist = Infinity;
-                cells.forEach(cell => {
-                    const rect = cell.getBoundingClientRect();
-                    const cellCenter = rect.left + rect.width / 2;
-                    const dist = Math.abs(cellCenter - centerX);
-                    if (dist < closestDist) {
-                        closestDist = dist;
-                        closestCell = cell;
-                    }
-                });
-                if (closestCell) {
-                    const giftIndex = parseInt(closestCell.dataset.giftIndex, 10);
-                    return giftIndex;
-                }
-                return 0;
-            }
-
-            // ---------- 12. СОЗДАНИЕ РУЛЕТКИ ----------
-            function createRouletteCells() {
-                const REPEAT_COUNT = 8;
-                let cellsHtml = '';
-                for (let rep = 0; rep < REPEAT_COUNT; rep++) {
-                    GIFTS.forEach((cell, index) => {
-                        cellsHtml += `
-                                <div class="roulette-cell" data-gift-index="${index}">
-                                    <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
-                                         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-                                    <div style="font-size:28px; display:none;">🎁</div>
-                                    <div class="cell-name">${cell.name}</div>
-                                </div>
-                            `;
-                    });
-                }
-                rouletteSlider.innerHTML = cellsHtml;
-                
-                const startOffset = 33;
-                rouletteSlider.style.transition = 'none';
-                rouletteSlider.style.transform = 'translateX(-' + startOffset + '%)';
-                void rouletteSlider.offsetWidth;
-                rouletteSlider.style.transition = '';
-            }
-
-            // ---------- 13. ЗАПУСК РУЛЕТКИ ----------
             function performSpin() {
                 console.log('performSpin вызван!');
                 
@@ -1102,21 +1100,53 @@
 
                 clearHighlight();
 
-                const totalUnique = GIFTS.length;
-                const cellWidth = getCellWidth();
-                const sliderWidth = rouletteSlider.scrollWidth || (totalUnique * 8 * cellWidth);
-                const targetCellIndex = 3 * totalUnique + winGiftIndex;
-                const offsetPercent = (targetCellIndex * cellWidth / sliderWidth) * 100 - 50;
+                // Расчёт позиции для остановки на выигрышном подарке
+                const totalGifts = GIFTS.length;
+                const repeats = 8;
+                const cellWidth = getCellWidthReal();
+                
+                // Находим элемент, на котором нужно остановиться
+                // Делаем так, чтобы он оказался примерно по центру
+                const targetRepeat = 5; // на каком повторе остановиться (чтобы было место для прокрутки)
+                const targetCellIndex = targetRepeat * totalGifts + winGiftIndex;
+                
+                // Смещение: чтобы элемент оказался в центре
+                const totalWidth = rouletteSlider.scrollWidth || (totalGifts * repeats * cellWidth);
+                const centerOffset = getTotalWidth() / 2 - cellWidth / 2;
+                const offset = targetCellIndex * cellWidth - centerOffset;
+                
+                // Добавляем случайность для реалистичности
+                const randomExtra = Math.random() * 100 + 50;
+                const finalOffset = offset + randomExtra;
                 
                 rouletteSlider.style.transition = 'none';
                 void rouletteSlider.offsetWidth;
-                rouletteSlider.style.transition = 'transform 5s cubic-bezier(0.1, 0.6, 0.2, 1)';
-                rouletteSlider.style.transform = 'translateX(-' + offsetPercent + '%)';
+                rouletteSlider.style.transition = 'transform 6s cubic-bezier(0.1, 0.6, 0.2, 1)';
+                rouletteSlider.style.transform = 'translateX(-' + finalOffset + 'px)';
 
                 if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
                 setTimeout(() => {
-                    const actualWinIndex = getGiftUnderIndicator();
+                    // Определяем выигрышный элемент по индикатору
+                    const cells = document.querySelectorAll('.roulette-cell');
+                    const centerX = window.innerWidth / 2;
+                    let closestCell = null;
+                    let closestDist = Infinity;
+                    cells.forEach(cell => {
+                        const rect = cell.getBoundingClientRect();
+                        const cellCenter = rect.left + rect.width / 2;
+                        const dist = Math.abs(cellCenter - centerX);
+                        if (dist < closestDist) {
+                            closestDist = dist;
+                            closestCell = cell;
+                        }
+                    });
+                    
+                    let actualWinIndex = 0;
+                    if (closestCell) {
+                        actualWinIndex = parseInt(closestCell.dataset.giftIndex, 10);
+                    }
+                    
                     const actualPrize = GIFTS[actualWinIndex];
 
                     state.balance -= 150;
@@ -1129,7 +1159,7 @@
                     };
                     state.inventory.push(newGift);
 
-                    highlightCell(actualWinIndex);
+                    highlightWinningCell(actualWinIndex);
                     rouletteResult.textContent = '🎉 Вы выиграли: ' + actualPrize.name + '!';
 
                     render();
@@ -1142,16 +1172,16 @@
                             balance: state.balance,
                         }
                     });
-                }, 4800);
+                }, 5800);
 
                 setTimeout(() => {
                     state.isSpinning = false;
                     spinBtn.disabled = false;
                     spinBtn.textContent = 'ЗАПУСТИТЬ РОЗЫГРЫШ 150 ⭐';
-                }, 5500);
+                }, 6500);
             }
 
-            // ---------- 14. НАВЕШИВАЕМ ОБРАБОТЧИКИ ----------
+            // ---------- 12. НАВЕШИВАЕМ ОБРАБОТЧИКИ ----------
             // Удаляем все старые обработчики и вешаем новые
             const newSpinBtn = spinBtn.cloneNode(true);
             spinBtn.parentNode.replaceChild(newSpinBtn, spinBtn);
@@ -1170,7 +1200,6 @@
             // Обработчик для мобильных устройств
             spinBtnNew.addEventListener('touchstart', function(e) {
                 console.log('touchstart на кнопке');
-                // Не блокируем клик
             }, { passive: true });
 
             // Двойной тап
@@ -1183,10 +1212,7 @@
                 }
             });
 
-            // Проверка через консоль
-            console.log('Кнопка привязана!');
-
-            // ---------- 15. КЛИК ПО NFT В ИНВЕНТАРЕ ----------
+            // ---------- 13. КЛИК ПО NFT В ИНВЕНТАРЕ ----------
             inventoryGrid.addEventListener('click', function(e) {
                 const item = e.target.closest('.nft-item');
                 if (!item) return;
@@ -1201,13 +1227,18 @@
                 }
             });
 
-            // ---------- 16. ИНИЦИАЛИЗАЦИЯ ----------
+            // ---------- 14. ИНИЦИАЛИЗАЦИЯ ----------
             createRouletteCells();
             render();
 
             console.log('[LAB NFT] Mini App загружен. User ID:', USER_ID);
             console.log('[LAB NFT] Всего подарков:', GIFTS.length);
             console.log('Кнопка spinBtnNew:', spinBtnNew);
+            
+            // Обработка изменения размера окна
+            window.addEventListener('resize', function() {
+                createRouletteCells();
+            });
             
         })();
     </script>
