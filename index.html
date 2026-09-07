@@ -234,7 +234,7 @@
             font-size: 14px;
         }
 
-        /* ===== НОВАЯ РУЛЕТКА (вдохновлена вторым примером) ===== */
+        /* РУЛЕТКА */
         .gr-reel-wrap {
             display: flex;
             flex-direction: column;
@@ -993,7 +993,7 @@
                 });
             });
 
-            // ---------- 11. СОЗДАНИЕ РУЛЕТКИ (новая) ----------
+            // ---------- 11. СОЗДАНИЕ РУЛЕТКИ ----------
             function createReel() {
                 const REPEAT_COUNT = 10;
                 let html = '';
@@ -1018,6 +1018,8 @@
                 reelTrack.style.transform = 'translateX(-' + startOffset + '%)';
                 void reelTrack.offsetWidth;
                 reelTrack.style.transition = '';
+                
+                console.log('Рулетка создана, элементов:', document.querySelectorAll('.gr-reel__item').length);
             }
 
             // ---------- 12. ФУНКЦИИ РУЛЕТКИ ----------
@@ -1076,20 +1078,28 @@
 
             // ---------- 13. ЗАПУСК РУЛЕТКИ ----------
             function performSpin() {
-                if (state.isSpinning) return;
+                console.log('performSpin вызван, isSpinning:', state.isSpinning);
+                
+                if (state.isSpinning) {
+                    console.log('Уже крутится, выход');
+                    return;
+                }
 
                 if (state.balance < 150) {
                     rouletteResult.textContent = '❌ Недостаточно ⭐ (нужно 150)';
                     tg.showAlert('Недостаточно звёзд! Нужно 150 ⭐');
+                    console.log('Недостаточно баланса:', state.balance);
                     return;
                 }
 
+                console.log('Запуск рулетки, баланс:', state.balance);
                 state.isSpinning = true;
                 spinBtn.disabled = true;
                 rouletteResult.textContent = '🌀 Крутим...';
 
                 const prize = getRandomGiftByChance();
                 const winIndex = GIFTS.indexOf(prize);
+                console.log('Выигрышный индекс:', winIndex, 'приз:', prize.name);
 
                 clearHighlight();
 
@@ -1104,12 +1114,14 @@
                 void reelTrack.offsetWidth;
                 reelTrack.style.transition = 'transform 5s cubic-bezier(0.1, 0.6, 0.2, 1)';
                 reelTrack.style.transform = 'translateX(-' + offsetPercent + '%)';
+                console.log('Смещение:', offsetPercent + '%');
 
                 if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
                 setTimeout(() => {
                     const actualWinIndex = getGiftUnderIndicator();
                     const actualPrize = GIFTS[actualWinIndex];
+                    console.log('Реальный выигрыш:', actualPrize.name);
 
                     state.balance -= 150;
                     state.spins += 1;
@@ -1139,17 +1151,20 @@
                 setTimeout(() => {
                     state.isSpinning = false;
                     spinBtn.disabled = false;
+                    console.log('Рулетка разблокирована');
                 }, 5500);
             }
 
-            spinBtn.addEventListener('click', function() {
+            spinBtn.addEventListener('click', function(e) {
+                console.log('Клик по кнопке');
                 performSpin();
             });
 
             spinBtn.addEventListener('dblclick', function(e) {
                 e.preventDefault();
                 if (!state.isSpinning) {
-                    spinBtn.click();
+                    console.log('Двойной клик');
+                    performSpin();
                     tg.showAlert('⚡ БЫСТРОЕ КРУЧЕНИЕ!');
                 }
             });
@@ -1175,6 +1190,7 @@
 
             console.log('[LAB NFT] Mini App загружен. User ID:', USER_ID);
             console.log('[LAB NFT] Всего подарков:', GIFTS.length);
+            console.log('[LAB NFT] Баланс:', state.balance);
         })();
     </script>
 </body>
