@@ -79,6 +79,8 @@
             padding: 10px 6px 14px 6px;
             border-bottom: 1px solid var(--glass-border);
             flex-shrink: 0;
+            position: relative;
+            z-index: 2;
         }
         .header h1 {
             font-size: 18px;
@@ -116,6 +118,8 @@
             scrollbar-width: thin;
             scrollbar-color: var(--neon-green) transparent;
             min-height: 0;
+            position: relative;
+            z-index: 1;
         }
         .content::-webkit-scrollbar {
             width: 3px;
@@ -154,6 +158,8 @@
             margin-bottom: 12px;
             backdrop-filter: blur(10px);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
         }
 
         .nft-grid {
@@ -188,6 +194,7 @@
             height: 200%;
             background: conic-gradient(from 0deg, transparent, rgba(0, 255, 136, 0.05), transparent, rgba(0, 212, 255, 0.05), transparent);
             animation: rotateGlow 6s linear infinite;
+            pointer-events: none;
         }
         @keyframes rotateGlow {
             100% {
@@ -228,72 +235,95 @@
             font-size: 14px;
         }
 
-        /* РУЛЕТКА - стили из второго файла */
-        .gr-reel-wrap {
+        .roulette-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+        .roulette-track {
             position: relative;
             width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 10px 0;
-        }
-        .gr-reel {
-            position: relative;
-            padding: 4px;
-            border-radius: 24px;
-            background: linear-gradient(135deg, rgba(0,255,136,0.1), rgba(0,212,255,0.1));
-            box-shadow: 0 0 60px rgba(0,255,136,0.05);
-        }
-        .gr-reel__ambient {
-            position: absolute;
-            inset: -2px;
-            border-radius: 26px;
-            background: conic-gradient(from 0deg, transparent, rgba(0,255,136,0.2), transparent, rgba(0,212,255,0.2), transparent);
-            animation: rotateGlow 8s linear infinite;
-            pointer-events: none;
-        }
-        .gr-reel__glow {
-            position: absolute;
-            inset: 0;
-            border-radius: 24px;
-            background: radial-gradient(circle at 50% 50%, rgba(0,255,136,0.03), transparent 70%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        .gr-reel__frame {
-            position: relative;
-            border-radius: 20px;
             overflow: hidden;
-            background: var(--bg-primary);
-            z-index: 1;
-            padding: 4px 0;
-        }
-        .gr-reel__frame-shine {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 50%, rgba(255,255,255,0.01) 100%);
-            pointer-events: none;
-            z-index: 2;
-        }
-        .gr-reel__viewport {
-            position: relative;
-            overflow: hidden;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            padding: 8px 0;
             mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
             -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
         }
-        .gr-reel__marker {
+        .roulette-slider {
+            display: flex;
+            gap: 8px;
+            padding: 0 8px;
+            will-change: transform;
+            transition: transform 5s cubic-bezier(0.1, 0.6, 0.2, 1);
+        }
+        .roulette-cell {
+            flex: 0 0 calc(20% - 8px);
+            min-width: 60px;
+            aspect-ratio: 3/4;
+            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 2px;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.03);
+            overflow: hidden;
+        }
+        .roulette-cell img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.2));
+            margin-bottom: 2px;
+            flex-shrink: 0;
+        }
+        .roulette-cell .cell-name {
+            font-size: 7px;
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-primary);
+            line-height: 1.1;
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            padding: 0 2px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-height: 16px;
+        }
+        .roulette-cell.highlight {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.4);
+            transform: scale(1.05);
+        }
+        .roulette-cell.highlight img {
+            filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.6));
+        }
+        .roulette-indicator {
             position: absolute;
             top: -2px;
             left: 50%;
             transform: translateX(-50%);
-            width: 3px;
+            width: 4px;
             height: calc(100% + 4px);
             background: var(--neon-green);
-            box-shadow: 0 0 30px var(--neon-green), 0 0 60px rgba(0,255,136,0.3);
-            z-index: 5;
+            box-shadow: 0 0 30px var(--neon-green), 0 0 60px rgba(0, 255, 136, 0.3);
+            border-radius: 2px;
+            z-index: 10;
             pointer-events: none;
         }
-        .gr-reel__marker::before,
-        .gr-reel__marker::after {
+        .roulette-indicator::before,
+        .roulette-indicator::after {
             content: '';
             position: absolute;
             width: 8px;
@@ -304,98 +334,13 @@
             left: 50%;
             transform: translateX(-50%);
         }
-        .gr-reel__marker::before {
-            top: -3px;
+        .roulette-indicator::before {
+            top: -4px;
         }
-        .gr-reel__marker::after {
-            bottom: -3px;
+        .roulette-indicator::after {
+            bottom: -4px;
         }
-        .gr-reel__track {
-            display: flex;
-            gap: 8px;
-            padding: 8px 4px;
-            transition: transform 4.5s cubic-bezier(0.1, 0.6, 0.15, 1);
-            will-change: transform;
-        }
-        .gr-reel__item {
-            flex: 0 0 calc(20% - 8px);
-            min-width: 60px;
-            aspect-ratio: 3/4;
-            list-style: none;
-        }
-        .gr-reel__card {
-            position: relative;
-            height: 100%;
-            width: 100%;
-            background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
-            border: 1px solid rgba(0,255,136,0.15);
-            border-radius: 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            transition: all 0.3s;
-            box-shadow: 0 0 20px rgba(0,255,136,0.02);
-            padding: 4px;
-        }
-        .gr-reel__card img {
-            width: 70%;
-            height: 65%;
-            object-fit: contain;
-            filter: drop-shadow(0 0 15px rgba(0,255,136,0.1));
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-        .gr-reel__card .gift-name {
-            font-size: 7px;
-            font-weight: 600;
-            text-align: center;
-            color: var(--text-primary);
-            line-height: 1.1;
-            margin-top: 2px;
-            max-width: 100%;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            padding: 0 2px;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .gr-reel__card-shine {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%, rgba(255,255,255,0.02) 100%);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .gr-reel__item.winning .gr-reel__card {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 40px rgba(0,255,136,0.3), inset 0 0 40px rgba(0,255,136,0.05);
-            transform: scale(1.05);
-        }
-        .gr-reel__item.winning .gr-reel__card img {
-            filter: drop-shadow(0 0 30px rgba(0,255,136,0.4));
-        }
-        .gr-reel__item.winning .gr-reel__card-shine {
-            opacity: 1;
-        }
-
-        .gr-actions {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
-            width: 100%;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .gr-spin {
+        .roulette-btn {
             background: var(--neon-green);
             color: #0a0e1a;
             border: none;
@@ -405,56 +350,38 @@
             font-size: 18px;
             font-family: var(--font-mono);
             width: 100%;
-            max-width: 300px;
-            box-shadow: 0 0 30px rgba(0,255,136,0.2);
+            max-width: 280px;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
             transition: 0.15s;
             cursor: pointer;
+            margin-top: 4px;
             position: relative;
-            overflow: hidden;
+            z-index: 20;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
-        .gr-spin::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%);
-            pointer-events: none;
-        }
-        .gr-spin:active {
+        .roulette-btn:active {
             transform: scale(0.96);
             opacity: 0.8;
         }
-        .gr-spin:disabled {
+        .roulette-btn:disabled {
             opacity: 0.4;
             transform: scale(1);
             pointer-events: none;
         }
-        .gr-spin__label {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .gr-spin__label .cost {
-            font-weight: 400;
-            font-size: 14px;
-            opacity: 0.7;
-        }
-        .gr-hint {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-align: center;
-            opacity: 0.7;
-            margin: 0;
-        }
-        .gr-result {
+        .roulette-result {
             text-align: center;
             font-size: 14px;
             min-height: 24px;
             color: var(--neon-cyan);
+            margin-top: 2px;
             font-weight: 500;
-            padding: 4px 0;
+        }
+        .roulette-hint {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 0;
         }
 
         .profile-avatar {
@@ -499,6 +426,8 @@
             gap: 8px;
             flex-shrink: 0;
             padding: 6px 0 4px 0;
+            position: relative;
+            z-index: 2;
         }
         .nav-btn {
             background: var(--glass-bg);
@@ -518,6 +447,8 @@
             flex-direction: column;
             align-items: center;
             gap: 2px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .nav-btn .icon {
             font-size: 20px;
@@ -579,6 +510,7 @@
             height: 200%;
             background: conic-gradient(from 0deg, transparent, rgba(0, 255, 136, 0.03), transparent, rgba(0, 212, 255, 0.03), transparent);
             animation: rotateGlow 8s linear infinite;
+            pointer-events: none;
         }
         .modal-content .modal-gif {
             width: 140px;
@@ -626,6 +558,8 @@
             flex: 1;
             min-width: 80px;
             max-width: 140px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .modal-actions .modal-btn:active {
             transform: scale(0.94);
@@ -679,16 +613,16 @@
             .nav-btn .icon {
                 font-size: 17px;
             }
-            .gr-reel__item {
+            .roulette-cell {
                 flex: 0 0 calc(25% - 8px);
                 min-width: 50px;
             }
-            .gr-reel__card img {
-                width: 60%;
-                height: 55%;
+            .roulette-cell img {
+                width: 36px;
+                height: 36px;
             }
-            .gr-reel__card .gift-name {
-                font-size: 6px;
+            .roulette-cell .cell-name {
+                font-size: 7px;
             }
             .nft-item .nft-image {
                 width: 48px;
@@ -705,18 +639,14 @@
             .modal-actions .modal-btn {
                 max-width: 100%;
             }
-            .gr-spin {
-                font-size: 15px;
-                padding: 12px 20px;
-            }
         }
         @media (min-width: 600px) {
-            .gr-reel__item {
+            .roulette-cell {
                 flex: 0 0 calc(16.66% - 8px);
             }
         }
         @media (min-width: 900px) {
-            .gr-reel__item {
+            .roulette-cell {
                 flex: 0 0 calc(12.5% - 8px);
             }
         }
@@ -757,33 +687,15 @@
             </div>
 
             <div class="screen" id="screenRoulette">
-                <div class="glass-card" style="padding: 12px;">
-                    <div class="gr-reel-wrap">
-                        <div class="gr-reel">
-                            <div class="gr-reel__ambient" aria-hidden="true">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                            <div class="gr-reel__glow" aria-hidden="true"></div>
-                            <div class="gr-reel__frame">
-                                <div class="gr-reel__frame-shine" aria-hidden="true"></div>
-                                <div class="gr-reel__viewport">
-                                    <div class="gr-reel__marker" aria-hidden="true"></div>
-                                    <div class="gr-reel__track" id="rouletteTrack"></div>
-                                </div>
-                            </div>
+                <div class="glass-card">
+                    <div class="roulette-container">
+                        <div class="roulette-track">
+                            <div class="roulette-indicator"></div>
+                            <div class="roulette-slider" id="rouletteSlider"></div>
                         </div>
-                    </div>
-                    <div class="gr-actions">
-                        <div id="rouletteResult" class="gr-result">Нажмите "ЗАПУСТИТЬ РОЗЫГРЫШ"</div>
-                        <button type="button" class="gr-spin" id="spinBtn">
-                            <span class="gr-spin__label">
-                                ЗАПУСТИТЬ РОЗЫГРЫШ
-                                <span class="cost">⭐ 150</span>
-                            </span>
-                        </button>
-                        <p class="gr-hint">NFT-подарки Telegram · выигрывайте уникальные подарки</p>
+                        <div id="rouletteResult" class="roulette-result">Нажмите "ЗАПУСТИТЬ РОЗЫГРЫШ"</div>
+                        <button class="roulette-btn" id="spinBtn">ЗАПУСТИТЬ РОЗЫГРЫШ</button>
+                        <div class="roulette-hint">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
                     </div>
                 </div>
             </div>
@@ -821,7 +733,7 @@
         (function() {
             'use strict';
 
-            // ---------- TELEGRAM SDK ----------
+            // ---------- 1. TELEGRAM SDK ----------
             let tg = null;
             let isTelegram = false;
 
@@ -853,9 +765,10 @@
                 };
             }
 
+            // ---------- 2. USER ID ----------
             const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-            // ---------- NFT ПОДАРКИ - ИЗ ПЕРВОГО КОДА (GIF) ----------
+            // ---------- 3. СПИСОК ПОДАРКОВ ----------
             const BASE_URL = 'https://judepip.github.io/NFT-LAB';
             const GIFTS = [
                 { name: 'Bow Tie', price: 800, image: BASE_URL + '/images/BowTie.gif' },
@@ -870,7 +783,7 @@
                 { name: 'Мишка', price: 15, image: BASE_URL + '/images/Мишка.gif' },
             ];
 
-            // Шансы выпадения (из первого кода)
+            // ---------- 4. ШАНСЫ ----------
             const PAID_CHANCES = [10, 8, 6, 5, 4, 3, 1, 18, 20, 25];
 
             function getRandomGiftByChance() {
@@ -885,7 +798,7 @@
                 return GIFTS[0];
             }
 
-            // ---------- СОСТОЯНИЕ ----------
+            // ---------- 5. СОСТОЯНИЕ ----------
             const STORAGE_KEY = 'lab_nft_simple';
 
             function getDefaultState() {
@@ -922,14 +835,14 @@
                 }
             }
 
-            // ---------- DOM ----------
+            // ---------- 6. DOM ----------
             const $ = (id) => document.getElementById(id);
             const balanceDisplay = $('balanceDisplay');
             const nftCount = $('nftCount');
             const screens = document.querySelectorAll('.screen');
             const navBtns = document.querySelectorAll('.nav-btn');
             const inventoryGrid = $('inventoryGrid');
-            const rouletteTrack = $('rouletteTrack');
+            const rouletteSlider = $('rouletteSlider');
             const spinBtn = $('spinBtn');
             const rouletteResult = $('rouletteResult');
             const profileName = $('profileName');
@@ -938,7 +851,7 @@
             const statBalance = $('statBalance');
             const statSpins = $('statSpins');
 
-            // ---------- ОТПРАВКА В БОТА ----------
+            // ---------- 7. ОТПРАВКА В БОТА ----------
             function sendToBot(data) {
                 try {
                     if (isTelegram && tg && typeof tg.sendData === 'function') {
@@ -951,7 +864,7 @@
                 }
             }
 
-            // ---------- МОДАЛЬНОЕ ОКНО ----------
+            // ---------- 8. МОДАЛЬНОЕ ОКНО ----------
             function showModal(gift, showSell = false) {
                 const oldModal = document.querySelector('.modal-overlay');
                 if (oldModal) oldModal.remove();
@@ -1032,7 +945,7 @@
                 }
             }
 
-            // ---------- РЕНДЕР ----------
+            // ---------- 9. РЕНДЕР ----------
             function render() {
                 balanceDisplay.textContent = Math.floor(state.balance);
                 nftCount.textContent = state.inventory.length + ' шт.';
@@ -1065,7 +978,7 @@
                 saveState();
             }
 
-            // ---------- НАВИГАЦИЯ ----------
+            // ---------- 10. НАВИГАЦИЯ ----------
             function switchScreen(screenId) {
                 screens.forEach(s => s.classList.remove('active'));
                 const target = document.getElementById(screenId);
@@ -1084,32 +997,87 @@
                 });
             });
 
-            // ---------- СОЗДАНИЕ РУЛЕТКИ ----------
-            function createRoulette() {
-                const REPEAT_COUNT = 10;
-                let html = '';
-                for (let rep = 0; rep < REPEAT_COUNT; rep++) {
-                    GIFTS.forEach((gift, index) => {
-                        html += `
-                            <div class="gr-reel__item" data-gift-index="${index}">
-                                <div class="gr-reel__card">
-                                    <div class="gr-reel__card-shine" aria-hidden="true"></div>
-                                    <img src="${gift.image}" alt="${gift.name}" draggable="false" loading="lazy"
-                                         onerror="this.style.display='none'">
-                                    <div class="gift-name">${gift.name}</div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-                rouletteTrack.innerHTML = html;
-                rouletteTrack.style.transition = 'none';
-                rouletteTrack.style.transform = 'translate3d(0px, 0, 0)';
-                void rouletteTrack.offsetWidth;
-                rouletteTrack.style.transition = '';
+            // ---------- 11. ФУНКЦИИ РУЛЕТКИ ----------
+            function getCellWidth() {
+                const cells = document.querySelectorAll('.roulette-cell');
+                if (cells.length === 0) return 60;
+                const firstCell = cells[0];
+                return firstCell.offsetWidth + 8;
             }
 
-            // ---------- ФУНКЦИЯ ВРАЩЕНИЯ ----------
+            function highlightCell(giftIndex) {
+                const cells = document.querySelectorAll('.roulette-cell[data-gift-index="' + giftIndex + '"]');
+                const centerX = window.innerWidth / 2;
+                let closestCell = null;
+                let closestDist = Infinity;
+                cells.forEach(cell => {
+                    const rect = cell.getBoundingClientRect();
+                    const cellCenter = rect.left + rect.width / 2;
+                    const dist = Math.abs(cellCenter - centerX);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestCell = cell;
+                    }
+                });
+                if (closestCell) {
+                    closestCell.classList.add('highlight');
+                }
+            }
+
+            function clearHighlight() {
+                document.querySelectorAll('.roulette-cell').forEach(cell => {
+                    cell.classList.remove('highlight');
+                });
+            }
+
+            function getGiftUnderIndicator() {
+                const cells = document.querySelectorAll('.roulette-cell');
+                const centerX = window.innerWidth / 2;
+                let closestCell = null;
+                let closestDist = Infinity;
+                cells.forEach(cell => {
+                    const rect = cell.getBoundingClientRect();
+                    const cellCenter = rect.left + rect.width / 2;
+                    const dist = Math.abs(cellCenter - centerX);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestCell = cell;
+                    }
+                });
+                if (closestCell) {
+                    const giftIndex = parseInt(closestCell.dataset.giftIndex, 10);
+                    return giftIndex;
+                }
+                return 0;
+            }
+
+            // ---------- 12. СОЗДАНИЕ РУЛЕТКИ ----------
+            function createRouletteCells() {
+                const REPEAT_COUNT = 8;
+                let cellsHtml = '';
+                for (let rep = 0; rep < REPEAT_COUNT; rep++) {
+                    GIFTS.forEach((cell, index) => {
+                        cellsHtml += `
+                                <div class="roulette-cell" data-gift-index="${index}">
+                                    <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
+                                         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                                    <div style="font-size:28px; display:none;">🎁</div>
+                                    <div class="cell-name">${cell.name}</div>
+                                </div>
+                            `;
+                    });
+                }
+                rouletteSlider.innerHTML = cellsHtml;
+                
+                const totalCells = GIFTS.length * REPEAT_COUNT;
+                const startOffset = 33;
+                rouletteSlider.style.transition = 'none';
+                rouletteSlider.style.transform = 'translateX(-' + startOffset + '%)';
+                void rouletteSlider.offsetWidth;
+                rouletteSlider.style.transition = '';
+            }
+
+            // ---------- 13. ЗАПУСК РУЛЕТКИ ----------
             function performSpin() {
                 if (state.isSpinning) return;
 
@@ -1124,97 +1092,71 @@
                 rouletteResult.textContent = '🌀 Крутим...';
 
                 const prize = getRandomGiftByChance();
-                const winIndex = GIFTS.indexOf(prize);
+                const winGiftIndex = GIFTS.indexOf(prize);
 
-                // Убираем подсветку
-                document.querySelectorAll('.gr-reel__item.winning').forEach(el => el.classList.remove('winning'));
+                clearHighlight();
 
-                // Вычисляем смещение
-                const items = document.querySelectorAll('.gr-reel__item');
-                const totalItems = items.length;
+                const totalUnique = GIFTS.length;
+                const cellWidth = getCellWidth();
+                const sliderWidth = rouletteSlider.scrollWidth || (totalUnique * 8 * cellWidth);
+                const targetCellIndex = 3 * totalUnique + winGiftIndex;
+                const offsetPercent = (targetCellIndex * cellWidth / sliderWidth) * 100 - 50;
                 
-                // Находим ячейку в 4-м повторении
-                const targetItemIndex = 4 * GIFTS.length + winIndex;
-
-                if (targetItemIndex >= totalItems) {
-                    console.error('Целевой индекс за пределами массива');
-                    state.isSpinning = false;
-                    spinBtn.disabled = false;
-                    return;
-                }
-
-                const itemWidth = items[0]?.offsetWidth + 8 || 80;
-                const viewportWidth = document.querySelector('.gr-reel__viewport').offsetWidth || 300;
-                const targetOffset = targetItemIndex * itemWidth;
-                const offsetPx = targetOffset - viewportWidth / 2 + itemWidth / 2;
-
-                // Применяем анимацию
-                rouletteTrack.style.transition = 'none';
-                void rouletteTrack.offsetWidth;
-                rouletteTrack.style.transition = 'transform 4.5s cubic-bezier(0.1, 0.6, 0.15, 1)';
-                rouletteTrack.style.transform = 'translate3d(-' + offsetPx + 'px, 0, 0)';
+                rouletteSlider.style.transition = 'none';
+                void rouletteSlider.offsetWidth;
+                rouletteSlider.style.transition = 'transform 5s cubic-bezier(0.1, 0.6, 0.2, 1)';
+                rouletteSlider.style.transform = 'translateX(-' + offsetPercent + '%)';
 
                 if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
                 setTimeout(() => {
-                    // Находим победителя
-                    const allItems = document.querySelectorAll('.gr-reel__item');
-                    const centerX = window.innerWidth / 2;
-                    let closestItem = null;
-                    let closestDist = Infinity;
+                    const actualWinIndex = getGiftUnderIndicator();
+                    const actualPrize = GIFTS[actualWinIndex];
 
-                    allItems.forEach(item => {
-                        const rect = item.getBoundingClientRect();
-                        const itemCenter = rect.left + rect.width / 2;
-                        const dist = Math.abs(itemCenter - centerX);
-                        if (dist < closestDist) {
-                            closestDist = dist;
-                            closestItem = item;
+                    state.balance -= 150;
+                    state.spins += 1;
+                    const newGift = {
+                        id: 'gift_' + Date.now(),
+                        name: actualPrize.name,
+                        image: actualPrize.image,
+                        price: actualPrize.price,
+                    };
+                    state.inventory.push(newGift);
+
+                    highlightCell(actualWinIndex);
+                    rouletteResult.textContent = '🎉 Вы выиграли: ' + actualPrize.name + '!';
+
+                    render();
+                    showModal(newGift, false);
+
+                    sendToBot({
+                        action: 'roulette_spin',
+                        payload: {
+                            prize: actualPrize.name,
+                            balance: state.balance,
                         }
                     });
-
-                    if (closestItem) {
-                        closestItem.classList.add('winning');
-                        const actualIndex = parseInt(closestItem.dataset.giftIndex, 10);
-                        const actualPrize = GIFTS[actualIndex] || prize;
-
-                        state.balance -= 150;
-                        state.spins += 1;
-                        const newGift = {
-                            id: 'gift_' + Date.now(),
-                            name: actualPrize.name,
-                            image: actualPrize.image,
-                            price: actualPrize.price,
-                        };
-                        state.inventory.push(newGift);
-
-                        rouletteResult.textContent = '🎉 Вы выиграли: ' + actualPrize.name + '!';
-                        render();
-                        showModal(newGift, false);
-
-                        sendToBot({
-                            action: 'roulette_spin',
-                            payload: {
-                                prize: actualPrize.name,
-                                balance: state.balance,
-                            }
-                        });
-                    } else {
-                        rouletteResult.textContent = '❌ Ошибка определения победителя';
-                    }
-                }, 4500);
+                }, 4800);
 
                 setTimeout(() => {
                     state.isSpinning = false;
                     spinBtn.disabled = false;
-                }, 5200);
+                }, 5500);
             }
 
-            // ---------- ОБРАБОТЧИКИ ----------
+            // ---------- 14. НАВЕШИВАЕМ ОБРАБОТЧИКИ ----------
             spinBtn.addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
+                console.log('Кнопка нажата!');
                 performSpin();
             });
+
+            // Добавляем touch события для мобильных
+            spinBtn.addEventListener('touchstart', function(e) {
+                console.log('touchstart на кнопке');
+                // Не мешаем клику
+            }, { passive: true });
 
             spinBtn.addEventListener('dblclick', function(e) {
                 e.preventDefault();
@@ -1224,7 +1166,7 @@
                 }
             });
 
-            // Клик по NFT в инвентаре
+            // ---------- 15. КЛИК ПО NFT В ИНВЕНТАРЕ ----------
             inventoryGrid.addEventListener('click', function(e) {
                 const item = e.target.closest('.nft-item');
                 if (!item) return;
@@ -1239,23 +1181,16 @@
                 }
             });
 
-            // ---------- ИНИЦИАЛИЗАЦИЯ ----------
-            createRoulette();
+            // ---------- 16. ИНИЦИАЛИЗАЦИЯ ----------
+            createRouletteCells();
             render();
 
             console.log('[LAB NFT] Mini App загружен. User ID:', USER_ID);
             console.log('[LAB NFT] Всего подарков:', GIFTS.length);
-
-            // Обработка изменения размера окна
-            let resizeTimeout;
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(() => {
-                    if (!state.isSpinning) {
-                        createRoulette();
-                    }
-                }, 300);
-            });
+            
+            // Проверка кнопки
+            console.log('Кнопка spinBtn:', spinBtn);
+            console.log('Кнопка spinBtn disabled:', spinBtn.disabled);
         })();
     </script>
 </body>
