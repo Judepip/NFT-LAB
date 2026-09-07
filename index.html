@@ -19,7 +19,6 @@
     </script>
     <script src="https://telegram.org/js/telegram-web-app.js" onerror="console.warn('Telegram SDK не загрузился, используется эмуляция')"></script>
     <style>
-        /* ---------- БАЗОВЫЕ СТИЛИ ---------- */
         * {
             margin: 0;
             padding: 0;
@@ -73,7 +72,6 @@
             backdrop-filter: blur(2px);
         }
 
-        /* ---------- ВЕРХНИЙ БАР ---------- */
         .header {
             display: flex;
             justify-content: space-between;
@@ -114,7 +112,6 @@
             font-weight: 400;
         }
 
-        /* ---------- КОНТЕНТ ---------- */
         .content {
             flex: 1;
             overflow-y: auto;
@@ -164,7 +161,7 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        /* ---------- ИНВЕНТАРЬ ---------- */
+        /* ИНВЕНТАРЬ */
         .nft-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -237,127 +234,51 @@
             font-size: 14px;
         }
 
-        /* ---------- РУЛЕТКА (НОВАЯ, ИЗ ВАШЕГО ПРИМЕРА) ---------- */
+        /* РУЛЕТКА (ИЗ ВАШЕГО ПРИМЕРА) */
         .roulette-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             width: 100%;
         }
 
-        .gr-reel-wrap {
+        .reel-wrap {
             position: relative;
             width: 100%;
             max-width: 400px;
             margin: 0 auto;
-        }
-
-        .gr-reel {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 1.2 / 1;
             background: radial-gradient(ellipse at center, rgba(18, 24, 43, 0.4), rgba(10, 14, 26, 0.8));
-            border-radius: 24px;
+            border-radius: 20px;
             border: 1px solid var(--glass-border);
+            padding: 12px 0;
             overflow: hidden;
             box-shadow: 0 0 60px rgba(0, 255, 136, 0.05);
         }
 
-        .gr-reel__ambient {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-        }
-        .gr-reel__ambient span {
-            position: absolute;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0, 255, 136, 0.03), transparent 70%);
-            animation: ambientFloat 8s ease-in-out infinite alternate;
-        }
-        .gr-reel__ambient span:nth-child(1) {
-            width: 60%;
-            height: 60%;
-            top: -10%;
-            left: -10%;
-            animation-delay: 0s;
-        }
-        .gr-reel__ambient span:nth-child(2) {
-            width: 50%;
-            height: 50%;
-            bottom: -10%;
-            right: -10%;
-            animation-delay: 3s;
-            background: radial-gradient(circle, rgba(0, 212, 255, 0.03), transparent 70%);
-        }
-        .gr-reel__ambient span:nth-child(3) {
-            width: 40%;
-            height: 40%;
-            top: 30%;
-            left: 30%;
-            animation-delay: 5s;
-            background: radial-gradient(circle, rgba(123, 47, 252, 0.02), transparent 70%);
-        }
-
-        @keyframes ambientFloat {
-            0% {
-                transform: translate(0, 0) scale(1);
-            }
-            100% {
-                transform: translate(10%, 10%) scale(1.2);
-            }
-        }
-
-        .gr-reel__glow {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 1;
-            background: radial-gradient(ellipse at 50% 50%, rgba(0, 255, 136, 0.02), transparent 70%);
-        }
-
-        .gr-reel__frame {
+        .reel-viewport {
             position: relative;
             width: 100%;
-            height: 100%;
-            z-index: 2;
-            padding: 12px 0;
-            overflow: hidden;
-        }
-
-        .gr-reel__frame-shine {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.02), transparent);
-            z-index: 4;
-        }
-
-        .gr-reel__viewport {
-            position: relative;
-            width: 100%;
-            height: 100%;
             overflow: hidden;
             mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
             -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
         }
 
-        .gr-reel__marker {
+        .reel-marker {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 3px;
-            height: 60%;
+            height: 70%;
             background: var(--neon-green);
             box-shadow: 0 0 20px var(--neon-green), 0 0 40px rgba(0, 255, 136, 0.3);
             z-index: 5;
             border-radius: 2px;
             pointer-events: none;
         }
-        .gr-reel__marker::before,
-        .gr-reel__marker::after {
+        .reel-marker::before,
+        .reel-marker::after {
             content: '';
             position: absolute;
             left: 50%;
@@ -368,36 +289,34 @@
             border-radius: 50%;
             box-shadow: 0 0 20px var(--neon-green);
         }
-        .gr-reel__marker::before {
+        .reel-marker::before {
             top: -4px;
         }
-        .gr-reel__marker::after {
+        .reel-marker::after {
             bottom: -4px;
         }
 
-        .gr-reel__track {
+        .reel-track {
             display: flex;
             gap: 8px;
             padding: 0 4px;
-            height: 100%;
-            align-items: center;
             transition: transform 5s cubic-bezier(0.1, 0.6, 0.2, 1);
             will-change: transform;
         }
 
-        .gr-reel__item {
+        .reel-item {
             flex: 0 0 calc(25% - 8px);
             min-width: 70px;
-            height: 85%;
+            aspect-ratio: 3/4;
             transition: all 0.3s;
         }
 
-        .gr-reel__card {
+        .reel-card {
             position: relative;
             width: 100%;
             height: 100%;
             background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
-            border-radius: 16px;
+            border-radius: 14px;
             border: 1px solid rgba(0, 255, 136, 0.15);
             overflow: hidden;
             display: flex;
@@ -407,41 +326,23 @@
             transition: all 0.3s;
         }
 
-        .gr-reel__card-shine {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 50%);
-            z-index: 1;
-        }
-
-        .gr-gift-lottie {
+        .reel-card img {
             width: 80%;
             height: 80%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-        }
-        .gr-gift-lottie img {
-            width: 100%;
-            height: 100%;
             object-fit: contain;
             filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.15));
         }
 
-        .gr-reel__item.highlight .gr-reel__card {
+        .reel-item.highlight .reel-card {
             border-color: var(--neon-green);
             box-shadow: 0 0 40px rgba(0, 255, 136, 0.3), inset 0 0 40px rgba(0, 255, 136, 0.05);
             transform: scale(1.05);
         }
-
-        .gr-reel__item.highlight .gr-gift-lottie img {
+        .reel-item.highlight .reel-card img {
             filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.4));
         }
 
-        /* Кнопка запуска */
-        .gr-spin {
+        .spin-btn {
             background: var(--neon-green);
             color: #0a0e1a;
             border: none;
@@ -455,39 +356,35 @@
             box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
             transition: 0.15s;
             cursor: pointer;
-            display: block;
-            margin: 0 auto;
+            margin-top: 4px;
         }
-        .gr-spin:active {
+        .spin-btn:active {
             transform: scale(0.96);
             opacity: 0.8;
         }
-        .gr-spin:disabled {
+        .spin-btn:disabled {
             opacity: 0.4;
             transform: scale(1);
             pointer-events: none;
         }
-        .gr-spin__label {
-            display: inline-block;
-        }
 
-        .gr-result {
+        .roulette-result {
             text-align: center;
             font-size: 14px;
             min-height: 24px;
             color: var(--neon-cyan);
-            margin-top: 4px;
+            margin-top: 2px;
             font-weight: 500;
         }
 
-        .gr-hint {
+        .roulette-hint {
             font-size: 11px;
             color: var(--text-secondary);
             text-align: center;
-            margin-top: 2px;
+            margin-top: 0;
         }
 
-        /* ---------- ПРОФИЛЬ ---------- */
+        /* ПРОФИЛЬ */
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -524,7 +421,7 @@
             letter-spacing: 0.5px;
         }
 
-        /* ---------- НАВИГАЦИЯ ---------- */
+        /* НАВИГАЦИЯ */
         .nav-center {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -565,7 +462,7 @@
             background: rgba(0, 255, 136, 0.05);
         }
 
-        /* ---------- МОДАЛЬНОЕ ОКНО ---------- */
+        /* МОДАЛЬНОЕ ОКНО */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -702,7 +599,6 @@
             transform: rotate(90deg);
         }
 
-        /* ---------- АДАПТИВ ---------- */
         @media (max-width: 380px) {
             .header h1 {
                 font-size: 15px;
@@ -718,9 +614,9 @@
             .nav-btn .icon {
                 font-size: 17px;
             }
-            .gr-reel__item {
+            .reel-item {
                 flex: 0 0 calc(30% - 8px);
-                min-width: 60px;
+                min-width: 55px;
             }
             .nft-item .nft-image {
                 width: 48px;
@@ -739,12 +635,12 @@
             }
         }
         @media (min-width: 600px) {
-            .gr-reel__item {
+            .reel-item {
                 flex: 0 0 calc(20% - 8px);
             }
         }
         @media (min-width: 900px) {
-            .gr-reel__item {
+            .reel-item {
                 flex: 0 0 calc(16.66% - 8px);
             }
         }
@@ -774,7 +670,6 @@
 
         <div class="content" id="contentArea">
 
-            <!-- ИНВЕНТАРЬ -->
             <div class="screen active" id="screenInventory">
                 <div class="glass-card">
                     <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
@@ -785,39 +680,22 @@
                 </div>
             </div>
 
-            <!-- РУЛЕТКА (НОВАЯ) -->
             <div class="screen" id="screenRoulette">
                 <div class="glass-card">
                     <div class="roulette-container">
-                        <div class="gr-reel-wrap">
-                            <div class="gr-reel">
-                                <div class="gr-reel__ambient" aria-hidden="true">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                </div>
-                                <div class="gr-reel__glow" aria-hidden="true"></div>
-                                <div class="gr-reel__frame">
-                                    <div class="gr-reel__frame-shine" aria-hidden="true"></div>
-                                    <div class="gr-reel__viewport">
-                                        <div class="gr-reel__marker" aria-hidden="true"></div>
-                                        <div class="gr-reel__track" id="rouletteTrack">
-                                            <!-- Ячейки создаются из JS -->
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="reel-wrap">
+                            <div class="reel-viewport">
+                                <div class="reel-marker"></div>
+                                <div class="reel-track" id="reelTrack"></div>
                             </div>
                         </div>
-                        <div id="rouletteResult" class="gr-result">Нажмите "РАСКРУТИТЬ"</div>
-                        <button class="gr-spin" id="spinBtn">
-                            <span class="gr-spin__label">РАСКРУТИТЬ ЗА 150 ⭐</span>
-                        </button>
-                        <div class="gr-hint">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
+                        <div id="rouletteResult" class="roulette-result">Нажмите "РАСКРУТИТЬ"</div>
+                        <button class="spin-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150 ⭐</button>
+                        <div class="roulette-hint">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
                     </div>
                 </div>
             </div>
 
-            <!-- ПРОФИЛЬ -->
             <div class="screen" id="screenProfile">
                 <div class="glass-card" style="text-align:center;">
                     <div class="profile-avatar" id="profileAvatar">👤</div>
@@ -833,7 +711,6 @@
 
         </div>
 
-        <!-- НАВИГАЦИЯ -->
         <div class="nav-center">
             <div class="nav-btn active" data-screen="screenInventory">
                 <span class="icon">📦</span> ИНВЕНТАРЬ
@@ -961,7 +838,7 @@
             const screens = document.querySelectorAll('.screen');
             const navBtns = document.querySelectorAll('.nav-btn');
             const inventoryGrid = $('inventoryGrid');
-            const rouletteTrack = $('rouletteTrack');
+            const reelTrack = $('reelTrack');
             const spinBtn = $('spinBtn');
             const rouletteResult = $('rouletteResult');
             const profileName = $('profileName');
@@ -1116,65 +993,71 @@
                 });
             });
 
-            // ---------- 11. СОЗДАНИЕ ЯЧЕЕК РУЛЕТКИ ----------
-            function createRouletteCells() {
-                const REPEAT_COUNT = 8;
-                let cellsHtml = '';
+            // ---------- 11. СОЗДАНИЕ РУЛЕТКИ ----------
+            function createReel() {
+                const REPEAT_COUNT = 10;
+                let html = '';
                 for (let rep = 0; rep < REPEAT_COUNT; rep++) {
-                    GIFTS.forEach((cell, index) => {
-                        cellsHtml += `
-                            <div class="gr-reel__item" data-gift-index="${index}">
-                                <div class="gr-reel__card">
-                                    <div class="gr-reel__card-shine" aria-hidden="true"></div>
-                                    <div class="gr-gift-lottie">
-                                        <img src="${cell.image}" alt="${cell.name}" draggable="false" loading="lazy">
-                                    </div>
+                    GIFTS.forEach((gift, index) => {
+                        html += `
+                            <div class="reel-item" data-gift-index="${index}">
+                                <div class="reel-card">
+                                    <img src="${gift.image}" alt="${gift.name}" draggable="false" loading="lazy">
                                 </div>
                             </div>
                         `;
                     });
                 }
-                rouletteTrack.innerHTML = cellsHtml;
+                reelTrack.innerHTML = html;
 
-                // Начальная позиция — центр ленты
-                const startRepeat = 4;
-                const startOffset = startRepeat * GIFTS.length * (100 / 4);
-                rouletteTrack.style.transition = 'none';
-                rouletteTrack.style.transform = 'translate3d(-' + startOffset + '%, 0, 0)';
-                void rouletteTrack.offsetWidth;
-                rouletteTrack.style.transition = '';
+                // Начальная позиция — центр ленты (5-е повторение)
+                const startRepeat = 5;
+                const itemWidth = 25; // 100% / 4 видимых
+                const startOffset = startRepeat * GIFTS.length * itemWidth;
+                reelTrack.style.transition = 'none';
+                reelTrack.style.transform = 'translateX(-' + startOffset + '%)';
+                void reelTrack.offsetWidth;
+                reelTrack.style.transition = '';
             }
 
             // ---------- 12. ФУНКЦИИ РУЛЕТКИ ----------
             function highlightCell(giftIndex) {
-                const items = document.querySelectorAll('.gr-reel__item');
-                items.forEach((item, idx) => {
-                    const idxAttr = parseInt(item.dataset.giftIndex, 10);
-                    if (idxAttr === giftIndex) {
-                        // Находим ближайшую к центру ячейку
+                const items = document.querySelectorAll('.reel-item');
+                const centerX = window.innerWidth / 2;
+                let closestItem = null;
+                let closestDist = Infinity;
+
+                items.forEach(item => {
+                    const idx = parseInt(item.dataset.giftIndex, 10);
+                    if (idx === giftIndex) {
                         const rect = item.getBoundingClientRect();
-                        const centerX = window.innerWidth / 2;
                         const itemCenter = rect.left + rect.width / 2;
-                        if (Math.abs(itemCenter - centerX) < rect.width) {
-                            item.classList.add('highlight');
+                        const dist = Math.abs(itemCenter - centerX);
+                        if (dist < closestDist) {
+                            closestDist = dist;
+                            closestItem = item;
                         }
-                    } else {
-                        item.classList.remove('highlight');
                     }
                 });
+
+                items.forEach(item => item.classList.remove('highlight'));
+                if (closestItem) {
+                    closestItem.classList.add('highlight');
+                }
             }
 
             function clearHighlight() {
-                document.querySelectorAll('.gr-reel__item').forEach(item => {
+                document.querySelectorAll('.reel-item').forEach(item => {
                     item.classList.remove('highlight');
                 });
             }
 
             function getGiftUnderIndicator() {
-                const items = document.querySelectorAll('.gr-reel__item');
+                const items = document.querySelectorAll('.reel-item');
                 const centerX = window.innerWidth / 2;
                 let closestItem = null;
                 let closestDist = Infinity;
+
                 items.forEach(item => {
                     const rect = item.getBoundingClientRect();
                     const itemCenter = rect.left + rect.width / 2;
@@ -1184,9 +1067,9 @@
                         closestItem = item;
                     }
                 });
+
                 if (closestItem) {
-                    const giftIndex = parseInt(closestItem.dataset.giftIndex, 10);
-                    return giftIndex;
+                    return parseInt(closestItem.dataset.giftIndex, 10);
                 }
                 return 0;
             }
@@ -1206,22 +1089,21 @@
                 rouletteResult.textContent = '🌀 Крутим...';
 
                 const prize = getRandomGiftByChance();
-                const winGiftIndex = GIFTS.indexOf(prize);
+                const winIndex = GIFTS.indexOf(prize);
 
                 clearHighlight();
 
                 const totalUnique = GIFTS.length;
-                const repeats = 8;
-                const cellWidthPercent = 25; // 4 ячейки видны
-                const targetRepeat = 6;
-                const targetCellIndex = targetRepeat * totalUnique + winGiftIndex;
+                const itemWidth = 25; // 4 ячейки видны
+                const targetRepeat = 7;
+                const targetCellIndex = targetRepeat * totalUnique + winIndex;
                 const visibleOffset = 2.5;
-                const offsetPercent = targetCellIndex * cellWidthPercent - visibleOffset * cellWidthPercent;
+                const offsetPercent = targetCellIndex * itemWidth - visibleOffset * itemWidth;
 
-                rouletteTrack.style.transition = 'none';
-                void rouletteTrack.offsetWidth;
-                rouletteTrack.style.transition = 'transform 5s cubic-bezier(0.1, 0.6, 0.2, 1)';
-                rouletteTrack.style.transform = 'translate3d(-' + offsetPercent + '%, 0, 0)';
+                reelTrack.style.transition = 'none';
+                void reelTrack.offsetWidth;
+                reelTrack.style.transition = 'transform 5s cubic-bezier(0.1, 0.6, 0.2, 1)';
+                reelTrack.style.transform = 'translateX(-' + offsetPercent + '%)';
 
                 if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
@@ -1288,7 +1170,7 @@
             });
 
             // ---------- 15. ИНИЦИАЛИЗАЦИЯ ----------
-            createRouletteCells();
+            createReel();
             render();
 
             console.log('[LAB NFT] Mini App загружен. User ID:', USER_ID);
