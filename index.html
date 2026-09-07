@@ -69,7 +69,6 @@
             height: 100vh;
             max-height: 100vh;
             padding: 8px 12px 8px 12px;
-            backdrop-filter: blur(2px);
         }
 
         .header {
@@ -359,6 +358,7 @@
             z-index: 20;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
         }
         .roulette-btn:active {
             transform: scale(0.96);
@@ -694,7 +694,7 @@
                             <div class="roulette-slider" id="rouletteSlider"></div>
                         </div>
                         <div id="rouletteResult" class="roulette-result">Нажмите "ЗАПУСТИТЬ РОЗЫГРЫШ"</div>
-                        <button class="roulette-btn" id="spinBtn">ЗАПУСТИТЬ РОЗЫГРЫШ</button>
+                        <button class="roulette-btn" id="spinBtn">ЗАПУСТИТЬ РОЗЫГРЫШ 150 ⭐</button>
                         <div class="roulette-hint">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
                     </div>
                 </div>
@@ -1069,7 +1069,6 @@
                 }
                 rouletteSlider.innerHTML = cellsHtml;
                 
-                const totalCells = GIFTS.length * REPEAT_COUNT;
                 const startOffset = 33;
                 rouletteSlider.style.transition = 'none';
                 rouletteSlider.style.transform = 'translateX(-' + startOffset + '%)';
@@ -1079,7 +1078,12 @@
 
             // ---------- 13. ЗАПУСК РУЛЕТКИ ----------
             function performSpin() {
-                if (state.isSpinning) return;
+                console.log('performSpin вызван!');
+                
+                if (state.isSpinning) {
+                    console.log('Уже крутится');
+                    return;
+                }
 
                 if (state.balance < 150) {
                     rouletteResult.textContent = '❌ Недостаточно ⭐ (нужно 150)';
@@ -1087,8 +1091,10 @@
                     return;
                 }
 
+                console.log('Запускаем вращение!');
                 state.isSpinning = true;
                 spinBtn.disabled = true;
+                spinBtn.textContent = '🌀 КРУТИТСЯ...';
                 rouletteResult.textContent = '🌀 Крутим...';
 
                 const prize = getRandomGiftByChance();
@@ -1141,30 +1147,44 @@
                 setTimeout(() => {
                     state.isSpinning = false;
                     spinBtn.disabled = false;
+                    spinBtn.textContent = 'ЗАПУСТИТЬ РОЗЫГРЫШ 150 ⭐';
                 }, 5500);
             }
 
             // ---------- 14. НАВЕШИВАЕМ ОБРАБОТЧИКИ ----------
-            spinBtn.addEventListener('click', function(e) {
+            // Удаляем все старые обработчики и вешаем новые
+            const newSpinBtn = spinBtn.cloneNode(true);
+            spinBtn.parentNode.replaceChild(newSpinBtn, spinBtn);
+            
+            // Теперь работаем с новым элементом
+            const spinBtnNew = document.getElementById('spinBtn');
+            
+            // Обработчик клика
+            spinBtnNew.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('Кнопка нажата!');
                 performSpin();
             });
 
-            // Добавляем touch события для мобильных
-            spinBtn.addEventListener('touchstart', function(e) {
+            // Обработчик для мобильных устройств
+            spinBtnNew.addEventListener('touchstart', function(e) {
                 console.log('touchstart на кнопке');
-                // Не мешаем клику
+                // Не блокируем клик
             }, { passive: true });
 
-            spinBtn.addEventListener('dblclick', function(e) {
+            // Двойной тап
+            spinBtnNew.addEventListener('dblclick', function(e) {
                 e.preventDefault();
                 if (!state.isSpinning) {
-                    spinBtn.click();
+                    console.log('Двойной тап!');
+                    performSpin();
                     tg.showAlert('⚡ БЫСТРОЕ КРУЧЕНИЕ!');
                 }
             });
+
+            // Проверка через консоль
+            console.log('Кнопка привязана!');
 
             // ---------- 15. КЛИК ПО NFT В ИНВЕНТАРЕ ----------
             inventoryGrid.addEventListener('click', function(e) {
@@ -1187,10 +1207,8 @@
 
             console.log('[LAB NFT] Mini App загружен. User ID:', USER_ID);
             console.log('[LAB NFT] Всего подарков:', GIFTS.length);
+            console.log('Кнопка spinBtnNew:', spinBtnNew);
             
-            // Проверка кнопки
-            console.log('Кнопка spinBtn:', spinBtn);
-            console.log('Кнопка spinBtn disabled:', spinBtn.disabled);
         })();
     </script>
 </body>
