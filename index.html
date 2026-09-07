@@ -234,8 +234,8 @@
             font-size: 14px;
         }
 
-        /* РУЛЕТКА (ИЗ ВАШЕГО ПРИМЕРА) */
-        .roulette-container {
+        /* ===== НОВАЯ РУЛЕТКА (вдохновлена вторым примером) ===== */
+        .gr-reel-wrap {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -243,7 +243,7 @@
             width: 100%;
         }
 
-        .reel-wrap {
+        .gr-reel {
             position: relative;
             width: 100%;
             max-width: 400px;
@@ -256,7 +256,7 @@
             box-shadow: 0 0 60px rgba(0, 255, 136, 0.05);
         }
 
-        .reel-viewport {
+        .gr-reel__viewport {
             position: relative;
             width: 100%;
             overflow: hidden;
@@ -264,7 +264,7 @@
             -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
         }
 
-        .reel-marker {
+        .gr-reel__marker {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -277,8 +277,8 @@
             border-radius: 2px;
             pointer-events: none;
         }
-        .reel-marker::before,
-        .reel-marker::after {
+        .gr-reel__marker::before,
+        .gr-reel__marker::after {
             content: '';
             position: absolute;
             left: 50%;
@@ -289,14 +289,14 @@
             border-radius: 50%;
             box-shadow: 0 0 20px var(--neon-green);
         }
-        .reel-marker::before {
+        .gr-reel__marker::before {
             top: -4px;
         }
-        .reel-marker::after {
+        .gr-reel__marker::after {
             bottom: -4px;
         }
 
-        .reel-track {
+        .gr-reel__track {
             display: flex;
             gap: 8px;
             padding: 0 4px;
@@ -304,14 +304,14 @@
             will-change: transform;
         }
 
-        .reel-item {
+        .gr-reel__item {
             flex: 0 0 calc(25% - 8px);
             min-width: 70px;
             aspect-ratio: 3/4;
             transition: all 0.3s;
         }
 
-        .reel-card {
+        .gr-reel__card {
             position: relative;
             width: 100%;
             height: 100%;
@@ -326,23 +326,23 @@
             transition: all 0.3s;
         }
 
-        .reel-card img {
+        .gr-reel__card img {
             width: 80%;
             height: 80%;
             object-fit: contain;
             filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.15));
         }
 
-        .reel-item.highlight .reel-card {
+        .gr-reel__item.highlight .gr-reel__card {
             border-color: var(--neon-green);
             box-shadow: 0 0 40px rgba(0, 255, 136, 0.3), inset 0 0 40px rgba(0, 255, 136, 0.05);
             transform: scale(1.05);
         }
-        .reel-item.highlight .reel-card img {
+        .gr-reel__item.highlight .gr-reel__card img {
             filter: drop-shadow(0 0 30px rgba(0, 255, 136, 0.4));
         }
 
-        .spin-btn {
+        .gr-spin {
             background: var(--neon-green);
             color: #0a0e1a;
             border: none;
@@ -358,17 +358,17 @@
             cursor: pointer;
             margin-top: 4px;
         }
-        .spin-btn:active {
+        .gr-spin:active {
             transform: scale(0.96);
             opacity: 0.8;
         }
-        .spin-btn:disabled {
+        .gr-spin:disabled {
             opacity: 0.4;
             transform: scale(1);
             pointer-events: none;
         }
 
-        .roulette-result {
+        .gr-hint {
             text-align: center;
             font-size: 14px;
             min-height: 24px;
@@ -377,7 +377,7 @@
             font-weight: 500;
         }
 
-        .roulette-hint {
+        .gr-actions {
             font-size: 11px;
             color: var(--text-secondary);
             text-align: center;
@@ -614,7 +614,7 @@
             .nav-btn .icon {
                 font-size: 17px;
             }
-            .reel-item {
+            .gr-reel__item {
                 flex: 0 0 calc(30% - 8px);
                 min-width: 55px;
             }
@@ -635,12 +635,12 @@
             }
         }
         @media (min-width: 600px) {
-            .reel-item {
+            .gr-reel__item {
                 flex: 0 0 calc(20% - 8px);
             }
         }
         @media (min-width: 900px) {
-            .reel-item {
+            .gr-reel__item {
                 flex: 0 0 calc(16.66% - 8px);
             }
         }
@@ -682,16 +682,16 @@
 
             <div class="screen" id="screenRoulette">
                 <div class="glass-card">
-                    <div class="roulette-container">
-                        <div class="reel-wrap">
-                            <div class="reel-viewport">
-                                <div class="reel-marker"></div>
-                                <div class="reel-track" id="reelTrack"></div>
+                    <div class="gr-reel-wrap">
+                        <div class="gr-reel">
+                            <div class="gr-reel__viewport">
+                                <div class="gr-reel__marker"></div>
+                                <div class="gr-reel__track" id="reelTrack"></div>
                             </div>
                         </div>
-                        <div id="rouletteResult" class="roulette-result">Нажмите "РАСКРУТИТЬ"</div>
-                        <button class="spin-btn" id="spinBtn">РАСКРУТИТЬ ЗА 150 ⭐</button>
-                        <div class="roulette-hint">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
+                        <div id="rouletteResult" class="gr-hint">Нажмите "ЗАПУСТИТЬ РОЗЫГРЫШ"</div>
+                        <button class="gr-spin" id="spinBtn">ЗАПУСТИТЬ РОЗЫГРЫШ</button>
+                        <div class="gr-actions">⚡ ДВОЙНОЙ ТАП ДЛЯ БЫСТРОГО КРУЧЕНИЯ</div>
                     </div>
                 </div>
             </div>
@@ -993,15 +993,15 @@
                 });
             });
 
-            // ---------- 11. СОЗДАНИЕ РУЛЕТКИ ----------
+            // ---------- 11. СОЗДАНИЕ РУЛЕТКИ (новая) ----------
             function createReel() {
                 const REPEAT_COUNT = 10;
                 let html = '';
                 for (let rep = 0; rep < REPEAT_COUNT; rep++) {
                     GIFTS.forEach((gift, index) => {
                         html += `
-                            <div class="reel-item" data-gift-index="${index}">
-                                <div class="reel-card">
+                            <div class="gr-reel__item" data-gift-index="${index}">
+                                <div class="gr-reel__card">
                                     <img src="${gift.image}" alt="${gift.name}" draggable="false" loading="lazy">
                                 </div>
                             </div>
@@ -1022,7 +1022,7 @@
 
             // ---------- 12. ФУНКЦИИ РУЛЕТКИ ----------
             function highlightCell(giftIndex) {
-                const items = document.querySelectorAll('.reel-item');
+                const items = document.querySelectorAll('.gr-reel__item');
                 const centerX = window.innerWidth / 2;
                 let closestItem = null;
                 let closestDist = Infinity;
@@ -1047,13 +1047,13 @@
             }
 
             function clearHighlight() {
-                document.querySelectorAll('.reel-item').forEach(item => {
+                document.querySelectorAll('.gr-reel__item').forEach(item => {
                     item.classList.remove('highlight');
                 });
             }
 
             function getGiftUnderIndicator() {
-                const items = document.querySelectorAll('.reel-item');
+                const items = document.querySelectorAll('.gr-reel__item');
                 const centerX = window.innerWidth / 2;
                 let closestItem = null;
                 let closestDist = Infinity;
