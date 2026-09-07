@@ -861,13 +861,11 @@
 
                 let buttonsHtml = '';
                 if (showSell) {
-                    // Модал из инвентаря — показываем продажу и вывод
                     buttonsHtml = `
                         <button class="modal-btn btn-sell" data-action="sell">💸 ПРОДАТЬ</button>
                         <button class="modal-btn btn-close" data-action="close">ЗАКРЫТЬ</button>
                     `;
                 } else {
-                    // Модал после выигрыша — показываем "В ИНВЕНТАРЬ" и "ЗАКРЫТЬ"
                     buttonsHtml = `
                         <button class="modal-btn btn-inventory" data-action="inventory">📦 В ИНВЕНТАРЬ</button>
                         <button class="modal-btn btn-close" data-action="close">ЗАКРЫТЬ</button>
@@ -888,13 +886,11 @@
 
                 document.body.appendChild(overlay);
 
-                // Обработчики
                 const closeBtn = overlay.querySelector('#modalCloseIcon');
                 const closeActionBtn = overlay.querySelector('[data-action="close"]');
                 const inventoryBtn = overlay.querySelector('[data-action="inventory"]');
                 const sellBtn = overlay.querySelector('[data-action="sell"]');
 
-                // Закрытие
                 const closeModal = () => overlay.remove();
 
                 closeBtn.addEventListener('click', closeModal);
@@ -904,7 +900,6 @@
                     if (e.target === overlay) closeModal();
                 });
 
-                // Кнопка "В ИНВЕНТАРЬ" — просто закрываем, подарок уже в инвентаре
                 if (inventoryBtn) {
                     inventoryBtn.addEventListener('click', function() {
                         closeModal();
@@ -912,18 +907,15 @@
                     });
                 }
 
-                // Кнопка "ПРОДАТЬ"
                 if (sellBtn) {
                     sellBtn.addEventListener('click', function() {
-                        // Находим подарок в инвентаре
                         const itemIndex = state.inventory.findIndex(item => item.id === gift.id);
                         if (itemIndex === -1) {
                             tg.showAlert('❌ Этот подарок уже продан!');
                             closeModal();
                             return;
                         }
-
-                        // Удаляем из инвентаря, добавляем звёзды                        state.inventory.splice(itemIndex, 1);
+                        state.inventory.splice(itemIndex, 1);
                         state.balance += gift.price;
                         render();
                         closeModal();
@@ -945,7 +937,6 @@
                 balanceDisplay.textContent = Math.floor(state.balance);
                 nftCount.textContent = state.inventory.length + ' шт.';
 
-                // Инвентарь
                 if (state.inventory.length === 0) {
                     inventoryGrid.innerHTML = '<div class="empty-inventory">🧪 Нет подарков. Крутите рулетку!</div>';
                 } else {
@@ -965,7 +956,6 @@
                     }).join('');
                 }
 
-                // Профиль
                 profileName.textContent = tg.initDataUnsafe?.user?.first_name || 'Аноним';
                 profileId.textContent = 'ID: ' + USER_ID;
                 statNFT.textContent = state.inventory.length;
@@ -995,6 +985,13 @@
             });
 
             // ---------- 11. ФУНКЦИИ РУЛЕТКИ ----------
+            function getCellWidth() {
+                const cells = document.querySelectorAll('.roulette-cell');
+                if (cells.length === 0) return 60;
+                const firstCell = cells[0];
+                return firstCell.offsetWidth + 8; // width + gap
+            }
+
             function highlightCell(giftIndex) {
                 const cells = document.querySelectorAll('.roulette-cell[data-gift-index="' + giftIndex + '"]');
                 const centerX = window.innerWidth / 2;
@@ -1043,7 +1040,7 @@
 
             // ---------- 12. СОЗДАНИЕ РУЛЕТКИ ----------
             function createRouletteCells() {
-                const REPEAT_COUNT = 6;
+                const REPEAT_COUNT = 8; // Увеличил для плавности
                 let cellsHtml = '';
                 for (let rep = 0; rep < REPEAT_COUNT; rep++) {
                     GIFTS.forEach((cell, index) => {
@@ -1058,10 +1055,14 @@
                     });
                 }
                 rouletteSlider.innerHTML = cellsHtml;
-                const startRepeat = 3;
-                const startOffset = startRepeat * GIFTS.length * 20;
+                
+                // Начальное положение - показываем середину
+                const totalCells = GIFTS.length * REPEAT_COUNT;
+                const startOffset = (totalCells / 2) * 100 / (totalCells / 3); // ~33% от ширины
                 rouletteSlider.style.transition = 'none';
-                rouletteSlider.style.transform = 'translateX(-' + startOffset + '%)';
+                // Сдвигаем так, чтобы индикатор был примерно в середине
+                const initialShift = 33; // %
+                rouletteSlider.style.transform = 'translateX(-' + initialShift + '%)';
                 void rouletteSlider.offsetWidth;
                 rouletteSlider.style.transition = '';
             }
@@ -1086,13 +1087,24 @@
                 clearHighlight();
 
                 const totalUnique = GIFTS.length;
-                const repeats = 6;
-                const cellWidthPercent = 20;
-                const targetRepeat = 4;
-                const targetCellIndex = targetRepeat * totalUnique + winGiftIndex;
-                const visibleOffset = 2.5;
-                const offsetPercent = targetCellIndex * cellWidthPercent - visibleOffset * cellWidthPercent;
-
+                const repeats = 8;
+                const cellWidth = getCellWidth();
+                
+                // Вычисляем смещение: нужно чтобы победный элемент оказался под индикатором
+                // Индикатор находится по центру (50%)
+                // Каждый элемент занимает примерно cellWidth пикселей
+                // Получаем общую ширину слайдера
+                const sliderWidth = rouletteSlider.scrollWidth || (totalUnique * repeats * cellWidth);
+                
+                // Находим позицию элемента под индикатором
+                // Индикатор в центре, значит нужно сдвинуть так, чтобы нужный элемент оказался в центре
+                const targetCellIndex = 3 * totalUnique + winGiftIndex; // 3-й повтор
+                
+                // Процент смещения: позиция элемента / общая ширина * 100
+                // Но нужно учесть, что transform: translateX(-X%) сдвигает влево
+                // Чтобы элемент оказался в центре, нужно сдвинуть на (позиция элемента - ширина/2)
+                const offsetPercent = (targetCellIndex * cellWidth / sliderWidth) * 100 - 50;
+                
                 rouletteSlider.style.transition = 'none';
                 void rouletteSlider.offsetWidth;
                 rouletteSlider.style.transition = 'transform 5s cubic-bezier(0.1, 0.6, 0.2, 1)';
@@ -1118,7 +1130,6 @@
                     rouletteResult.textContent = '🎉 Вы выиграли: ' + actualPrize.name + '!';
 
                     render();
-                    // Показываем модал с кнопками "В ИНВЕНТАРЬ" и "ЗАКРЫТЬ"
                     showModal(newGift, false);
 
                     sendToBot({
@@ -1155,7 +1166,6 @@
                 const id = item.dataset.id;
                 const gift = state.inventory.find(n => n.id === id);
                 if (gift) {
-                    // Показываем модал с кнопками "ПРОДАТЬ" и "ЗАКРЫТЬ"
                     showModal(gift, true);
                     sendToBot({
                         action: 'view_nft',
