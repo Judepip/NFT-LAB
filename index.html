@@ -156,7 +156,6 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        /* ИНВЕНТАРЬ */
         .nft-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -229,7 +228,6 @@
             font-size: 14px;
         }
 
-        /* РУЛЕТКА */
         .roulette-container {
             display: flex;
             flex-direction: column;
@@ -375,7 +373,6 @@
             margin-top: 0;
         }
 
-        /* ПРОФИЛЬ */
         .profile-avatar {
             width: 80px;
             height: 80px;
@@ -412,7 +409,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* НАВИГАЦИЯ */
         .nav-center {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -453,7 +449,6 @@
             background: rgba(0, 255, 136, 0.05);
         }
 
-        /* ---------- МОДАЛЬНОЕ ОКНО ---------- */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -720,7 +715,6 @@
         (function() {
             'use strict';
 
-            // ---------- 1. TELEGRAM SDK ----------
             let tg = null;
             let isTelegram = false;
 
@@ -752,10 +746,8 @@
                 };
             }
 
-            // ---------- 2. USER ID ----------
             const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-            // ---------- 3. СПИСОК ПОДАРКОВ ----------
             const BASE_URL = 'https://judepip.github.io/NFT-LAB';
             const GIFTS = [
                 { name: 'Bow Tie', price: 800, image: BASE_URL + '/images/BowTie.gif' },
@@ -770,7 +762,6 @@
                 { name: 'Мишка', price: 15, image: BASE_URL + '/images/Мишка.gif' },
             ];
 
-            // ---------- 4. ШАНСЫ ----------
             const PAID_CHANCES = [10, 8, 6, 5, 4, 3, 1, 18, 20, 25];
 
             function getRandomGiftByChance() {
@@ -785,7 +776,6 @@
                 return GIFTS[0];
             }
 
-            // ---------- 5. СОСТОЯНИЕ ----------
             const STORAGE_KEY = 'lab_nft_simple';
 
             function getDefaultState() {
@@ -822,7 +812,6 @@
                 }
             }
 
-            // ---------- 6. DOM ----------
             const $ = (id) => document.getElementById(id);
             const balanceDisplay = $('balanceDisplay');
             const nftCount = $('nftCount');
@@ -838,7 +827,6 @@
             const statBalance = $('statBalance');
             const statSpins = $('statSpins');
 
-            // ---------- 7. ОТПРАВКА В БОТА ----------
             function sendToBot(data) {
                 try {
                     if (isTelegram && tg && typeof tg.sendData === 'function') {
@@ -851,7 +839,6 @@
                 }
             }
 
-            // ---------- 8. МОДАЛЬНОЕ ОКНО ----------
             function showModal(gift, showSell = false) {
                 const oldModal = document.querySelector('.modal-overlay');
                 if (oldModal) oldModal.remove();
@@ -932,7 +919,6 @@
                 }
             }
 
-            // ---------- 9. РЕНДЕР ----------
             function render() {
                 balanceDisplay.textContent = Math.floor(state.balance);
                 nftCount.textContent = state.inventory.length + ' шт.';
@@ -965,7 +951,6 @@
                 saveState();
             }
 
-            // ---------- 10. НАВИГАЦИЯ ----------
             function switchScreen(screenId) {
                 screens.forEach(s => s.classList.remove('active'));
                 const target = document.getElementById(screenId);
@@ -984,12 +969,40 @@
                 });
             });
 
-            // ---------- 11. ФУНКЦИИ РУЛЕТКИ ----------
-            function getCellWidth() {
-                const cells = document.querySelectorAll('.roulette-cell');
-                if (cells.length === 0) return 60;
-                const firstCell = cells[0];
-                return firstCell.offsetWidth + 8; // width + gap
+            let cellWidth = 0;
+            let totalCells = 0;
+
+            function createRouletteCells() {
+                const REPEAT_COUNT = 10; // Больше повторений для эффекта
+                let cellsHtml = '';
+                for (let rep = 0; rep < REPEAT_COUNT; rep++) {
+                    GIFTS.forEach((cell, index) => {
+                        cellsHtml += `
+                                <div class="roulette-cell" data-gift-index="${index}">
+                                    <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
+                                         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                                    <div style="font-size:28px; display:none;">🎁</div>
+                                    <div class="cell-name">${cell.name}</div>
+                                </div>
+                            `;
+                    });
+                }
+                rouletteSlider.innerHTML = cellsHtml;
+                
+                // Узнаем ширину ячейки после рендера
+                setTimeout(() => {
+                    const firstCell = document.querySelector('.roulette-cell');
+                    if (firstCell) {
+                        cellWidth = firstCell.offsetWidth + 8; // + gap
+                        totalCells = document.querySelectorAll('.roulette-cell').length;
+                    }
+                }, 50);
+                
+                // Начальное положение
+                rouletteSlider.style.transition = 'none';
+                rouletteSlider.style.transform = 'translateX(-10%)';
+                void rouletteSlider.offsetWidth;
+                rouletteSlider.style.transition = '';
             }
 
             function highlightCell(giftIndex) {
@@ -1038,38 +1051,13 @@
                 return 0;
             }
 
-            // ---------- 12. СОЗДАНИЕ РУЛЕТКИ ----------
-            function createRouletteCells() {
-                const REPEAT_COUNT = 8; // Увеличил для плавности
-                let cellsHtml = '';
-                for (let rep = 0; rep < REPEAT_COUNT; rep++) {
-                    GIFTS.forEach((cell, index) => {
-                        cellsHtml += `
-                                <div class="roulette-cell" data-gift-index="${index}">
-                                    <img src="${cell.image}" alt="${cell.name}" loading="lazy" 
-                                         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-                                    <div style="font-size:28px; display:none;">🎁</div>
-                                    <div class="cell-name">${cell.name}</div>
-                                </div>
-                            `;
-                    });
-                }
-                rouletteSlider.innerHTML = cellsHtml;
-                
-                // Начальное положение - показываем середину
-                const totalCells = GIFTS.length * REPEAT_COUNT;
-                const startOffset = (totalCells / 2) * 100 / (totalCells / 3); // ~33% от ширины
-                rouletteSlider.style.transition = 'none';
-                // Сдвигаем так, чтобы индикатор был примерно в середине
-                const initialShift = 33; // %
-                rouletteSlider.style.transform = 'translateX(-' + initialShift + '%)';
-                void rouletteSlider.offsetWidth;
-                rouletteSlider.style.transition = '';
-            }
-
-            // ---------- 13. ЗАПУСК РУЛЕТКИ ----------
             function performSpin() {
-                if (state.isSpinning) return;
+                console.log('performSpin вызван');
+                
+                if (state.isSpinning) {
+                    console.log('Уже крутится');
+                    return;
+                }
 
                 if (state.balance < 150) {
                     rouletteResult.textContent = '❌ Недостаточно ⭐ (нужно 150)';
@@ -1077,44 +1065,70 @@
                     return;
                 }
 
+                console.log('Начинаем крутить, баланс:', state.balance);
+
                 state.isSpinning = true;
                 spinBtn.disabled = true;
                 rouletteResult.textContent = '🌀 Крутим...';
 
                 const prize = getRandomGiftByChance();
                 const winGiftIndex = GIFTS.indexOf(prize);
+                console.log('Выигрышный индекс:', winGiftIndex, 'Подарок:', prize.name);
 
                 clearHighlight();
 
-                const totalUnique = GIFTS.length;
-                const repeats = 8;
-                const cellWidth = getCellWidth();
+                // Получаем все ячейки
+                const cells = document.querySelectorAll('.roulette-cell');
+                if (cells.length === 0) {
+                    console.error('Нет ячеек!');
+                    state.isSpinning = false;
+                    spinBtn.disabled = false;
+                    return;
+                }
+
+                // Находим ячейку с нужным индексом в 5-м повторении
+                const REPEAT_COUNT = 10;
+                const targetIndex = 5 * GIFTS.length + winGiftIndex;
+                console.log('Целевая ячейка:', targetIndex, 'Всего ячеек:', cells.length);
                 
-                // Вычисляем смещение: нужно чтобы победный элемент оказался под индикатором
-                // Индикатор находится по центру (50%)
-                // Каждый элемент занимает примерно cellWidth пикселей
-                // Получаем общую ширину слайдера
-                const sliderWidth = rouletteSlider.scrollWidth || (totalUnique * repeats * cellWidth);
+                if (targetIndex >= cells.length) {
+                    console.error('Целевая ячейка за пределами массива');
+                    state.isSpinning = false;
+                    spinBtn.disabled = false;
+                    return;
+                }
+
+                // Получаем позицию целевой ячейки
+                const targetCell = cells[targetIndex];
+                const sliderRect = rouletteSlider.getBoundingClientRect();
+                const trackRect = document.querySelector('.roulette-track').getBoundingClientRect();
                 
-                // Находим позицию элемента под индикатором
-                // Индикатор в центре, значит нужно сдвинуть так, чтобы нужный элемент оказался в центре
-                const targetCellIndex = 3 * totalUnique + winGiftIndex; // 3-й повтор
+                // Вычисляем смещение в пикселях
+                const cellOffset = targetCell.offsetLeft;
+                const trackWidth = trackRect.width;
+                const cellCenterOffset = cellOffset + targetCell.offsetWidth / 2;
                 
-                // Процент смещения: позиция элемента / общая ширина * 100
-                // Но нужно учесть, что transform: translateX(-X%) сдвигает влево
-                // Чтобы элемент оказался в центре, нужно сдвинуть на (позиция элемента - ширина/2)
-                const offsetPercent = (targetCellIndex * cellWidth / sliderWidth) * 100 - 50;
+                // Сдвигаем так, чтобы ячейка оказалась под индикатором (в центре)
+                const offsetPx = -(cellCenterOffset - trackWidth / 2);
                 
+                // Переводим в проценты
+                const sliderWidth = rouletteSlider.scrollWidth || (cells.length * (targetCell.offsetWidth + 8));
+                const offsetPercent = (offsetPx / sliderWidth) * 100;
+                
+                console.log('Смещение в %:', offsetPercent);
+                
+                // Применяем анимацию
                 rouletteSlider.style.transition = 'none';
                 void rouletteSlider.offsetWidth;
                 rouletteSlider.style.transition = 'transform 5s cubic-bezier(0.1, 0.6, 0.2, 1)';
-                rouletteSlider.style.transform = 'translateX(-' + offsetPercent + '%)';
+                rouletteSlider.style.transform = 'translateX(' + offsetPercent + '%)';
 
                 if (navigator.vibrate) navigator.vibrate([30, 50, 30, 50, 80]);
 
                 setTimeout(() => {
                     const actualWinIndex = getGiftUnderIndicator();
                     const actualPrize = GIFTS[actualWinIndex];
+                    console.log('Фактический выигрыш:', actualPrize.name);
 
                     state.balance -= 150;
                     state.spins += 1;
@@ -1144,10 +1158,13 @@
                 setTimeout(() => {
                     state.isSpinning = false;
                     spinBtn.disabled = false;
+                    console.log('Рулетка разблокирована');
                 }, 5500);
             }
 
-            spinBtn.addEventListener('click', function() {
+            spinBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Клик по кнопке');
                 performSpin();
             });
 
@@ -1159,7 +1176,6 @@
                 }
             });
 
-            // ---------- 14. КЛИК ПО NFT В ИНВЕНТАРЕ ----------
             inventoryGrid.addEventListener('click', function(e) {
                 const item = e.target.closest('.nft-item');
                 if (!item) return;
@@ -1174,12 +1190,16 @@
                 }
             });
 
-            // ---------- 15. ИНИЦИАЛИЗАЦИЯ ----------
+            // Инициализация
             createRouletteCells();
             render();
 
             console.log('[LAB NFT] Mini App загружен. User ID:', USER_ID);
             console.log('[LAB NFT] Всего подарков:', GIFTS.length);
+            
+            // Проверка кнопки
+            console.log('Кнопка спина:', spinBtn);
+            console.log('Слайдер:', rouletteSlider);
         })();
     </script>
 </body>
