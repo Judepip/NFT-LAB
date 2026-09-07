@@ -228,7 +228,7 @@
             font-size: 14px;
         }
 
-        /* РУЛЕТКА */
+        /* РУЛЕТКА - стили из второго файла */
         .gr-reel-wrap {
             position: relative;
             width: 100%;
@@ -331,18 +331,38 @@
             border: 1px solid rgba(0,255,136,0.15);
             border-radius: 14px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             transition: all 0.3s;
             box-shadow: 0 0 20px rgba(0,255,136,0.02);
+            padding: 4px;
         }
         .gr-reel__card img {
             width: 70%;
-            height: 70%;
+            height: 65%;
             object-fit: contain;
             filter: drop-shadow(0 0 15px rgba(0,255,136,0.1));
             transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .gr-reel__card .gift-name {
+            font-size: 7px;
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-primary);
+            line-height: 1.1;
+            margin-top: 2px;
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            padding: 0 2px;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .gr-reel__card-shine {
             position: absolute;
@@ -665,7 +685,10 @@
             }
             .gr-reel__card img {
                 width: 60%;
-                height: 60%;
+                height: 55%;
+            }
+            .gr-reel__card .gift-name {
+                font-size: 6px;
             }
             .nft-item .nft-image {
                 width: 48px;
@@ -832,18 +855,23 @@
 
             const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
 
-            // ---------- NFT ПОДАРКИ (из реальных NFT Telegram) ----------
+            // ---------- NFT ПОДАРКИ - ИЗ ПЕРВОГО КОДА (GIF) ----------
+            const BASE_URL = 'https://judepip.github.io/NFT-LAB';
             const GIFTS = [
-                { name: 'Hex Pot', price: 150, image: 'https://nft.fragment.com/gift/hexpot-10348.medium.jpg' },
-                { name: 'Plush Pepe', price: 200, image: 'https://nft.fragment.com/gift/plushpepe-2133.medium.jpg' },
-                { name: 'Easter Egg', price: 180, image: 'https://nft.fragment.com/gift/easteregg-1.medium.jpg' },
-                { name: 'Astral Shard', price: 250, image: 'https://nft.fragment.com/gift/astralshard-2358.medium.jpg' },
-                { name: 'Desk Calendar', price: 120, image: 'https://nft.fragment.com/gift/deskcalendar-100.medium.jpg' },
-                { name: 'Toy Bear', price: 100, image: 'https://nft.fragment.com/gift/toybear-500.medium.jpg' },
+                { name: 'Bow Tie', price: 800, image: BASE_URL + '/images/BowTie.gif' },
+                { name: 'Chill Flame', price: 500, image: BASE_URL + '/images/ChillFlame.gif' },
+                { name: 'Big Year', price: 500, image: BASE_URL + '/images/BigYear.gif' },
+                { name: 'JACK IN THE BOX', price: 600, image: BASE_URL + '/images/JackInTheBox.gif' },
+                { name: 'Liberty Figure', price: 450, image: BASE_URL + '/images/LibertyFigure.gif' },
+                { name: 'Light Sword', price: 480, image: BASE_URL + '/images/LightSword.gif' },
+                { name: 'Star Notepad', price: 480, image: BASE_URL + '/images/StarNotepad.gif' },
+                { name: 'Кубок', price: 100, image: BASE_URL + '/images/Кубок.gif' },
+                { name: 'Кольцо', price: 100, image: BASE_URL + '/images/Кольцо.gif' },
+                { name: 'Мишка', price: 15, image: BASE_URL + '/images/Мишка.gif' },
             ];
 
-            // Шансы выпадения (сумма = 100)
-            const PAID_CHANCES = [15, 12, 18, 8, 22, 25];
+            // Шансы выпадения (из первого кода)
+            const PAID_CHANCES = [10, 8, 6, 5, 4, 3, 1, 18, 20, 25];
 
             function getRandomGiftByChance() {
                 const totalChance = PAID_CHANCES.reduce((sum, c) => sum + c, 0);
@@ -1068,6 +1096,7 @@
                                     <div class="gr-reel__card-shine" aria-hidden="true"></div>
                                     <img src="${gift.image}" alt="${gift.name}" draggable="false" loading="lazy"
                                          onerror="this.style.display='none'">
+                                    <div class="gift-name">${gift.name}</div>
                                 </div>
                             </div>
                         `;
@@ -1103,7 +1132,8 @@
                 // Вычисляем смещение
                 const items = document.querySelectorAll('.gr-reel__item');
                 const totalItems = items.length;
-                const itemsPerView = Math.floor(window.innerWidth / (items[0]?.offsetWidth + 8 || 80));
+                
+                // Находим ячейку в 4-м повторении
                 const targetItemIndex = 4 * GIFTS.length + winIndex;
 
                 if (targetItemIndex >= totalItems) {
@@ -1114,9 +1144,8 @@
                 }
 
                 const itemWidth = items[0]?.offsetWidth + 8 || 80;
-                const trackWidth = rouletteTrack.scrollWidth || totalItems * itemWidth;
-                const targetOffset = targetItemIndex * itemWidth;
                 const viewportWidth = document.querySelector('.gr-reel__viewport').offsetWidth || 300;
+                const targetOffset = targetItemIndex * itemWidth;
                 const offsetPx = targetOffset - viewportWidth / 2 + itemWidth / 2;
 
                 // Применяем анимацию
@@ -1222,9 +1251,7 @@
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(() => {
-                    const currentTransform = rouletteTrack.style.transform;
-                    if (currentTransform && !state.isSpinning) {
-                        // Пересоздаем рулетку при изменении размера, если не крутится
+                    if (!state.isSpinning) {
                         createRoulette();
                     }
                 }, 300);
