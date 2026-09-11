@@ -19,6 +19,7 @@ window.__TG_FALLBACK__ = {
     --neon:#00ff88; --cyan:#00d4ff;
     --glass:rgba(18,24,43,.75);
     --border:rgba(0,255,136,.15);
+    --border2:rgba(255,255,255,.08);
     --text:#e8f0f8; --muted:#8899bb;
     --gold:#ffd700; --red:#ff4466;
     --mono:'JetBrains Mono','Roboto Mono',monospace;
@@ -33,12 +34,10 @@ body::before{
 }
 #app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;padding:6px 8px;}
 
-/* HEADER */
 .header{display:flex;justify-content:space-between;align-items:center;padding:6px 4px 8px;border-bottom:1px solid var(--border);flex-shrink:0;}
 .header h1{font-size:15px;background:linear-gradient(135deg,var(--neon),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1px;}
 .balance{background:var(--glass);border:1px solid var(--border);border-radius:30px;padding:5px 12px;font-size:12px;color:var(--gold);backdrop-filter:blur(8px);}
 
-/* CONTENT */
 .content{flex:1;overflow-y:auto;margin:6px 0;padding:2px;min-height:0;}
 .content::-webkit-scrollbar{width:3px;}
 .content::-webkit-scrollbar-thumb{background:var(--neon);border-radius:10px;}
@@ -46,13 +45,17 @@ body::before{
 .screen.active{display:block;}
 @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
-/* ===== ВЕРХ ===== */
+/* ВЕРХ */
 .upgrade-top{
     display:grid;
     grid-template-columns:1fr 170px 1fr;
     gap:6px;
-    align-items:center;
+    align-items:start;
     margin-bottom:8px;
+}
+
+.slot-col{
+    display:flex;flex-direction:column;gap:6px;
 }
 
 .slot-panel{
@@ -70,6 +73,36 @@ body::before{
 .slot-panel .slot-item .slot-price{font-size:8px;color:var(--gold);margin-top:1px;}
 .slot-panel .slot-remove{position:absolute;top:3px;right:5px;background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;font-family:var(--mono);}
 
+/* ===== БЫСТРЫЕ КНОПКИ ПРОЦЕНТА ===== */
+.quick-chances{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:4px;
+    margin-top:2px;
+}
+.qc-btn{
+    background:rgba(0,0,0,.4);
+    border:1px solid var(--border2);
+    border-radius:7px;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:9px;
+    font-weight:700;
+    padding:7px 2px;
+    cursor:pointer;
+    transition:.15s;
+    text-align:center;
+    letter-spacing:.3px;
+    touch-action:manipulation;
+}
+.qc-btn:hover{border-color:rgba(255,255,255,.25);}
+.qc-btn:active{transform:scale(.94);}
+.qc-btn.p5  {border-color:rgba(255,68,102,.4); color:#ff8899;}
+.qc-btn.p25 {border-color:rgba(255,170,60,.4); color:#ffbb66;}
+.qc-btn.p50 {border-color:rgba(255,215,0,.4); color:var(--gold);}
+.qc-btn.p75 {border-color:rgba(0,255,136,.4); color:var(--neon);}
+.qc-btn.active{background:rgba(0,255,136,.12);}
+
 /* КОЛЕСО */
 .wheel-wrap{position:relative;width:170px;height:170px;margin:0 auto;display:flex;align-items:center;justify-content:center;}
 .wheel-svg{transform:rotate(-90deg);}
@@ -78,18 +111,15 @@ body::before{
 
 .wheel-spinner{
     position:absolute;top:50%;left:50%;
-    width:170px;height:170px;
-    margin:-85px 0 0 -85px;
-    pointer-events:none;
-    transform:rotate(0deg);
+    width:170px;height:170px;margin:-85px 0 0 -85px;
+    pointer-events:none;transform:rotate(0deg);
     transition:transform 4s cubic-bezier(.17,.67,.3,1);
     z-index:5;will-change:transform;
 }
 .wheel-spinner .marker{
     position:absolute;top:-6px;left:50%;transform:translateX(-50%);
     width:0;height:0;
-    border-left:9px solid transparent;
-    border-right:9px solid transparent;
+    border-left:9px solid transparent;border-right:9px solid transparent;
     border-top:20px solid #ffffff;
     filter:drop-shadow(0 0 8px #00ff88) drop-shadow(0 0 16px #00ff88) drop-shadow(0 0 24px rgba(0,255,136,.6));
 }
@@ -111,7 +141,6 @@ body::before{
     letter-spacing:1.5px;z-index:3;font-weight:500;
 }
 
-/* КНОПКА */
 .upgrade-btn{
     width:100%;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;
     border:none;border-radius:30px;padding:12px;font-weight:700;font-size:14px;
@@ -126,13 +155,12 @@ body::before{
 .bottombar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
 .inv-section{
     background:var(--glass);border:1px solid var(--border);border-radius:12px;
-    padding:8px;backdrop-filter:blur(8px);min-height:260px;
+    padding:8px;backdrop-filter:blur(8px);min-height:280px;
     display:flex;flex-direction:column;
 }
 .inv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:10px;font-weight:600;}
 .inv-header .count{color:var(--muted);font-size:9px;}
 
-/* Табы */
 .tabs{
     display:flex;gap:4px;margin-bottom:6px;
     background:rgba(0,0,0,.25);padding:3px;border-radius:8px;
@@ -146,6 +174,56 @@ body::before{
 }
 .tab.active{background:rgba(0,255,136,.1);color:var(--neon);border-color:rgba(0,255,136,.3);}
 .tab:active{transform:scale(.96);}
+
+/* ПОИСК */
+.search-bar{
+    display:grid;
+    grid-template-columns: 1fr auto auto;
+    gap:4px;
+    margin-bottom:6px;
+}
+.search-inputs{
+    display:grid;
+    grid-template-columns: 1.2fr 1px 1fr 1px 1fr;
+    gap:0;
+    background:rgba(0,0,0,.25);
+    border:1px solid var(--border2);
+    border-radius:6px;
+    overflow:hidden;
+}
+.search-inputs input{
+    background:transparent;
+    border:none;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:10px;
+    padding:6px 6px;
+    outline:none;
+    width:100%;
+    min-width:0;
+}
+.search-inputs input::placeholder{color:var(--muted);font-size:9px;}
+.search-inputs .divider{background:var(--border2);}
+.search-inputs .field{display:flex;align-items:center;position:relative;}
+.search-inputs .field .lbl{
+    position:absolute;left:4px;top:50%;transform:translateY(-50%);
+    font-size:8px;color:var(--gold);font-weight:700;pointer-events:none;
+}
+.search-inputs .field.with-lbl input{padding-left:20px;}
+
+.search-btn, .sort-btn{
+    background:rgba(255,255,255,.06);
+    border:1px solid var(--border2);
+    border-radius:6px;
+    color:var(--text);
+    font-size:13px;
+    padding:0 9px;
+    cursor:pointer;
+    transition:.15s;
+    touch-action:manipulation;
+}
+.search-btn:active, .sort-btn:active{transform:scale(.95);background:rgba(0,255,136,.15);}
+.sort-btn{font-size:11px;padding:0 7px;}
 
 .inv-grid{
     display:grid;grid-template-columns:repeat(3,1fr);gap:5px;
@@ -187,6 +265,7 @@ body::before{
 .modal-content.win{border-color:var(--neon);box-shadow:0 0 60px rgba(0,255,136,.3);}
 .modal-content.lose{border-color:var(--red);box-shadow:0 0 60px rgba(255,68,102,.3);}
 .modal-content.buy{border-color:var(--gold);box-shadow:0 0 60px rgba(255,215,0,.3);}
+.modal-content.sell{border-color:var(--cyan);box-shadow:0 0 60px rgba(0,212,255,.3);}
 .modal-content img{width:110px;height:110px;object-fit:contain;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(0,255,136,.4));}
 .modal-title{font-size:18px;font-weight:700;margin-bottom:4px;}
 .modal-sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
@@ -194,6 +273,7 @@ body::before{
 .modal-btn{background:var(--neon);color:#0a0e1a;border:none;border-radius:30px;padding:11px 20px;font-weight:700;font-size:13px;font-family:var(--mono);cursor:pointer;flex:1;}
 .modal-btn:active{transform:scale(.96);}
 .modal-btn.gold{background:var(--gold);}
+.modal-btn.cyan{background:var(--cyan);}
 .modal-btn.grey{background:rgba(255,255,255,.1);color:var(--text);}
 
 /* НАВИГАЦИЯ */
@@ -224,6 +304,7 @@ body::before{
     .slot-panel .slot-item img{width:38px;height:38px;}
     .inv-item img{width:28px;height:28px;}
     .tab{font-size:8px;padding:4px 2px;}
+    .qc-btn{font-size:8px;padding:6px 1px;}
 }
 </style>
 </head>
@@ -239,11 +320,21 @@ body::before{
 
         <div class="screen active" id="screenUpgrade">
             <div class="upgrade-top">
-                <div class="slot-panel" id="slotLeft">
-                    <div class="slot-label">ВЫБЕРИТЕ ПРЕДМЕТ</div>
-                    <div class="slot-empty">➕</div>
+                <!-- ЛЕВЫЙ СЛОТ + кнопки быстрого выбора % -->
+                <div class="slot-col">
+                    <div class="slot-panel" id="slotLeft">
+                        <div class="slot-label">ВЫБЕРИТЕ ПРЕДМЕТ</div>
+                        <div class="slot-empty">➕</div>
+                    </div>
+                    <div class="quick-chances" id="quickLeft">
+                        <button class="qc-btn p5"  data-chance="5">5%</button>
+                        <button class="qc-btn p25" data-chance="25">25%</button>
+                        <button class="qc-btn p50" data-chance="50">50%</button>
+                        <button class="qc-btn p75" data-chance="75">75%</button>
+                    </div>
                 </div>
 
+                <!-- КОЛЕСО -->
                 <div class="wheel-wrap">
                     <svg class="wheel-svg" width="170" height="170" viewBox="0 0 170 170">
                         <defs>
@@ -265,9 +356,18 @@ body::before{
                     <div class="wheel-center-sub">ШАНС</div>
                 </div>
 
-                <div class="slot-panel" id="slotRight">
-                    <div class="slot-label">ВЫБЕРИТЕ ЦЕЛЬ</div>
-                    <div class="slot-empty">🎯</div>
+                <!-- ПРАВЫЙ СЛОТ + кнопки быстрого выбора % -->
+                <div class="slot-col">
+                    <div class="slot-panel" id="slotRight">
+                        <div class="slot-label">ВЫБЕРИТЕ ЦЕЛЬ</div>
+                        <div class="slot-empty">🎯</div>
+                    </div>
+                    <div class="quick-chances" id="quickRight">
+                        <button class="qc-btn p5"  data-chance="5">5%</button>
+                        <button class="qc-btn p25" data-chance="25">25%</button>
+                        <button class="qc-btn p50" data-chance="50">50%</button>
+                        <button class="qc-btn p75" data-chance="75">75%</button>
+                    </div>
                 </div>
             </div>
 
@@ -275,6 +375,7 @@ body::before{
             <div class="upgrade-info" id="upgradeInfo">Выберите предмет и цель</div>
 
             <div class="bottombar">
+                <!-- ЛЕВО: инвентарь -->
                 <div class="inv-section">
                     <div class="inv-header">
                         <span>📦 Мой инвентарь</span>
@@ -283,11 +384,33 @@ body::before{
                     <div class="inv-grid" id="invGrid"></div>
                 </div>
 
+                <!-- ПРАВО: табы + поиск + сетка -->
                 <div class="inv-section">
                     <div class="tabs">
                         <div class="tab active" data-tab="shop">🛒 МАГАЗИН</div>
                         <div class="tab" data-tab="target">🎯 ПРОКАЧАТЬ ДО</div>
                     </div>
+
+                    <div class="search-bar">
+                        <div class="search-inputs">
+                            <div class="field">
+                                <input type="text" id="searchName" placeholder="Price">
+                            </div>
+                            <div class="divider"></div>
+                            <div class="field with-lbl">
+                                <span class="lbl">⭐от</span>
+                                <input type="number" id="priceMin" inputmode="numeric">
+                            </div>
+                            <div class="divider"></div>
+                            <div class="field with-lbl">
+                                <span class="lbl">⭐до</span>
+                                <input type="number" id="priceMax" inputmode="numeric">
+                            </div>
+                        </div>
+                        <button class="sort-btn" id="sortBtn" title="Сортировка">▲▼</button>
+                        <button class="search-btn" id="searchBtn">🔍</button>
+                    </div>
+
                     <div class="inv-grid" id="rightGrid"></div>
                 </div>
             </div>
@@ -316,10 +439,11 @@ body::before{
             <div class="inv-section" style="min-height:auto;">
                 <div class="inv-header"><span>ℹ️ Как играть</span></div>
                 <div style="font-size:12px;line-height:1.7;color:var(--muted);">
-                    <p>1️⃣ Купите подарок в <b style="color:var(--gold)">Магазине</b> (за звёзды)</p>
+                    <p>1️⃣ Купите подарок в <b style="color:var(--gold)">Магазине</b></p>
                     <p>2️⃣ Предмет появится в <b style="color:var(--neon)">Моём инвентаре</b></p>
-                    <p>3️⃣ Выберите его слева + цель справа (<b>Прокачать до</b>)</p>
-                    <p>4️⃣ Нажмите <b style="color:var(--neon)">ПРОКАЧАТЬ</b></p>
+                    <p>3️⃣ Клик по предмету в инвентаре → можно <b style="color:var(--cyan)">ПРОДАТЬ</b></p>
+                    <p>4️⃣ Выберите предмет слева + цель справа → <b style="color:var(--neon)">ПРОКАЧАТЬ</b></p>
+                    <p>⚡ Кнопки <b>5% 25% 50% 75%</b> — быстрый подбор цели по шансу</p>
                     <p>🎯 Стрелка крутится по колесу</p>
                     <p>✅ Попала в цветной сектор → выигрыш</p>
                     <p>❌ Попала в пустую часть → предмет сгорает</p>
@@ -342,7 +466,7 @@ body::before{
 (function(){
 'use strict';
 
-// ===== 1) ЖДЁМ ЗАГРУЗКИ TELEGRAM SDK =====
+// ===== 1) ЖДЁМ TELEGRAM SDK =====
 let tg = null;
 let user = { id: 0, first_name: 'Аноним', last_name: '', username: null, photo_url: null };
 
@@ -353,7 +477,6 @@ function initTelegram(callback){
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData !== undefined){
             tg = window.Telegram.WebApp;
             try { tg.ready(); tg.expand(); } catch(e){}
-
             const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
             if (u){
                 user = {
@@ -393,7 +516,7 @@ const GIFTS = [
 ];
 
 // ===== 3) СОСТОЯНИЕ =====
-const KEY = 'lab_upgrade_v5';
+const KEY = 'lab_upgrade_v7';
 function defaultState(){
     return {
         inventory: [
@@ -404,12 +527,16 @@ function defaultState(){
         selectedRight: null,
         isUpgrading: false,
         rightTab: 'shop',
+        search: { name:'', min:'', max:'' },
+        sortAsc: true,
     };
 }
 let state;
 try { state = JSON.parse(localStorage.getItem(KEY)) || defaultState(); }
 catch(e){ state = defaultState(); }
 if (!state.rightTab) state.rightTab = 'shop';
+if (!state.search) state.search = { name:'', min:'', max:'' };
+if (typeof state.sortAsc !== 'boolean') state.sortAsc = true;
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
 // ===== 4) DOM =====
@@ -428,40 +555,46 @@ const upgradeInfo = $('upgradeInfo');
 const screens = document.querySelectorAll('.screen');
 const navBtns = document.querySelectorAll('.nav-btn');
 const tabs = document.querySelectorAll('.tab');
+const searchName = $('searchName');
+const priceMin = $('priceMin');
+const priceMax = $('priceMax');
+const searchBtn = $('searchBtn');
+const sortBtn = $('sortBtn');
 
 // ===== 5) ПРОФИЛЬ =====
 function renderProfile(){
-    const nameEl = $('profileName');
-    const userEl = $('profileUsername');
-    const idEl = $('profileId');
-    const avEl = $('profileAvatar');
-    const nftEl = $('statNFT');
-    const balEl = $('statBalance');
-
     const fullName = (user.first_name + ' ' + (user.last_name || '')).trim() || 'Аноним';
-    nameEl.textContent = fullName;
+    $('profileName').textContent = fullName;
+    const uEl = $('profileUsername');
+    if (user.username){ uEl.textContent = '@' + user.username; uEl.style.display='block'; }
+    else { uEl.textContent = ''; uEl.style.display='none'; }
+    $('profileId').textContent = 'ID: ' + (user.id || '—');
 
-    if (user.username){
-        userEl.textContent = '@' + user.username;
-        userEl.style.display = 'block';
-    } else {
-        userEl.textContent = '';
-        userEl.style.display = 'none';
-    }
-
-    idEl.textContent = 'ID: ' + (user.id || '—');
-
+    const avEl = $('profileAvatar');
     if (user.photo_url){
-        avEl.innerHTML = '<img src="' + user.photo_url + '" alt="avatar" onerror="this.parentNode.innerHTML=\'👤\'">';
-    } else {
-        avEl.innerHTML = '👤';
-    }
+        avEl.innerHTML = '<img src="'+user.photo_url+'" onerror="this.parentNode.innerHTML=\'👤\'">';
+    } else { avEl.innerHTML = '👤'; }
 
-    nftEl.textContent = state.inventory.length;
-    balEl.textContent = Math.floor(state.balance) + ' ⭐';
+    $('statNFT').textContent = state.inventory.length;
+    $('statBalance').textContent = Math.floor(state.balance) + ' ⭐';
 }
 
-// ===== 6) РЕНДЕР =====
+// ===== 6) ФИЛЬТРАЦИЯ =====
+function filterGifts(list){
+    const q = (state.search.name || '').toLowerCase().trim();
+    const min = state.search.min !== '' ? Number(state.search.min) : null;
+    const max = state.search.max !== '' ? Number(state.search.max) : null;
+    let filtered = list.filter(g => {
+        if (q && !g.name.toLowerCase().includes(q)) return false;
+        if (min !== null && g.price < min) return false;
+        if (max !== null && g.price > max) return false;
+        return true;
+    });
+    filtered.sort((a,b) => state.sortAsc ? a.price - b.price : b.price - a.price);
+    return filtered;
+}
+
+// ===== 7) РЕНДЕР =====
 function render(){
     balanceDisplay.textContent = Math.floor(state.balance);
     invCount.textContent = state.inventory.length + ' шт.';
@@ -479,21 +612,36 @@ function render(){
     }
 
     // ПРАВАЯ ПАНЕЛЬ
+    const filtered = filterGifts(GIFTS);
     if (state.rightTab === 'shop'){
-        rightGrid.innerHTML = GIFTS.map((g,i) => `
-            <div class="inv-item" data-buy="${i}">
-                <div class="buy-badge">КУПИТЬ</div>
-                <img src="${g.image}" onerror="this.style.display='none'">
-                <div class="inv-name">${g.name}</div>
-                <div class="inv-price">⭐${g.price}</div>
-            </div>`).join('');
+        if (filtered.length === 0){
+            rightGrid.innerHTML = '<div class="inv-empty">Ничего не найдено</div>';
+        } else {
+            rightGrid.innerHTML = filtered.map(g => {
+                const idx = GIFTS.indexOf(g);
+                return `
+                <div class="inv-item" data-buy="${idx}">
+                    <div class="buy-badge">КУПИТЬ</div>
+                    <img src="${g.image}" onerror="this.style.display='none'">
+                    <div class="inv-name">${g.name}</div>
+                    <div class="inv-price">⭐${g.price}</div>
+                </div>`;
+            }).join('');
+        }
     } else {
-        rightGrid.innerHTML = GIFTS.map((g,i) => `
-            <div class="inv-item ${state.selectedRight===i?'selected':''}" data-target="${i}">
-                <img src="${g.image}" onerror="this.style.display='none'">
-                <div class="inv-name">${g.name}</div>
-                <div class="inv-price">⭐${g.price}</div>
-            </div>`).join('');
+        if (filtered.length === 0){
+            rightGrid.innerHTML = '<div class="inv-empty">Ничего не найдено</div>';
+        } else {
+            rightGrid.innerHTML = filtered.map(g => {
+                const idx = GIFTS.indexOf(g);
+                return `
+                <div class="inv-item ${state.selectedRight===idx?'selected':''}" data-target="${idx}">
+                    <img src="${g.image}" onerror="this.style.display='none'">
+                    <div class="inv-name">${g.name}</div>
+                    <div class="inv-price">⭐${g.price}</div>
+                </div>`;
+            }).join('');
+        }
     }
 
     // СЛОТЫ
@@ -527,12 +675,17 @@ function render(){
         slotRight.innerHTML = `<div class="slot-label">ВЫБЕРИТЕ ЦЕЛЬ</div><div class="slot-empty">🎯</div>`;
     }
 
+    // синхронизация полей поиска
+    if (document.activeElement !== searchName) searchName.value = state.search.name || '';
+    if (document.activeElement !== priceMin)   priceMin.value   = state.search.min  || '';
+    if (document.activeElement !== priceMax)   priceMax.value   = state.search.max  || '';
+
     updateChance();
     renderProfile();
     save();
 }
 
-// ===== 7) ШАНС (макс 75%) =====
+// ===== 8) ШАНС =====
 const MAX_CHANCE = 75;
 function calcChance(){
     const left = state.inventory.find(x => x.id === state.selectedLeft);
@@ -564,7 +717,94 @@ function updateChance(){
     }
 }
 
-// ===== 8) ТАБЫ =====
+// ===== 9) БЫСТРЫЙ ПОДБОР ПО ПРОЦЕНТУ =====
+function quickPickChance(targetPercent){
+    // Нужна цель, где price_left / price_target ≈ targetPercent / 100
+    // price_target ≈ price_left * 100 / targetPercent
+    let basePrice = null;
+    const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
+    const rightItem = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
+
+    if (leftItem){
+        basePrice = leftItem.price;
+    } else if (rightItem){
+        // если слева пусто — берём цену цели как опору, подбираем "источник"
+        basePrice = rightItem.price;
+    } else {
+        tg.showAlert('Сначала выберите предмет слева или цель справа');
+        return;
+    }
+
+    const wantedPrice = basePrice * 100 / targetPercent;
+
+    // Находим ближайший по цене подарок
+    let bestIdx = 0, bestDiff = Infinity;
+    GIFTS.forEach((g, i) => {
+        const diff = Math.abs(g.price - wantedPrice);
+        if (diff < bestDiff){ bestDiff = diff; bestIdx = i; }
+    });
+
+    // Если слева что-то выбрано — ставим цель справа
+    if (leftItem){
+        state.selectedRight = bestIdx;
+        // переключаем таб на "Прокачать до" чтобы юзер видел выбор
+        state.rightTab = 'target';
+        // Обновляем UI табов
+        document.querySelectorAll('.tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.tab === 'target');
+        });
+    } else {
+        // Если слева пусто — ищем ближайший предмет в инвентаре
+        const wantedLeftPrice = rightItem.price * targetPercent / 100;
+        let bestInv = null, bestInvDiff = Infinity;
+        state.inventory.forEach(it => {
+            const d = Math.abs(it.price - wantedLeftPrice);
+            if (d < bestInvDiff){ bestInvDiff = d; bestInv = it; }
+        });
+        if (bestInv){
+            state.selectedLeft = bestInv.id;
+        } else {
+            tg.showAlert('Нет подходящего предмета в инвентаре');
+            return;
+        }
+    }
+
+    render();
+    if (navigator.vibrate) navigator.vibrate(15);
+}
+
+// вешаем обработчики на кнопки быстрого выбора
+document.querySelectorAll('.qc-btn').forEach(btn => {
+    btn.addEventListener('click', function(){
+        const pct = Number(this.dataset.chance);
+        quickPickChance(pct);
+    });
+});
+
+// ===== 10) ПОИСК =====
+function applySearch(){
+    state.search.name = searchName.value.trim();
+    state.search.min  = priceMin.value.trim();
+    state.search.max  = priceMax.value.trim();
+    render();
+}
+searchBtn.addEventListener('click', applySearch);
+searchName.addEventListener('keypress', e => { if (e.key === 'Enter') applySearch(); });
+priceMin.addEventListener('keypress',   e => { if (e.key === 'Enter') applySearch(); });
+priceMax.addEventListener('keypress',   e => { if (e.key === 'Enter') applySearch(); });
+searchName.addEventListener('input', applySearch);
+priceMin.addEventListener('input',   applySearch);
+priceMax.addEventListener('input',   applySearch);
+
+// ===== 11) СОРТИРОВКА =====
+sortBtn.addEventListener('click', () => {
+    state.sortAsc = !state.sortAsc;
+    sortBtn.textContent = state.sortAsc ? '▲' : '▼';
+    render();
+});
+sortBtn.textContent = state.sortAsc ? '▲' : '▼';
+
+// ===== 12) ТАБЫ =====
 tabs.forEach(tab => {
     tab.addEventListener('click', function(){
         tabs.forEach(t => t.classList.remove('active'));
@@ -575,15 +815,19 @@ tabs.forEach(tab => {
     });
 });
 
-// ===== 9) КЛИКИ =====
+// ===== 13) КЛИК ПО ИНВЕНТАРЮ =====
 invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
-    state.selectedLeft = el.dataset.id;
+    // Открываем модал продажи
+    const id = el.dataset.id;
+    state.selectedLeft = id;
     render();
+    showSellModal(id);
     if (navigator.vibrate) navigator.vibrate(10);
 });
 
+// ===== 14) КЛИК ПО ПРАВОЙ ПАНЕЛИ =====
 rightGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
@@ -601,14 +845,12 @@ rightGrid.addEventListener('click', e => {
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-// ===== 10) МОДАЛ ПОКУПКИ =====
+// ===== 15) МОДАЛ ПОКУПКИ =====
 function showBuyModal(giftIndex){
     const gift = GIFTS[giftIndex];
     if (!gift) return;
-
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
-
     const canAfford = state.balance >= gift.price;
 
     const overlay = document.createElement('div');
@@ -629,38 +871,68 @@ function showBuyModal(giftIndex){
         </div>`;
     document.body.appendChild(overlay);
 
-    const closeBtn = overlay.querySelector('[data-action="close"]');
-    const buyBtn = overlay.querySelector('[data-action="buy"]');
-    const closeModal = () => overlay.remove();
-    closeBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 
+    const buyBtn = overlay.querySelector('[data-action="buy"]');
     if (buyBtn && canAfford){
         buyBtn.addEventListener('click', () => {
             state.balance -= gift.price;
             state.inventory.push({
                 id: 'gift_' + Date.now() + '_' + Math.floor(Math.random()*1000),
-                name: gift.name,
-                price: gift.price,
-                image: gift.image,
+                name: gift.name, price: gift.price, image: gift.image,
             });
-            closeModal();
+            overlay.remove();
             render();
             tg.showAlert('✅ Куплено: ' + gift.name + ' за ⭐' + gift.price);
-
-            try {
-                tg.sendData(JSON.stringify({
-                    action: 'buy_gift',
-                    payload: { name: gift.name, price: gift.price, balance: state.balance, userId: user.id }
-                }));
-            } catch(e){}
-
+            try { tg.sendData(JSON.stringify({ action:'buy_gift', payload:{name:gift.name,price:gift.price,balance:state.balance,userId:user.id} })); } catch(e){}
             if (navigator.vibrate) navigator.vibrate([20,40,20]);
         });
     }
 }
 
-// ===== 11) АПГРЕЙД (честная логика стрелки) =====
+// ===== 16) МОДАЛ ПРОДАЖИ =====
+function showSellModal(itemId){
+    const item = state.inventory.find(x => x.id === itemId);
+    if (!item) return;
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content sell">
+            <img src="${item.image}" onerror="this.style.display='none'">
+            <div class="modal-title">${item.name}</div>
+            <div class="modal-sub">
+                Продать за: <b style="color:var(--gold)">⭐ ${item.price}</b><br>
+                <span style="font-size:10px;">Звёзды придут на баланс</span>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn grey" data-action="close">ОТМЕНА</button>
+                <button class="modal-btn cyan" data-action="sell">💸 ПРОДАТЬ</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    overlay.querySelector('[data-action="sell"]').addEventListener('click', () => {
+        const idx = state.inventory.findIndex(x => x.id === itemId);
+        if (idx === -1){ overlay.remove(); return; }
+        state.inventory.splice(idx, 1);
+        state.balance += item.price;
+        if (state.selectedLeft === itemId) state.selectedLeft = null;
+        overlay.remove();
+        render();
+        tg.showAlert('✅ Продано: ' + item.name + ' за ⭐' + item.price);
+        try { tg.sendData(JSON.stringify({ action:'sell_gift', payload:{name:item.name,price:item.price,balance:state.balance,userId:user.id} })); } catch(e){}
+        if (navigator.vibrate) navigator.vibrate([20,40,20]);
+    });
+}
+
+// ===== 17) АПГРЕЙД =====
 upgradeBtn.addEventListener('click', function(){
     if (state.isUpgrading) return;
     const left = state.inventory.find(x => x.id === state.selectedLeft);
@@ -673,7 +945,6 @@ upgradeBtn.addEventListener('click', function(){
     upgradeInfo.textContent = '🌀 Прокачка...';
     if (navigator.vibrate) navigator.vibrate([30,60,30]);
 
-    // Честно: сначала угол, потом результат
     const finalAngleDeg = Math.random() * 360;
     const chanceDeg = chance * 3.6;
     const success = finalAngleDeg < chanceDeg;
@@ -692,32 +963,22 @@ upgradeBtn.addEventListener('click', function(){
         if (success){
             state.inventory.push({
                 id: 'gift_' + Date.now(),
-                name: right.name,
-                price: right.price,
-                image: right.image,
+                name: right.name, price: right.price, image: right.image,
             });
         }
-
         state.selectedLeft = null;
         state.isUpgrading = false;
         upgradeInfo.textContent = success ? '✅ Успех!' : '❌ Неудача';
         render();
         showResult(success, success ? right : left, chance);
-
-        try {
-            tg.sendData(JSON.stringify({
-                action: 'upgrade',
-                payload: { from: left.name, to: right.name, chance, success, userId: user.id }
-            }));
-        } catch(e){}
+        try { tg.sendData(JSON.stringify({ action:'upgrade', payload:{from:left.name,to:right.name,chance,success,userId:user.id} })); } catch(e){}
     }, 4100);
 });
 
-// ===== 12) МОДАЛ РЕЗУЛЬТАТА =====
+// ===== 18) МОДАЛ РЕЗУЛЬТАТА =====
 function showResult(success, item, chance){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
-
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
@@ -736,7 +997,7 @@ function showResult(success, item, chance){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 13) НАВИГАЦИЯ =====
+// ===== 19) НАВИГАЦИЯ =====
 function switchScreen(id){
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
@@ -748,7 +1009,7 @@ navBtns.forEach(b => b.addEventListener('click', function(){
     if (navigator.vibrate) navigator.vibrate(10);
 }));
 
-// ===== 14) СТАРТ =====
+// ===== 20) СТАРТ =====
 initTelegram(function(){
     render();
     console.log('[UPGRADER] готов, user:', user);
