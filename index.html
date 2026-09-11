@@ -25,13 +25,7 @@ window.__TG_FALLBACK__ = {
     --mono:'JetBrains Mono','Roboto Mono',monospace;
 }
 html,body{height:100%;overflow:hidden;font-family:var(--mono);background:var(--bg);color:var(--text);user-select:none;-webkit-tap-highlight-color:transparent;}
-body::before{
-    content:'';position:fixed;inset:0;
-    background:
-        radial-gradient(circle at 20% 30%, rgba(0,255,136,.04), transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(0,212,255,.04), transparent 60%);
-    pointer-events:none;z-index:0;
-}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 20% 30%, rgba(0,255,136,.04), transparent 60%),radial-gradient(circle at 80% 70%, rgba(0,212,255,.04), transparent 60%);pointer-events:none;z-index:0;}
 #app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;padding:6px 8px;}
 
 .header{display:flex;justify-content:space-between;align-items:center;padding:6px 4px 8px;border-bottom:1px solid var(--border);flex-shrink:0;gap:6px;}
@@ -40,7 +34,9 @@ body::before{
 .head-icon{width:26px;height:26px;background:var(--glass);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:.15s;touch-action:manipulation;color:var(--text);}
 .head-icon:active{transform:scale(.9);}
 .head-icon.active{background:rgba(0,255,136,.15);border-color:var(--neon);}
-.balance{background:var(--glass);border:1px solid var(--border);border-radius:30px;padding:5px 10px;font-size:11px;color:var(--gold);backdrop-filter:blur(8px);}
+.deposit-icon{background:linear-gradient(135deg,var(--neon),#00cc70) !important;color:#0a0e1a !important;font-weight:700;font-size:16px !important;border:none !important;box-shadow:0 0 15px rgba(0,255,136,.4);}
+.balance{background:var(--glass);border:1px solid var(--border);border-radius:30px;padding:5px 10px;font-size:11px;color:var(--gold);backdrop-filter:blur(8px);cursor:pointer;transition:.15s;}
+.balance:active{transform:scale(.95);}
 
 .content{flex:1;overflow-y:auto;margin:6px 0;padding:2px;min-height:0;}
 .content::-webkit-scrollbar{width:3px;}
@@ -178,6 +174,28 @@ body::before{
 .volume-test-btn{background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);color:var(--neon);border-radius:20px;padding:8px 16px;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;margin-top:12px;width:100%;touch-action:manipulation;}
 .volume-test-btn:active{transform:scale(.96);}
 
+/* ПОПОЛНЕНИЕ */
+.deposit-tabs{display:flex;gap:4px;margin-bottom:14px;background:rgba(0,0,0,.3);padding:3px;border-radius:10px;}
+.deposit-tab{flex:1;text-align:center;padding:9px 4px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:8px;transition:.15s;border:1px solid transparent;touch-action:manipulation;}
+.deposit-tab.active{background:rgba(0,255,136,.12);color:var(--neon);border-color:rgba(0,255,136,.3);}
+.deposit-tab:active{transform:scale(.96);}
+
+.deposit-packages{display:flex;flex-direction:column;gap:8px;}
+.deposit-pkg{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:#0f1525;border:1px solid var(--border2);border-radius:10px;padding:12px 14px;cursor:pointer;transition:.15s;touch-action:manipulation;}
+.deposit-pkg:hover{border-color:rgba(0,255,136,.4);}
+.deposit-pkg:active{transform:scale(.98);}
+.deposit-pkg .pkg-stars{font-size:14px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:4px;}
+.deposit-pkg .pkg-ton{font-size:12px;color:var(--cyan);font-weight:600;text-align:right;}
+.deposit-pkg .pkg-arrow{font-size:16px;color:var(--muted);}
+
+.deposit-note{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);border-radius:10px;padding:12px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px;}
+.deposit-note b{color:var(--cyan);}
+
+.deposit-wallet{background:rgba(0,0,0,.35);border:1px dashed var(--border2);border-radius:10px;padding:12px;font-size:10px;color:var(--muted);word-break:break-all;text-align:center;margin:12px 0;line-height:1.5;}
+.deposit-wallet .wallet-addr{color:var(--neon);font-weight:600;font-size:11px;margin-top:6px;display:block;}
+.deposit-copy{background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);color:var(--neon);border-radius:20px;padding:8px 16px;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;margin-top:8px;width:100%;touch-action:manipulation;}
+.deposit-copy:active{transform:scale(.96);}
+
 .history-item{display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;background:rgba(0,0,0,.3);border-radius:10px;padding:8px;margin-bottom:6px;border-left:3px solid var(--muted);}
 .history-item.win{border-left-color:var(--neon);}
 .history-item.lose{border-left-color:var(--red);}
@@ -231,7 +249,8 @@ body::before{
             <div class="head-icon" id="btnVolume" title="Громкость">🔊</div>
             <div class="head-icon" id="btnFast" title="Быстрый прокрут">⚡</div>
         </div>
-        <div class="balance">⭐ <span id="balanceDisplay">0</span></div>
+        <div class="balance" id="balanceBtn" title="Пополнить">⭐ <span id="balanceDisplay">0</span></div>
+        <div class="head-icon deposit-icon" id="btnDeposit" title="Пополнить">＋</div>
     </div>
 
     <div class="content">
@@ -411,13 +430,11 @@ const GIFTS = [
 ];
 
 // ===== 3) СОСТОЯНИЕ =====
-const KEY = 'lab_upgrade_v11';
+const KEY = 'lab_upgrade_v12';
 function defaultState(){
     return {
-        inventory: [
-            { id:'g1', name:'Мишка', price:15, image: BASE+'/images/Мишка.gif' },
-        ],
-        balance: 1000,
+        inventory: [],
+        balance: 0,
         selectedLeft: null,
         selectedRight: null,
         isUpgrading: false,
@@ -442,10 +459,7 @@ if (typeof state.sortAsc !== 'boolean') state.sortAsc = true;
 if (!state.history) state.history = [];
 if (!state.settings) state.settings = { presets:{x:[2,4,8],percent:[5,25,50,75]}, soundOn:true, volume:0.7, fastSpin:false };
 if (!state.settings.presets) state.settings.presets = { x:[2,4,8], percent:[5,25,50,75] };
-// Миграция: если percent — 3 значения, делаем 4
-if (state.settings.presets.percent.length !== 4){
-    state.settings.presets.percent = [5, 25, 50, 75];
-}
+if (state.settings.presets.percent.length !== 4) state.settings.presets.percent = [5,25,50,75];
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
 // ===== 4) ЗВУКИ =====
@@ -521,12 +535,11 @@ const priceMax = $('priceMax');
 const searchBtn = $('searchBtn');
 const sortBtn = $('sortBtn');
 
-// ===== 6) БЫСТРЫЕ КНОПКИ (из настроек) =====
+// ===== 6) БЫСТРЫЕ КНОПКИ =====
 function renderQuickButtons(){
     const container = document.getElementById('quickRight');
     if (!container) return;
     const percentPresets = state.settings.presets.percent;
-
     container.innerHTML = percentPresets.map(pct => {
         let colorClass = 'p50';
         if (pct <= 15) colorClass = 'p5';
@@ -535,7 +548,6 @@ function renderQuickButtons(){
         else colorClass = 'p75';
         return `<button class="qc-btn ${colorClass}" data-chance="${pct}">${pct}%</button>`;
     }).join('');
-
     container.querySelectorAll('.qc-btn').forEach(btn => {
         btn.addEventListener('click', function(){
             quickPickChance(Number(this.dataset.chance));
@@ -607,7 +619,19 @@ function render(){
     invCount.textContent = state.inventory.length + ' шт.';
 
     if (state.inventory.length === 0){
-        invGrid.innerHTML = '<div class="inv-empty">Нет предметов<br>Купите в магазине →</div>';
+        invGrid.innerHTML = `
+            <div class="inv-empty" style="padding:30px 12px;">
+                <div style="font-size:32px;margin-bottom:8px;">💎</div>
+                <div style="font-size:12px;color:var(--text);margin-bottom:4px;font-weight:600;">Нет предметов</div>
+                <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">Пополните баланс и купите первый подарок</div>
+                <button class="volume-test-btn" id="emptyDepositBtn" style="max-width:200px;margin:0 auto;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;">
+                    ＋ ПОПОЛНИТЬ ОТ 100 ⭐
+                </button>
+            </div>`;
+        setTimeout(() => {
+            const b = document.getElementById('emptyDepositBtn');
+            if (b) b.addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
+        }, 0);
     } else {
         invGrid.innerHTML = state.inventory.map(it => `
             <div class="inv-item ${state.selectedLeft===it.id?'selected':''}" data-id="${it.id}">
@@ -1132,8 +1156,8 @@ function showSettingsModal(){
     overlay.querySelector('[data-action="save"]').addEventListener('click', () => {
         Sound.click();
         save();
-        applySettingsToUI();   // ← обновляет кнопку быстрого прокрута
-        renderQuickButtons();  // ← обновляет кнопки процентов под слотом цели
+        applySettingsToUI();
+        renderQuickButtons();
         overlay.remove();
     });
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
@@ -1172,22 +1196,140 @@ function showVolumeModal(){
         value.textContent = v + '%';
         state.settings.volume = v / 100;
     });
-    slider.addEventListener('change', () => {
-        save();
-        Sound.click();
-    });
-    overlay.querySelector('#testSound').addEventListener('click', () => {
-        Sound.win();
-    });
+    slider.addEventListener('change', () => { save(); Sound.click(); });
+    overlay.querySelector('#testSound').addEventListener('click', () => Sound.win());
     overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-        save();
-        Sound.click();
-        overlay.remove();
+        save(); Sound.click(); overlay.remove();
     });
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 23) ВЕРХНИЕ КНОПКИ =====
+// ===== 23) ПОПОЛНЕНИЕ =====
+const DEPOSIT_PACKAGES = [
+    { stars: 100,  ton: 1.1  },
+    { stars: 250,  ton: 2.7  },
+    { stars: 500,  ton: 5.5  },
+    { stars: 1000, ton: 11   },
+    { stars: 5000, ton: 54.7 },
+];
+
+// ЗАМЕНИТЕ НА СВОЙ КОШЕЛЁК!
+const WALLET_ADDRESS = 'UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+
+function showDepositModal(defaultTab){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    let activeTab = defaultTab || 'ton';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    function renderContent(){
+        let body = '';
+
+        if (activeTab === 'ton'){
+            body = `
+                <div class="deposit-note">
+                    Отправьте <b>Toncoin</b> на кошелёк ниже и звёзды зачислятся автоматически в течение 1-2 минут. Курс фиксированный.
+                </div>
+                <div class="deposit-packages">
+                    ${DEPOSIT_PACKAGES.map(p => `
+                        <div class="deposit-pkg" data-stars="${p.stars}" data-ton="${p.ton}">
+                            <div class="pkg-stars">⭐ ${p.stars}</div>
+                            <div class="pkg-arrow">→</div>
+                            <div class="pkg-ton">${p.ton} TON</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="deposit-wallet">
+                    Адрес TON-кошелька:
+                    <span class="wallet-addr" id="walletAddr">${WALLET_ADDRESS}</span>
+                    <button class="deposit-copy" data-action="copy">📋 СКОПИРОВАТЬ АДРЕС</button>
+                </div>
+            `;
+        } else {
+            body = `
+                <div class="deposit-note">
+                    Отправьте <b>NFT-подарок</b> нашему боту в Telegram. Мы оценим его и зачислим звёзды на ваш баланс.
+                </div>
+                <div class="deposit-note" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3);">
+                    <b style="color:var(--gold);">Как это работает:</b><br>
+                    1. Перешлите подарок нашему боту<br>
+                    2. Бот оценит его по рыночной цене<br>
+                    3. Звёзды будут начислены автоматически
+                </div>
+                <button class="volume-test-btn" data-action="openBot" style="background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.4);color:var(--gold);">
+                    🎁 ОТКРЫТЬ БОТА ДЛЯ ОТПРАВКИ
+                </button>
+            `;
+        }
+
+        overlay.innerHTML = `
+            <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
+                <div class="settings-header">
+                    <h2>💎 Пополнение</h2>
+                    <button class="settings-close" data-action="close">✕</button>
+                </div>
+                <div class="deposit-tabs">
+                    <div class="deposit-tab ${activeTab==='ton'?'active':''}" data-tab="ton">💎 TONCOIN</div>
+                    <div class="deposit-tab ${activeTab==='nft'?'active':''}" data-tab="nft">🎁 NFT-ПОДАРКИ</div>
+                </div>
+                ${body}
+            </div>
+        `;
+
+        overlay.querySelectorAll('.deposit-tab').forEach(t => {
+            t.addEventListener('click', () => {
+                activeTab = t.dataset.tab;
+                Sound.click();
+                renderContent();
+            });
+        });
+
+        overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
+            Sound.click(); overlay.remove();
+        });
+
+        const copyBtn = overlay.querySelector('[data-action="copy"]');
+        if (copyBtn){
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(WALLET_ADDRESS).then(() => {
+                    copyBtn.textContent = '✅ СКОПИРОВАНО';
+                    Sound.buy();
+                    setTimeout(() => { copyBtn.textContent = '📋 СКОПИРОВАТЬ АДРЕС'; }, 1500);
+                }).catch(() => tg.showAlert('Адрес: ' + WALLET_ADDRESS));
+            });
+        }
+
+        overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
+            pkg.addEventListener('click', () => {
+                const stars = pkg.dataset.stars;
+                const ton = pkg.dataset.ton;
+                Sound.click();
+                navigator.clipboard.writeText(WALLET_ADDRESS).catch(()=>{});
+                tg.showAlert('Пакет: ⭐ ' + stars + ' за ' + ton + ' TON\\n\\nАдрес скопирован! Отправьте ' + ton + ' TON.');
+                try { tg.sendData(JSON.stringify({
+                    action: 'deposit_request',
+                    payload: { stars: Number(stars), ton: Number(ton), userId: user.id }
+                })); } catch(e){}
+            });
+        });
+
+        const botBtn = overlay.querySelector('[data-action="openBot"]');
+        if (botBtn){
+            botBtn.addEventListener('click', () => {
+                Sound.click();
+                tg.showAlert('Напишите боту @ваш_бот чтобы отправить NFT-подарок');
+            });
+        }
+    }
+
+    renderContent();
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+// ===== 24) ВЕРХНИЕ КНОПКИ =====
 $('btnInfo').addEventListener('click', () => {
     Sound.click();
     switchScreen('screenHistory');
@@ -1202,12 +1344,14 @@ $('btnFast').addEventListener('click', function(){
     save();
     tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
 });
+$('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
+$('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
 
 function applySettingsToUI(){
     $('btnFast').classList.toggle('active', state.settings.fastSpin);
 }
 
-// ===== 24) НАВИГАЦИЯ =====
+// ===== 25) НАВИГАЦИЯ =====
 function switchScreen(id){
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
@@ -1221,11 +1365,12 @@ navBtns.forEach(b => b.addEventListener('click', function(){
     if (navigator.vibrate) navigator.vibrate(10);
 }));
 
-// ===== 25) СТАРТ =====
+// ===== 26) СТАРТ =====
 initTelegram(function(){
     render();
     renderHistory();
-    applySettingsToUI();   // ← внутри вызывает renderQuickButtons
+    applySettingsToUI();
+    renderQuickButtons();
     console.log('[UPGRADER] готов, user:', user);
 });
 })();
