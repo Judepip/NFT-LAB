@@ -331,7 +331,6 @@ body::before{
 
         <div class="screen active" id="screenUpgrade">
             <div class="upgrade-top">
-                <!-- ЛЕВАЯ КОЛОНКА: только слот -->
                 <div class="slot-col">
                     <div class="slot-panel" id="slotLeft">
                         <div class="slot-label">ВЫБЕРИТЕ ПРЕДМЕТ</div>
@@ -339,7 +338,6 @@ body::before{
                     </div>
                 </div>
 
-                <!-- ЦЕНТР: колесо -->
                 <div class="wheel-wrap">
                     <svg class="wheel-svg" width="170" height="170" viewBox="0 0 170 170">
                         <defs>
@@ -361,7 +359,6 @@ body::before{
                     <div class="wheel-center-sub">ШАНС</div>
                 </div>
 
-                <!-- ПРАВАЯ КОЛОНКА: слот + кнопки % -->
                 <div class="slot-col">
                     <div class="slot-panel" id="slotRight">
                         <div class="slot-label">ВЫБЕРИТЕ ЦЕЛЬ</div>
@@ -512,7 +509,7 @@ const GIFTS = [
 ];
 
 // ===== 3) СОСТОЯНИЕ =====
-const KEY = 'lab_upgrade_v9';
+const KEY = 'lab_upgrade_v10';
 function defaultState(){
     return {
         inventory: [
@@ -545,7 +542,7 @@ if (!state.settings) state.settings = { presets:{x:[2,4,8],percent:[35,55,75]}, 
 if (!state.settings.presets) state.settings.presets = { x:[2,4,8], percent:[35,55,75] };
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
-// ===== 4) ЗВУКИ =====
+// ===== 4) ЗВУКИ (мягкие, приятные) =====
 let audioCtx = null;
 function getAudioCtx(){
     if (!audioCtx){
@@ -554,51 +551,83 @@ function getAudioCtx(){
     }
     return audioCtx;
 }
-function playTone(freq, duration, type='sine', volumeMul=1){
+
+// Универсальный "нотный" плеер — с плавной огибающей
+function playNote(freq, startTime, duration, type='sine', volumeMul=1){
     if (!state.settings.soundOn) return;
     if (state.settings.volume <= 0) return;
     const ctx = getAudioCtx();
     if (!ctx) return;
+    const t0 = ctx.currentTime + startTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
     osc.frequency.value = freq;
-    const vol = state.settings.volume * volumeMul * 0.25;
-    gain.gain.setValueAtTime(vol, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+    const vol = state.settings.volume * volumeMul * 0.18;
+    // Плавная атака и спад — без резких щелчков
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(vol, t0 + duration * 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + duration);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
 }
+
 const Sound = {
-    click(){ playTone(600, 0.05, 'square', 0.6); },
-    tick(){ playTone(900 + Math.random()*200, 0.03, 'sine', 0.4); },
+    // Лёгкий "блип" — мягкий колокольчик
+    click(){
+        playNote(1200, 0, 0.08, 'sine', 0.9);
+        playNote(1800, 0.005, 0.06, 'sine', 0.4);
+    },
+
+    // Тик прокрутки — капли / маримба
+    tick(){
+        const base = 700 + Math.random() * 300;
+        playNote(base, 0, 0.06, 'triangle', 0.5);
+    },
+
+    // Выигрыш — восходящее мажорное арпеджио C-E-G-C (музыкальная шкатулка)
     win(){
-        playTone(523, 0.12, 'sine', 1);
-        setTimeout(()=>playTone(659, 0.12, 'sine', 1), 100);
-        setTimeout(()=>playTone(784, 0.2, 'sine', 1), 200);
-        setTimeout(()=>playTone(1047, 0.35, 'sine', 1), 320);
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+        notes.forEach((f, i) => {
+            playNote(f, i * 0.11, 0.45, 'sine', 1);
+            playNote(f * 2, i * 0.11 + 0.01, 0.3, 'sine', 0.25);
+        });
+        // Финальный мажорный аккорд
+        playNote(523.25, 0.5, 0.7, 'sine', 0.5);
+        playNote(659.25, 0.5, 0.7, 'sine', 0.4);
+        playNote(783.99, 0.5, 0.7, 'sine', 0.4);
     },
+
+    // Проигрыш — мягкое нисходящее, "грустный колокольчик"
     lose(){
-        playTone(220, 0.2, 'sawtooth', 0.8);
-        setTimeout(()=>playTone(160, 0.3, 'sawtooth', 0.8), 150);
-        setTimeout(()=>playTone(110, 0.4, 'sawtooth', 0.8), 320);
+        const notes = [440, 392, 329.63, 261.63]; // A4 G4 E4 C4
+        notes.forEach((f, i) => {
+            playNote(f, i * 0.13, 0.35, 'sine', 0.85);
+        });
+        playNote(196, 0.55, 0.6, 'sine', 0.5); // G3
     },
+
+    // Покупка — приятный восходящий "динь"
     buy(){
-        playTone(880, 0.08, 'sine', 0.8);
-        setTimeout(()=>playTone(1320, 0.15, 'sine', 0.8), 80);
+        playNote(659.25, 0, 0.15, 'sine', 0.9);   // E5
+        playNote(987.77, 0.08, 0.25, 'sine', 0.8); // B5
     },
+
+    // Продажа — приятный нисходящий "динь"
     sell(){
-        playTone(1200, 0.08, 'sine', 0.8);
-        setTimeout(()=>playTone(800, 0.15, 'sine', 0.8), 80);
+        playNote(987.77, 0, 0.15, 'sine', 0.9);  // B5
+        playNote(659.25, 0.08, 0.25, 'sine', 0.8); // E5
     },
 };
 
 let spinSoundInterval = null;
 function startSpinSound(){
     stopSpinSound();
-    spinSoundInterval = setInterval(() => Sound.tick(), 100);
+    spinSoundInterval = setInterval(() => Sound.tick(), 90);
 }
 function stopSpinSound(){
     if (spinSoundInterval){
