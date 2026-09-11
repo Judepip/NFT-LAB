@@ -174,7 +174,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .volume-test-btn{background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);color:var(--neon);border-radius:20px;padding:8px 16px;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;margin-top:12px;width:100%;touch-action:manipulation;}
 .volume-test-btn:active{transform:scale(.96);}
 
-/* ПОПОЛНЕНИЕ */
 .deposit-tabs{display:flex;gap:4px;margin-bottom:14px;background:rgba(0,0,0,.3);padding:3px;border-radius:10px;}
 .deposit-tab{flex:1;text-align:center;padding:9px 4px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:8px;transition:.15s;border:1px solid transparent;touch-action:manipulation;}
 .deposit-tab.active{background:rgba(0,255,136,.12);color:var(--neon);border-color:rgba(0,255,136,.3);}
@@ -190,11 +189,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 
 .deposit-note{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);border-radius:10px;padding:12px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px;}
 .deposit-note b{color:var(--cyan);}
-
-.deposit-wallet{background:rgba(0,0,0,.35);border:1px dashed var(--border2);border-radius:10px;padding:12px;font-size:10px;color:var(--muted);word-break:break-all;text-align:center;margin:12px 0;line-height:1.5;}
-.deposit-wallet .wallet-addr{color:var(--neon);font-weight:600;font-size:11px;margin-top:6px;display:block;}
-.deposit-copy{background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);color:var(--neon);border-radius:20px;padding:8px 16px;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;margin-top:8px;width:100%;touch-action:manipulation;}
-.deposit-copy:active{transform:scale(.96);}
 
 .history-item{display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;background:rgba(0,0,0,.3);border-radius:10px;padding:8px;margin-bottom:6px;border-left:3px solid var(--muted);}
 .history-item.win{border-left-color:var(--neon);}
@@ -1218,68 +1212,78 @@ const DEPOSIT_PACKAGES = [
 
 let tonConnectUI = null;
 let selectedAmount = null;
+let sdkLoadingPromise = null;
 
-// ---- Загрузка SDK TON Connect ----
-function initTonConnect() {
-    console.log('[TON] initTonConnect вызван');
+// ---- Загрузка SDK TON Connect через async IIFE (работает везде) ----
+function loadTonConnectSDK() {
+    if (window.TonConnectUI) return Promise.resolve(window.TonConnectUI);
+    if (sdkLoadingPromise) return sdkLoadingPromise;
 
-    if (window.TonConnectUI) {
-        console.log('[TON] SDK уже загружен');
-        createTonConnectInstance();
-        return;
-    }
+    console.log('[TON SDK] начинаю загрузку');
 
-    // Пробуем локальный файл, затем unpkg
-    const script = document.createElement('script');
-    script.type = 'module';
-    script.textContent = `
-        let loaded = false;
-        try {
-            const mod = await import('./tonconnect-ui.min.js');
-            window.TonConnectUI = mod.default || mod.TonConnectUI;
-            loaded = true;
-            console.log('[TON SDK] загружен локально');
-        } catch (e) {
-            console.warn('[TON SDK] локальный не найден, пробуем unpkg:', e.message);
-        }
-        if (!loaded) {
-            try {
-                const mod = await import('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js');
-                window.TonConnectUI = mod.default || mod.TonConnectUI;
-                console.log('[TON SDK] загружен с unpkg');
-            } catch (e) {
-                console.error('[TON SDK] не удалось загрузить:', e.message);
-            }
-        }
-        window.dispatchEvent(new Event('tonconnect-ready'));
-    `;
-    document.head.appendChild(script);
+    sdkLoadingPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.textContent = `
+            (async () => {
+                let mod = null;
+                try {
+                    mod = await import('./tonconnect-ui.min.js');
+                    console.log('[TON SDK] локальный загружен');
+                } catch (e) {
+                    console.warn('[TON SDK] локальный не найден:', e && e.message);
+                }
+                if (!mod) {
+                    try {
+                        mod = await import('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js');
+                        console.log('[TON SDK] unpkg загружен');
+                    } catch (e) {
+                        console.error('[TON SDK] unpkg не удалось:', e && e.message);
+                    }
+                }
+                if (mod) {
+                    window.TonConnectUI = mod.default || mod.TonConnectUI;
+                    window.dispatchEvent(new Event('tonconnect-ready'));
+                } else {
+                    window.dispatchEvent(new Event('tonconnect-error'));
+                }
+            })();
+        `;
+        script.onerror = () => {
+            console.error('[TON SDK] script.onerror');
+            window.dispatchEvent(new Event('tonconnect-error'));
+        };
+        document.head.appendChild(script);
 
-    window.addEventListener('tonconnect-ready', () => {
-        if (window.TonConnectUI) {
-            console.log('[TON] SDK готов, создаю instance');
-            createTonConnectInstance();
-        } else {
-            console.error('[TON] SDK так и не загрузился');
-        }
-    }, { once: true });
+        window.addEventListener('tonconnect-ready', () => resolve(window.TonConnectUI), { once: true });
+        window.addEventListener('tonconnect-error', () => reject(new Error('SDK load failed')), { once: true });
+        setTimeout(() => {
+            if (!window.TonConnectUI) reject(new Error('SDK timeout'));
+        }, 8000);
+    });
+
+    return sdkLoadingPromise;
 }
 
-function createTonConnectInstance() {
-    if (tonConnectUI) return;
-    try {
-        tonConnectUI = new window.TonConnectUI({ manifestUrl: MANIFEST_URL });
+// ---- Гарантировать instance TonConnectUI ----
+function ensureTonConnectUI() {
+    if (tonConnectUI) return Promise.resolve(tonConnectUI);
+    return loadTonConnectSDK().then((TonConnectUICls) => {
+        if (!TonConnectUICls) throw new Error('TonConnectUI class missing');
+        tonConnectUI = new TonConnectUICls({ manifestUrl: MANIFEST_URL });
         tonConnectUI.onStatusChange(() => {
-            console.log('[TON] статус изменился, connected =', tonConnectUI.connected);
+            console.log('[TON] status change, connected =', tonConnectUI.connected);
             updateWalletStatus();
         });
         console.log('[TON] instance создан');
-    } catch (e) {
-        console.error('[TON] ошибка создания instance:', e);
-    }
+        return tonConnectUI;
+    }).catch((e) => {
+        console.error('[TON] ошибка ensureTonConnectUI:', e);
+        return null;
+    });
 }
 
-// ---- Статус кошелька ----
+// ---- Обновление статуса ----
 function updateWalletStatus() {
     const statusEl = document.getElementById('walletStatus');
     const payBtn = document.getElementById('payBtn');
@@ -1328,7 +1332,9 @@ function showDepositModal(defaultTab) {
                     Подключите <b>TON-кошелёк</b> и выберите сумму — звёзды зачислятся автоматически после подтверждения транзакции. Курс фиксированный.
                 </div>
 
-                <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:40px;"></div>
+                <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:40px;">
+                    <div id="sdkStatus" style="color:var(--muted);font-size:10px;text-align:center;width:100%;">Загрузка кошелька...</div>
+                </div>
 
                 <div id="walletStatus" style="display:none;text-align:center;font-size:10px;color:var(--neon);margin:6px 0 10px;word-break:break-all;"></div>
 
@@ -1394,22 +1400,31 @@ function showDepositModal(defaultTab) {
         });
 
         if (activeTab === 'ton') {
-            // Просим SDK отрисовать кнопку в новом контейнере
-            setTimeout(() => {
-                if (tonConnectUI) {
-                    try {
-                        tonConnectUI.uiOptions = { buttonRootId: 'ton-connect-button' };
-                    } catch(e) {
-                        console.error('[TON] uiOptions error:', e);
-                    }
-                    updateWalletStatus();
-                } else {
-                    const btnRoot = overlay.querySelector('#ton-connect-button');
-                    if (btnRoot) {
-                        btnRoot.innerHTML = '<div style="color:var(--muted);font-size:10px;">Загрузка кошелька...</div>';
-                    }
+            const statusEl = overlay.querySelector('#sdkStatus');
+            const setStatus = (txt, color) => {
+                if (statusEl) {
+                    statusEl.textContent = txt;
+                    statusEl.style.color = color || 'var(--muted)';
                 }
-            }, 0);
+                console.log('[TON UI]', txt);
+            };
+
+            setStatus('Загрузка SDK...');
+
+            ensureTonConnectUI().then((ui) => {
+                if (!ui) {
+                    setStatus('❌ SDK не загрузился', 'var(--red)');
+                    return;
+                }
+                // Прячем статус и просим SDK отрисовать кнопку в контейнере
+                if (statusEl) statusEl.remove();
+                try {
+                    ui.uiOptions = { buttonRootId: 'ton-connect-button' };
+                } catch (e) {
+                    console.error('[TON] uiOptions error:', e);
+                }
+                updateWalletStatus();
+            });
 
             overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
                 pkg.addEventListener('click', () => {
@@ -1541,7 +1556,13 @@ initTelegram(function(){
     renderHistory();
     applySettingsToUI();
     renderQuickButtons();
-    initTonConnect();
+    // Прогреваем SDK сразу, чтобы к моменту открытия модалки он был готов
+    loadTonConnectSDK().then(() => {
+        console.log('[TON] SDK прогрет');
+        ensureTonConnectUI();
+    }).catch(e => {
+        console.warn('[TON] не удалось прогреть SDK:', e.message);
+    });
     console.log('[UPGRADER] готов, user:', user);
 });
 })();
