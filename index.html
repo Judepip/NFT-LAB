@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NFT LAB · Upgrade</title>
 <script>
-if (!window.Telegram) {
-    window.Telegram = { WebApp: { ready:()=>{}, expand:()=>{}, showAlert:(m)=>alert(m), sendData:(d)=>console.log(d), initDataUnsafe:{user:{id:12345,first_name:'Тестер'}} } };
-}
+window.__TG_FALLBACK__ = {
+    ready:()=>{}, expand:()=>{}, showAlert:(m)=>alert(m),
+    sendData:(d)=>console.log('sendData:', d),
+    initDataUnsafe: { user: { id: 0, first_name: 'Аноним', last_name:'', username: null, photo_url: null } }
+};
 </script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -16,9 +18,7 @@ if (!window.Telegram) {
     --bg:#0a0e1a; --bg2:#12182b;
     --neon:#00ff88; --cyan:#00d4ff;
     --glass:rgba(18,24,43,.75);
-    --glass2:rgba(26,33,52,.85);
     --border:rgba(0,255,136,.15);
-    --border2:rgba(255,255,255,.08);
     --text:#e8f0f8; --muted:#8899bb;
     --gold:#ffd700; --red:#ff4466;
     --mono:'JetBrains Mono','Roboto Mono',monospace;
@@ -46,7 +46,7 @@ body::before{
 .screen.active{display:block;}
 @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
-/* ===== ВЕРХ: слоты + колесо ===== */
+/* ===== ВЕРХ ===== */
 .upgrade-top{
     display:grid;
     grid-template-columns:1fr 170px 1fr;
@@ -55,7 +55,6 @@ body::before{
     margin-bottom:8px;
 }
 
-/* Слоты */
 .slot-panel{
     background:var(--glass);border:1px solid var(--border);border-radius:12px;
     padding:8px 4px;min-height:120px;display:flex;flex-direction:column;
@@ -71,32 +70,23 @@ body::before{
 .slot-panel .slot-item .slot-price{font-size:8px;color:var(--gold);margin-top:1px;}
 .slot-panel .slot-remove{position:absolute;top:3px;right:5px;background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;font-family:var(--mono);}
 
-/* ===== КОЛЕСО СО СТРЕЛКОЙ ===== */
-.wheel-wrap{
-    position:relative;
-    width:170px;height:170px;
-    margin:0 auto;
-    display:flex;align-items:center;justify-content:center;
-}
+/* КОЛЕСО */
+.wheel-wrap{position:relative;width:170px;height:170px;margin:0 auto;display:flex;align-items:center;justify-content:center;}
 .wheel-svg{transform:rotate(-90deg);}
 .wheel-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:14;}
 .wheel-progress{fill:none;stroke:url(#wheelGrad);stroke-width:14;stroke-linecap:butt;transition:stroke-dashoffset .5s ease;}
 
 .wheel-spinner{
-    position:absolute;
-    top:50%;left:50%;
+    position:absolute;top:50%;left:50%;
     width:170px;height:170px;
     margin:-85px 0 0 -85px;
     pointer-events:none;
     transform:rotate(0deg);
     transition:transform 4s cubic-bezier(.17,.67,.3,1);
-    z-index:5;
-    will-change:transform;
+    z-index:5;will-change:transform;
 }
 .wheel-spinner .marker{
-    position:absolute;
-    top:-6px;left:50%;
-    transform:translateX(-50%);
+    position:absolute;top:-6px;left:50%;transform:translateX(-50%);
     width:0;height:0;
     border-left:9px solid transparent;
     border-right:9px solid transparent;
@@ -104,33 +94,24 @@ body::before{
     filter:drop-shadow(0 0 8px #00ff88) drop-shadow(0 0 16px #00ff88) drop-shadow(0 0 24px rgba(0,255,136,.6));
 }
 .wheel-spinner .marker-glow{
-    position:absolute;
-    top:14px;left:50%;
-    transform:translateX(-50%);
-    width:6px;height:6px;
-    border-radius:50%;
-    background:#00ff88;
+    position:absolute;top:14px;left:50%;transform:translateX(-50%);
+    width:6px;height:6px;border-radius:50%;background:#00ff88;
     box-shadow:0 0 15px #00ff88, 0 0 30px #00ff88;
 }
 
 .wheel-center-text{
-    position:absolute;
-    font-size:24px;font-weight:800;
+    position:absolute;font-size:24px;font-weight:800;
     background:linear-gradient(135deg,var(--neon),var(--gold));
     -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    z-index:3;
-    letter-spacing:-.5px;
+    z-index:3;letter-spacing:-.5px;
 }
 .wheel-center-sub{
-    position:absolute;
-    top:calc(50% + 20px);
+    position:absolute;top:calc(50% + 20px);
     font-size:8px;color:var(--muted);
-    letter-spacing:1.5px;
-    z-index:3;
-    font-weight:500;
+    letter-spacing:1.5px;z-index:3;font-weight:500;
 }
 
-/* Кнопка */
+/* КНОПКА */
 .upgrade-btn{
     width:100%;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;
     border:none;border-radius:30px;padding:12px;font-weight:700;font-size:14px;
@@ -141,28 +122,34 @@ body::before{
 .upgrade-btn:disabled{opacity:.35;pointer-events:none;}
 .upgrade-info{text-align:center;font-size:10px;color:var(--muted);margin:6px 0;min-height:14px;}
 
-/* ===== НИЖНЯЯ ЧАСТЬ: 2 КОЛОНКИ ===== */
-.bottombar{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:6px;
-    margin-bottom:8px;
-}
+/* НИЗ */
+.bottombar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
 .inv-section{
     background:var(--glass);border:1px solid var(--border);border-radius:12px;
-    padding:8px;backdrop-filter:blur(8px);min-height:200px;
+    padding:8px;backdrop-filter:blur(8px);min-height:260px;
     display:flex;flex-direction:column;
 }
 .inv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:10px;font-weight:600;}
 .inv-header .count{color:var(--muted);font-size:9px;}
+
+/* Табы */
+.tabs{
+    display:flex;gap:4px;margin-bottom:6px;
+    background:rgba(0,0,0,.25);padding:3px;border-radius:8px;
+}
+.tab{
+    flex:1;text-align:center;padding:5px 4px;
+    font-size:9px;font-weight:600;color:var(--muted);
+    cursor:pointer;border-radius:6px;transition:.15s;
+    letter-spacing:.3px;border:1px solid transparent;
+    touch-action:manipulation;
+}
+.tab.active{background:rgba(0,255,136,.1);color:var(--neon);border-color:rgba(0,255,136,.3);}
+.tab:active{transform:scale(.96);}
+
 .inv-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:5px;
-    overflow-y:auto;
-    flex:1;
-    padding-right:2px;
-    align-content:start;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:5px;
+    overflow-y:auto;flex:1;padding-right:2px;align-content:start;
 }
 .inv-grid::-webkit-scrollbar{width:2px;}
 .inv-grid::-webkit-scrollbar-thumb{background:var(--neon);border-radius:10px;}
@@ -179,7 +166,14 @@ body::before{
 .inv-item .inv-price{font-size:6px;color:var(--gold);font-weight:600;margin-top:1px;}
 .inv-empty{color:var(--muted);text-align:center;padding:20px 8px;font-size:10px;grid-column:1/-1;}
 
-/* ===== МОДАЛ ===== */
+.inv-item .buy-badge{
+    position:absolute;top:2px;right:2px;
+    background:var(--gold);color:#0a0e1a;
+    font-size:6px;font-weight:700;
+    padding:1px 3px;border-radius:4px;z-index:2;
+}
+
+/* МОДАЛ */
 .modal-overlay{
     position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(14px);
     z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;
@@ -192,13 +186,17 @@ body::before{
 }
 .modal-content.win{border-color:var(--neon);box-shadow:0 0 60px rgba(0,255,136,.3);}
 .modal-content.lose{border-color:var(--red);box-shadow:0 0 60px rgba(255,68,102,.3);}
+.modal-content.buy{border-color:var(--gold);box-shadow:0 0 60px rgba(255,215,0,.3);}
 .modal-content img{width:110px;height:110px;object-fit:contain;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(0,255,136,.4));}
 .modal-title{font-size:18px;font-weight:700;margin-bottom:4px;}
 .modal-sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
-.modal-btn{background:var(--neon);color:#0a0e1a;border:none;border-radius:30px;padding:11px 30px;font-weight:700;font-size:13px;font-family:var(--mono);cursor:pointer;width:100%;}
+.modal-actions{display:flex;gap:8px;}
+.modal-btn{background:var(--neon);color:#0a0e1a;border:none;border-radius:30px;padding:11px 20px;font-weight:700;font-size:13px;font-family:var(--mono);cursor:pointer;flex:1;}
 .modal-btn:active{transform:scale(.96);}
+.modal-btn.gold{background:var(--gold);}
+.modal-btn.grey{background:rgba(255,255,255,.1);color:var(--text);}
 
-/* ===== НАВИГАЦИЯ ===== */
+/* НАВИГАЦИЯ */
 .nav-center{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;flex-shrink:0;padding:2px 0;}
 .nav-btn{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 4px;color:var(--muted);font-family:var(--mono);font-size:10px;font-weight:500;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:.15s;touch-action:manipulation;}
 .nav-btn .icon{font-size:16px;}
@@ -207,11 +205,15 @@ body::before{
 
 /* ПРОФИЛЬ */
 .profile-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;}
-.profile-avatar{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 10px;}
-.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
-.stat-box{background:rgba(0,0,0,.3);border-radius:10px;padding:10px;text-align:center;}
-.stat-box .value{font-size:18px;font-weight:600;color:var(--gold);}
-.stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px;overflow:hidden;position:relative;}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;}
+.profile-name{font-size:18px;font-weight:600;margin-bottom:2px;}
+.profile-username{color:var(--cyan);font-size:12px;margin-bottom:4px;}
+.profile-id{color:var(--muted);font-size:11px;}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+.stat-box{background:rgba(0,0,0,.3);border-radius:10px;padding:12px;text-align:center;}
+.stat-box .value{font-size:20px;font-weight:600;color:var(--gold);}
+.stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
 
 @media(max-width:380px){
     .upgrade-top{grid-template-columns:1fr 140px 1fr;gap:4px;}
@@ -221,6 +223,7 @@ body::before{
     .slot-panel{min-height:105px;}
     .slot-panel .slot-item img{width:38px;height:38px;}
     .inv-item img{width:28px;height:28px;}
+    .tab{font-size:8px;padding:4px 2px;}
 }
 </style>
 </head>
@@ -229,7 +232,7 @@ body::before{
 
     <div class="header">
         <h1>⚡ LAB UPGRADER</h1>
-        <div class="balance">⭐ <span id="balanceDisplay">1000</span></div>
+        <div class="balance">⭐ <span id="balanceDisplay">0</span></div>
     </div>
 
     <div class="content">
@@ -254,12 +257,10 @@ body::before{
                         <circle class="wheel-progress" id="wheelProgress" cx="85" cy="85" r="70"
                                 stroke-dasharray="439.82" stroke-dashoffset="439.82"/>
                     </svg>
-
                     <div class="wheel-spinner" id="wheelSpinner">
                         <div class="marker"></div>
                         <div class="marker-glow"></div>
                     </div>
-
                     <div class="wheel-center-text" id="chanceText">0%</div>
                     <div class="wheel-center-sub">ШАНС</div>
                 </div>
@@ -283,23 +284,30 @@ body::before{
                 </div>
 
                 <div class="inv-section">
-                    <div class="inv-header">
-                        <span>🎯 Прокачать до</span>
-                        <span class="count">апгрейд</span>
+                    <div class="tabs">
+                        <div class="tab active" data-tab="shop">🛒 МАГАЗИН</div>
+                        <div class="tab" data-tab="target">🎯 ПРОКАЧАТЬ ДО</div>
                     </div>
-                    <div class="inv-grid" id="targetGrid"></div>
+                    <div class="inv-grid" id="rightGrid"></div>
                 </div>
             </div>
         </div>
 
         <div class="screen" id="screenProfile">
             <div class="profile-card">
-                <div class="profile-avatar">👤</div>
-                <div style="font-size:16px;font-weight:600;" id="profileName">Аноним</div>
-                <div style="color:var(--muted);font-size:12px;" id="profileId">ID: 0</div>
+                <div class="profile-avatar" id="profileAvatar">👤</div>
+                <div class="profile-name" id="profileName">Загрузка...</div>
+                <div class="profile-username" id="profileUsername"></div>
+                <div class="profile-id" id="profileId">ID: —</div>
                 <div class="profile-stats">
-                    <div class="stat-box"><div class="value" id="statNFT">0</div><div class="label">NFT</div></div>
-                    <div class="stat-box"><div class="value" id="statBalance">0 ⭐</div><div class="label">Баланс</div></div>
+                    <div class="stat-box">
+                        <div class="value" id="statNFT">0</div>
+                        <div class="label">🎁 Подарки</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="statBalance">0 ⭐</div>
+                        <div class="label">Звёзды</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -308,13 +316,14 @@ body::before{
             <div class="inv-section" style="min-height:auto;">
                 <div class="inv-header"><span>ℹ️ Как играть</span></div>
                 <div style="font-size:12px;line-height:1.7;color:var(--muted);">
-                    <p>1️⃣ Выберите предмет из инвентаря (слева внизу)</p>
-                    <p>2️⃣ Выберите цель (справа внизу)</p>
-                    <p>3️⃣ Колесо показывает шанс (макс. 75%)</p>
+                    <p>1️⃣ Купите подарок в <b style="color:var(--gold)">Магазине</b> (за звёзды)</p>
+                    <p>2️⃣ Предмет появится в <b style="color:var(--neon)">Моём инвентаре</b></p>
+                    <p>3️⃣ Выберите его слева + цель справа (<b>Прокачать до</b>)</p>
                     <p>4️⃣ Нажмите <b style="color:var(--neon)">ПРОКАЧАТЬ</b></p>
-                    <p>🎯 Стрелка крутится по колесу и останавливается</p>
+                    <p>🎯 Стрелка крутится по колесу</p>
                     <p>✅ Попала в цветной сектор → выигрыш</p>
                     <p>❌ Попала в пустую часть → предмет сгорает</p>
+                    <p style="margin-top:8px;color:var(--gold);">Макс. шанс: 75%</p>
                 </div>
             </div>
         </div>
@@ -333,12 +342,42 @@ body::before{
 (function(){
 'use strict';
 
-// ===== TELEGRAM =====
-let tg = window.Telegram?.WebApp || { ready:()=>{}, expand:()=>{}, showAlert:alert, sendData:console.log, initDataUnsafe:{user:{id:12345,first_name:'Тестер'}} };
-try { tg.ready(); tg.expand(); } catch(e){}
-const USER_ID = tg.initDataUnsafe?.user?.id || 12345;
+// ===== 1) ЖДЁМ ЗАГРУЗКИ TELEGRAM SDK =====
+let tg = null;
+let user = { id: 0, first_name: 'Аноним', last_name: '', username: null, photo_url: null };
 
-// ===== ПРЕДМЕТЫ =====
+function initTelegram(callback){
+    let attempts = 0;
+    const MAX = 50;
+    const check = () => {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData !== undefined){
+            tg = window.Telegram.WebApp;
+            try { tg.ready(); tg.expand(); } catch(e){}
+
+            const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+            if (u){
+                user = {
+                    id: u.id || 0,
+                    first_name: u.first_name || 'Аноним',
+                    last_name: u.last_name || '',
+                    username: u.username || null,
+                    photo_url: u.photo_url || null,
+                };
+            }
+            console.log('[TG] init OK', user);
+            callback();
+        } else if (attempts++ < MAX){
+            setTimeout(check, 100);
+        } else {
+            tg = window.__TG_FALLBACK__;
+            console.warn('[TG] SDK не загрузился, эмуляция');
+            callback();
+        }
+    };
+    check();
+}
+
+// ===== 2) ПРЕДМЕТЫ =====
 const BASE = 'https://judepip.github.io/NFT-LAB';
 const GIFTS = [
     { name:'Bow Tie',        price:800, image: BASE+'/images/BowTie.gif' },
@@ -353,31 +392,31 @@ const GIFTS = [
     { name:'Мишка',          price:15,  image: BASE+'/images/Мишка.gif' },
 ];
 
-// ===== СОСТОЯНИЕ =====
-const KEY = 'lab_upgrade_v3';
+// ===== 3) СОСТОЯНИЕ =====
+const KEY = 'lab_upgrade_v5';
 function defaultState(){
     return {
         inventory: [
             { id:'g1', name:'Мишка', price:15, image: BASE+'/images/Мишка.gif' },
-            { id:'g2', name:'Кольцо', price:100, image: BASE+'/images/Кольцо.gif' },
-            { id:'g3', name:'Кубок', price:100, image: BASE+'/images/Кубок.gif' },
         ],
         balance: 1000,
         selectedLeft: null,
         selectedRight: null,
         isUpgrading: false,
+        rightTab: 'shop',
     };
 }
 let state;
 try { state = JSON.parse(localStorage.getItem(KEY)) || defaultState(); }
 catch(e){ state = defaultState(); }
+if (!state.rightTab) state.rightTab = 'shop';
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
-// ===== DOM =====
+// ===== 4) DOM =====
 const $ = id => document.getElementById(id);
 const balanceDisplay = $('balanceDisplay');
 const invGrid = $('invGrid');
-const targetGrid = $('targetGrid');
+const rightGrid = $('rightGrid');
 const invCount = $('invCount');
 const slotLeft = $('slotLeft');
 const slotRight = $('slotRight');
@@ -388,14 +427,48 @@ const upgradeBtn = $('upgradeBtn');
 const upgradeInfo = $('upgradeInfo');
 const screens = document.querySelectorAll('.screen');
 const navBtns = document.querySelectorAll('.nav-btn');
+const tabs = document.querySelectorAll('.tab');
 
-// ===== РЕНДЕР =====
+// ===== 5) ПРОФИЛЬ =====
+function renderProfile(){
+    const nameEl = $('profileName');
+    const userEl = $('profileUsername');
+    const idEl = $('profileId');
+    const avEl = $('profileAvatar');
+    const nftEl = $('statNFT');
+    const balEl = $('statBalance');
+
+    const fullName = (user.first_name + ' ' + (user.last_name || '')).trim() || 'Аноним';
+    nameEl.textContent = fullName;
+
+    if (user.username){
+        userEl.textContent = '@' + user.username;
+        userEl.style.display = 'block';
+    } else {
+        userEl.textContent = '';
+        userEl.style.display = 'none';
+    }
+
+    idEl.textContent = 'ID: ' + (user.id || '—');
+
+    if (user.photo_url){
+        avEl.innerHTML = '<img src="' + user.photo_url + '" alt="avatar" onerror="this.parentNode.innerHTML=\'👤\'">';
+    } else {
+        avEl.innerHTML = '👤';
+    }
+
+    nftEl.textContent = state.inventory.length;
+    balEl.textContent = Math.floor(state.balance) + ' ⭐';
+}
+
+// ===== 6) РЕНДЕР =====
 function render(){
     balanceDisplay.textContent = Math.floor(state.balance);
     invCount.textContent = state.inventory.length + ' шт.';
 
+    // ЛЕВЫЙ ИНВЕНТАРЬ
     if (state.inventory.length === 0){
-        invGrid.innerHTML = '<div class="inv-empty">Нет предметов</div>';
+        invGrid.innerHTML = '<div class="inv-empty">Нет предметов<br>Купите в магазине →</div>';
     } else {
         invGrid.innerHTML = state.inventory.map(it => `
             <div class="inv-item ${state.selectedLeft===it.id?'selected':''}" data-id="${it.id}">
@@ -405,13 +478,25 @@ function render(){
             </div>`).join('');
     }
 
-    targetGrid.innerHTML = GIFTS.map((g,i) => `
-        <div class="inv-item ${state.selectedRight===i?'selected':''}" data-target="${i}">
-            <img src="${g.image}" onerror="this.style.display='none'">
-            <div class="inv-name">${g.name}</div>
-            <div class="inv-price">⭐${g.price}</div>
-        </div>`).join('');
+    // ПРАВАЯ ПАНЕЛЬ
+    if (state.rightTab === 'shop'){
+        rightGrid.innerHTML = GIFTS.map((g,i) => `
+            <div class="inv-item" data-buy="${i}">
+                <div class="buy-badge">КУПИТЬ</div>
+                <img src="${g.image}" onerror="this.style.display='none'">
+                <div class="inv-name">${g.name}</div>
+                <div class="inv-price">⭐${g.price}</div>
+            </div>`).join('');
+    } else {
+        rightGrid.innerHTML = GIFTS.map((g,i) => `
+            <div class="inv-item ${state.selectedRight===i?'selected':''}" data-target="${i}">
+                <img src="${g.image}" onerror="this.style.display='none'">
+                <div class="inv-name">${g.name}</div>
+                <div class="inv-price">⭐${g.price}</div>
+            </div>`).join('');
+    }
 
+    // СЛОТЫ
     const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
     if (leftItem){
         slotLeft.classList.add('filled');
@@ -443,17 +528,17 @@ function render(){
     }
 
     updateChance();
+    renderProfile();
     save();
 }
 
-// ===== ШАНС (макс 75%) =====
+// ===== 7) ШАНС (макс 75%) =====
 const MAX_CHANCE = 75;
 function calcChance(){
     const left = state.inventory.find(x => x.id === state.selectedLeft);
     const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
     if (!left || !right) return 0;
-    const c = (left.price / right.price) * 100;
-    return Math.min(MAX_CHANCE, Math.max(1, c));
+    return Math.min(MAX_CHANCE, Math.max(1, (left.price / right.price) * 100));
 }
 
 function updateChance(){
@@ -479,7 +564,18 @@ function updateChance(){
     }
 }
 
-// ===== КЛИКИ =====
+// ===== 8) ТАБЫ =====
+tabs.forEach(tab => {
+    tab.addEventListener('click', function(){
+        tabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        state.rightTab = this.dataset.tab;
+        render();
+        if (navigator.vibrate) navigator.vibrate(8);
+    });
+});
+
+// ===== 9) КЛИКИ =====
 invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
@@ -488,18 +584,83 @@ invGrid.addEventListener('click', e => {
     if (navigator.vibrate) navigator.vibrate(10);
 });
 
-targetGrid.addEventListener('click', e => {
+rightGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
-    state.selectedRight = parseInt(el.dataset.target, 10);
-    render();
-    if (navigator.vibrate) navigator.vibrate(10);
+    if (el.dataset.buy !== undefined){
+        showBuyModal(parseInt(el.dataset.buy, 10));
+        return;
+    }
+    if (el.dataset.target !== undefined){
+        state.selectedRight = parseInt(el.dataset.target, 10);
+        render();
+        if (navigator.vibrate) navigator.vibrate(10);
+    }
 });
 
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-// ===== АПГРЕЙД С ЧЕСТНОЙ СТРЕЛКОЙ =====
+// ===== 10) МОДАЛ ПОКУПКИ =====
+function showBuyModal(giftIndex){
+    const gift = GIFTS[giftIndex];
+    if (!gift) return;
+
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+
+    const canAfford = state.balance >= gift.price;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content buy">
+            <img src="${gift.image}" onerror="this.style.display='none'">
+            <div class="modal-title">${gift.name}</div>
+            <div class="modal-sub">
+                Цена: <b style="color:var(--gold)">⭐ ${gift.price}</b><br>
+                У вас: <b style="color:var(--gold)">⭐ ${Math.floor(state.balance)}</b>
+                ${!canAfford ? '<br><span style="color:var(--red)">Недостаточно звёзд</span>' : ''}
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn grey" data-action="close">ОТМЕНА</button>
+                <button class="modal-btn gold" data-action="buy" ${!canAfford?'disabled style="opacity:.4"':''}>КУПИТЬ</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    const closeBtn = overlay.querySelector('[data-action="close"]');
+    const buyBtn = overlay.querySelector('[data-action="buy"]');
+    const closeModal = () => overlay.remove();
+    closeBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+    if (buyBtn && canAfford){
+        buyBtn.addEventListener('click', () => {
+            state.balance -= gift.price;
+            state.inventory.push({
+                id: 'gift_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+                name: gift.name,
+                price: gift.price,
+                image: gift.image,
+            });
+            closeModal();
+            render();
+            tg.showAlert('✅ Куплено: ' + gift.name + ' за ⭐' + gift.price);
+
+            try {
+                tg.sendData(JSON.stringify({
+                    action: 'buy_gift',
+                    payload: { name: gift.name, price: gift.price, balance: state.balance, userId: user.id }
+                }));
+            } catch(e){}
+
+            if (navigator.vibrate) navigator.vibrate([20,40,20]);
+        });
+    }
+}
+
+// ===== 11) АПГРЕЙД (честная логика стрелки) =====
 upgradeBtn.addEventListener('click', function(){
     if (state.isUpgrading) return;
     const left = state.inventory.find(x => x.id === state.selectedLeft);
@@ -512,35 +673,22 @@ upgradeBtn.addEventListener('click', function(){
     upgradeInfo.textContent = '🌀 Прокачка...';
     if (navigator.vibrate) navigator.vibrate([30,60,30]);
 
-    // ===== ГЛАВНОЕ ИСПРАВЛЕНИЕ =====
-    // 1) Сначала выбираем СЛУЧАЙНЫЙ угол 0..360 — куда попадёт стрелка
+    // Честно: сначала угол, потом результат
     const finalAngleDeg = Math.random() * 360;
-
-    // 2) Сектор шанса в градусах: 75% = 270°, 20% = 72° и т.д.
     const chanceDeg = chance * 3.6;
-
-    // 3) Успех определяется ИСКЛЮЧИТЕЛЬНО позицией стрелки:
-    //    попала в закрашенный сектор (0 .. chanceDeg) → выигрыш
-    //    попала в пустую часть (chanceDeg .. 360) → проигрыш
     const success = finalAngleDeg < chanceDeg;
 
-    // 4) Обороты: 4-6 полных кругов + финальный угол
     const turns = 4 + Math.floor(Math.random() * 3);
     const finalRotation = turns * 360 + finalAngleDeg;
 
-    // 5) Сброс стрелки в 0 без анимации
     wheelSpinner.style.transition = 'none';
     wheelSpinner.style.transform = 'rotate(0deg)';
     void wheelSpinner.offsetWidth;
-
-    // 6) Запуск анимации
     wheelSpinner.style.transition = 'transform 4s cubic-bezier(.17,.67,.3,1)';
     wheelSpinner.style.transform = `rotate(${finalRotation}deg)`;
 
-    // 7) Через 4 секунды — результат
     setTimeout(() => {
         state.inventory = state.inventory.filter(x => x.id !== left.id);
-
         if (success){
             state.inventory.push({
                 id: 'gift_' + Date.now(),
@@ -559,13 +707,13 @@ upgradeBtn.addEventListener('click', function(){
         try {
             tg.sendData(JSON.stringify({
                 action: 'upgrade',
-                payload: { from: left.name, to: right.name, chance, success }
+                payload: { from: left.name, to: right.name, chance, success, userId: user.id }
             }));
         } catch(e){}
     }, 4100);
 });
 
-// ===== МОДАЛ =====
+// ===== 12) МОДАЛ РЕЗУЛЬТАТА =====
 function showResult(success, item, chance){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -588,20 +736,23 @@ function showResult(success, item, chance){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== НАВИГАЦИЯ =====
+// ===== 13) НАВИГАЦИЯ =====
 function switchScreen(id){
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
     navBtns.forEach(b => b.classList.toggle('active', b.dataset.screen === id));
+    if (id === 'screenProfile') renderProfile();
 }
 navBtns.forEach(b => b.addEventListener('click', function(){
     switchScreen(this.dataset.screen);
     if (navigator.vibrate) navigator.vibrate(10);
 }));
 
-// ===== СТАРТ =====
-render();
-console.log('[UPGRADER] loaded, user:', USER_ID);
+// ===== 14) СТАРТ =====
+initTelegram(function(){
+    render();
+    console.log('[UPGRADER] готов, user:', user);
+});
 })();
 </script>
 </body>
