@@ -1204,7 +1204,12 @@ function showVolumeModal(){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 23) ПОПОЛНЕНИЕ =====
+/* ============================================================ */
+/* ===== 23) TON CONNECT — ПОПОЛНЕНИЕ (ЗАМЕНА КНОПКИ КОПИРОВАНИЯ) */
+/* ============================================================ */
+const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
+const MANIFEST_URL = 'https://judepip.github.io/NFT-LAB/tonconnect-manifest.json';
+
 const DEPOSIT_PACKAGES = [
     { stars: 100,  ton: 1.1  },
     { stars: 250,  ton: 2.7  },
@@ -1213,14 +1218,72 @@ const DEPOSIT_PACKAGES = [
     { stars: 5000, ton: 54.7 },
 ];
 
-// ЗАМЕНИТЕ НА СВОЙ КОШЕЛЁК!
-const WALLET_ADDRESS = 'UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+let tonConnectUI = null;
+let selectedAmount = null;
+
+// Динамическая загрузка TonConnectUI
+function initTonConnect(){
+    if (typeof window.TonConnectUI === 'undefined'){
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.textContent = `
+            import TonConnectUI from 'https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js';
+            window.TonConnectUI = TonConnectUI;
+            window.dispatchEvent(new Event('tonconnect-ready'));
+        `;
+        document.head.appendChild(script);
+        window.addEventListener('tonconnect-ready', setupTonConnect, { once: true });
+        return;
+    }
+    setupTonConnect();
+}
+
+function setupTonConnect(){
+    try {
+        tonConnectUI = new window.TonConnectUI({
+            manifestUrl: MANIFEST_URL,
+            buttonRootId: 'ton-connect-button'
+        });
+        tonConnectUI.onStatusChange(() => updateWalletStatus());
+        console.log('[TON] Connect UI инициализирован');
+    } catch(e){
+        console.error('[TON] Ошибка инициализации:', e);
+    }
+    updateWalletStatus();
+}
+
+function updateWalletStatus(){
+    const statusEl = document.getElementById('walletStatus');
+    const payBtn = document.getElementById('payBtn');
+    const payInfo = document.getElementById('payInfo');
+    if (!statusEl || !payBtn || !payInfo) return;
+
+    if (tonConnectUI && tonConnectUI.connected && tonConnectUI.account){
+        const addr = tonConnectUI.account.address;
+        const short = addr.slice(0, 6) + '...' + addr.slice(-6);
+        statusEl.style.display = 'block';
+        statusEl.textContent = '✅ Кошелёк подключён: ' + short;
+    } else {
+        statusEl.style.display = 'none';
+    }
+
+    if (!tonConnectUI || !tonConnectUI.connected){
+        payBtn.disabled = true;
+        payInfo.textContent = 'Подключите кошелёк';
+    } else if (!selectedAmount){
+        payBtn.disabled = true;
+        payInfo.textContent = 'Выберите сумму';
+    } else {
+        payBtn.disabled = false;
+        payInfo.textContent = 'Нажмите ОПЛАТИТЬ для подтверждения';
+    }
+}
 
 function showDepositModal(defaultTab){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
-    let activeTab = defaultTab || 'ton';
 
+    let activeTab = defaultTab || 'ton';
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
 
@@ -1230,8 +1293,13 @@ function showDepositModal(defaultTab){
         if (activeTab === 'ton'){
             body = `
                 <div class="deposit-note">
-                    Отправьте <b>Toncoin</b> на кошелёк ниже и звёзды зачислятся автоматически в течение 1-2 минут. Курс фиксированный.
+                    Отправьте <b>Toncoin</b> через подключённый кошелёк — звёзды зачислятся автоматически в течение 1-2 минут. Курс фиксированный.
                 </div>
+
+                <!-- Контейнер для встроенной кнопки TON Connect -->
+                <div id="ton-connect-button" style="margin-bottom:10px;display:flex;justify-content:center;"></div>
+                <div id="walletStatus" style="display:none;text-align:center;font-size:10px;color:var(--neon);margin-bottom:10px;word-break:break-all;"></div>
+
                 <div class="deposit-packages">
                     ${DEPOSIT_PACKAGES.map(p => `
                         <div class="deposit-pkg" data-stars="${p.stars}" data-ton="${p.ton}">
@@ -1241,10 +1309,13 @@ function showDepositModal(defaultTab){
                         </div>
                     `).join('')}
                 </div>
-                <div class="deposit-wallet">
-                    Адрес TON-кошелька:
-                    <span class="wallet-addr" id="walletAddr">${WALLET_ADDRESS}</span>
-                    <button class="deposit-copy" data-action="copy">📋 СКОПИРОВАТЬ АДРЕС</button>
+
+                <button class="volume-test-btn" id="payBtn" disabled
+                        style="margin-top:14px;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;opacity:.4;">
+                    ОПЛАТИТЬ
+                </button>
+                <div id="payInfo" style="text-align:center;font-size:10px;color:var(--muted);margin-top:8px;min-height:14px;">
+                    Подключите кошелёк
                 </div>
             `;
         } else {
@@ -1290,37 +1361,92 @@ function showDepositModal(defaultTab){
             Sound.click(); overlay.remove();
         });
 
-        const copyBtn = overlay.querySelector('[data-action="copy"]');
-        if (copyBtn){
-            copyBtn.addEventListener('click', () => {
-                navigator.clipboard.writeText(WALLET_ADDRESS).then(() => {
-                    copyBtn.textContent = '✅ СКОПИРОВАНО';
-                    Sound.buy();
-                    setTimeout(() => { copyBtn.textContent = '📋 СКОПИРОВАТЬ АДРЕС'; }, 1500);
-                }).catch(() => tg.showAlert('Адрес: ' + WALLET_ADDRESS));
-            });
-        }
+        if (activeTab === 'ton'){
+            // Пересоздаём TonConnectUI внутри нового контейнера
+            setTimeout(() => {
+                if (tonConnectUI){
+                    try { tonConnectUI.uiOptions = { buttonRootId: 'ton-connect-button' }; } catch(e){}
+                } else {
+                    setupTonConnect();
+                }
+                updateWalletStatus();
+            }, 0);
 
-        overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
-            pkg.addEventListener('click', () => {
-                const stars = pkg.dataset.stars;
-                const ton = pkg.dataset.ton;
-                Sound.click();
-                navigator.clipboard.writeText(WALLET_ADDRESS).catch(()=>{});
-                tg.showAlert('Пакет: ⭐ ' + stars + ' за ' + ton + ' TON\\n\\nАдрес скопирован! Отправьте ' + ton + ' TON.');
-                try { tg.sendData(JSON.stringify({
-                    action: 'deposit_request',
-                    payload: { stars: Number(stars), ton: Number(ton), userId: user.id }
-                })); } catch(e){}
+            overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
+                pkg.addEventListener('click', () => {
+                    overlay.querySelectorAll('.deposit-pkg').forEach(p => p.classList.remove('selected'));
+                    pkg.classList.add('selected');
+                    pkg.style.borderColor = 'var(--neon)';
+                    pkg.style.background = 'rgba(0,255,136,.08)';
+                    selectedAmount = {
+                        stars: parseInt(pkg.dataset.stars, 10),
+                        ton: parseFloat(pkg.dataset.ton)
+                    };
+                    Sound.click();
+                    updateWalletStatus();
+                });
             });
-        });
 
-        const botBtn = overlay.querySelector('[data-action="openBot"]');
-        if (botBtn){
-            botBtn.addEventListener('click', () => {
-                Sound.click();
-                tg.showAlert('Напишите боту @ваш_бот чтобы отправить NFT-подарок');
-            });
+            const payBtn = overlay.querySelector('#payBtn');
+            if (payBtn){
+                payBtn.addEventListener('click', async () => {
+                    if (!tonConnectUI || !tonConnectUI.connected || !selectedAmount) return;
+
+                    const btn = payBtn;
+                    const info = overlay.querySelector('#payInfo');
+                    btn.disabled = true;
+                    btn.textContent = 'ОЖИДАНИЕ...';
+                    info.textContent = 'Откройте кошелёк и подтвердите';
+
+                    const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
+
+                    const transaction = {
+                        validUntil: Math.floor(Date.now() / 1000) + 300,
+                        network: '-239',
+                        messages: [{
+                            address: RECIPIENT_ADDRESS,
+                            amount: amountNano
+                        }]
+                    };
+
+                    try {
+                        const result = await tonConnectUI.sendTransaction(transaction);
+                        console.log('✅ Транзакция:', result.boc);
+                        info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
+                        btn.textContent = 'ОТПРАВЛЕНО';
+
+                        try {
+                            tg.sendData(JSON.stringify({
+                                action: 'topup_request',
+                                payload: {
+                                    stars: selectedAmount.stars,
+                                    ton: selectedAmount.ton,
+                                    boc: result.boc,
+                                    userId: user.id
+                                }
+                            }));
+                        } catch(e){}
+
+                        setTimeout(() => {
+                            overlay.remove();
+                        }, 2500);
+                    } catch (e){
+                        console.error('❌ Ошибка транзакции:', e);
+                        info.textContent = '❌ Транзакция отклонена';
+                        btn.textContent = 'ОПЛАТИТЬ';
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                    }
+                });
+            }
+        } else {
+            const botBtn = overlay.querySelector('[data-action="openBot"]');
+            if (botBtn){
+                botBtn.addEventListener('click', () => {
+                    Sound.click();
+                    tg.showAlert('Напишите боту @ваш_бот чтобы отправить NFT-подарок');
+                });
+            }
         }
     }
 
@@ -1328,6 +1454,7 @@ function showDepositModal(defaultTab){
     document.body.appendChild(overlay);
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
+/* ===== КОНЕЦ TON CONNECT ===== */
 
 // ===== 24) ВЕРХНИЕ КНОПКИ =====
 $('btnInfo').addEventListener('click', () => {
@@ -1371,6 +1498,7 @@ initTelegram(function(){
     renderHistory();
     applySettingsToUI();
     renderQuickButtons();
+    initTonConnect();   // ← ДОБАВЛЕНО: инициализация TON Connect
     console.log('[UPGRADER] готов, user:', user);
 });
 })();
