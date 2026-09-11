@@ -1198,7 +1198,10 @@ function showVolumeModal(){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 23) ПОПОЛНЕНИЕ + TON CONNECT =====
+/* ============================================================ */
+/* ===== 23) ПОПОЛНЕНИЕ + TON CONNECT (С ФИКСОМ ЭКСПОРТА) ===== */
+/* ============================================================ */
+
 const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
 const MANIFEST_URL = 'https://judepip.github.io/NFT-LAB/tonconnect-manifest.json';
 
@@ -1214,9 +1217,34 @@ let tonConnectUI = null;
 let selectedAmount = null;
 let sdkLoadingPromise = null;
 
-// ---- Загрузка SDK TON Connect через async IIFE (работает везде) ----
+// ---- Извлечь класс TonConnectUI из любого формата экспорта ----
+function extractTonConnectUIClass(mod) {
+    if (!mod) return null;
+    // ES module
+    if (mod.TonConnectUI) return mod.TonConnectUI;
+    if (mod.default && mod.default.TonConnectUI) return mod.default.TonConnectUI;
+    if (typeof mod.default === 'function') return mod.default;
+    // UMD глобал
+    if (window.TON_CONNECT_UI) {
+        if (window.TON_CONNECT_UI.TonConnectUI) return window.TON_CONNECT_UI.TonConnectUI;
+        if (window.TON_CONNECT_UI.default && window.TON_CONNECT_UI.default.TonConnectUI) {
+            return window.TON_CONNECT_UI.default.TonConnectUI;
+        }
+        if (typeof window.TON_CONNECT_UI === 'function') return window.TON_CONNECT_UI;
+    }
+    if (window.TonConnectUI) {
+        if (typeof window.TonConnectUI === 'function') return window.TonConnectUI;
+        if (window.TonConnectUI.TonConnectUI) return window.TonConnectUI.TonConnectUI;
+    }
+    return null;
+}
+
+// ---- Загрузка SDK TON Connect ----
 function loadTonConnectSDK() {
-    if (window.TonConnectUI) return Promise.resolve(window.TonConnectUI);
+    if (window.TonConnectUI && typeof window.TonConnectUI === 'function') {
+        console.log('[TON SDK] уже загружен, использую существующий');
+        return Promise.resolve(window.TonConnectUI);
+    }
     if (sdkLoadingPromise) return sdkLoadingPromise;
 
     console.log('[TON SDK] начинаю загрузку');
@@ -1229,22 +1257,48 @@ function loadTonConnectSDK() {
                 let mod = null;
                 try {
                     mod = await import('./tonconnect-ui.min.js');
-                    console.log('[TON SDK] локальный загружен');
+                    console.log('[TON SDK] локальный загружен, ключи:', mod ? Object.keys(mod).slice(0, 10) : 'null');
+                    console.log('[TON SDK] mod.default type:', typeof (mod && mod.default));
+                    console.log('[TON SDK] window.TON_CONNECT_UI:', typeof window.TON_CONNECT_UI);
                 } catch (e) {
                     console.warn('[TON SDK] локальный не найден:', e && e.message);
                 }
-                if (!mod) {
+
+                // Пытаемся достать класс из всех возможных мест
+                let Cls = null;
+                if (mod) {
+                    Cls = mod.TonConnectUI
+                        || (mod.default && mod.default.TonConnectUI)
+                        || (typeof mod.default === 'function' ? mod.default : null);
+                }
+                if (!Cls && window.TON_CONNECT_UI) {
+                    Cls = window.TON_CONNECT_UI.TonConnectUI
+                        || (window.TON_CONNECT_UI.default && window.TON_CONNECT_UI.default.TonConnectUI)
+                        || (typeof window.TON_CONNECT_UI === 'function' ? window.TON_CONNECT_UI : null);
+                }
+                if (!Cls && typeof window.TonConnectUI === 'function') {
+                    Cls = window.TonConnectUI;
+                }
+
+                // Фолбэк на unpkg
+                if (!Cls) {
                     try {
-                        mod = await import('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js');
-                        console.log('[TON SDK] unpkg загружен');
+                        const m2 = await import('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js');
+                        Cls = m2.TonConnectUI
+                            || (m2.default && m2.default.TonConnectUI)
+                            || (typeof m2.default === 'function' ? m2.default : null);
+                        console.log('[TON SDK] загружен с unpkg');
                     } catch (e) {
-                        console.error('[TON SDK] unpkg не удалось:', e && e.message);
+                        console.error('[TON SDK] unpkg тоже не удалось:', e && e.message);
                     }
                 }
-                if (mod) {
-                    window.TonConnectUI = mod.default || mod.TonConnectUI;
+
+                if (Cls) {
+                    window.TonConnectUI = Cls;
+                    console.log('[TON SDK] класс установлен:', typeof Cls);
                     window.dispatchEvent(new Event('tonconnect-ready'));
                 } else {
+                    console.error('[TON SDK] не удалось найти класс TonConnectUI');
                     window.dispatchEvent(new Event('tonconnect-error'));
                 }
             })();
@@ -1259,7 +1313,7 @@ function loadTonConnectSDK() {
         window.addEventListener('tonconnect-error', () => reject(new Error('SDK load failed')), { once: true });
         setTimeout(() => {
             if (!window.TonConnectUI) reject(new Error('SDK timeout'));
-        }, 8000);
+        }, 10000);
     });
 
     return sdkLoadingPromise;
@@ -1513,6 +1567,8 @@ function showDepositModal(defaultTab) {
     document.body.appendChild(overlay);
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
+
+/* ===== КОНЕЦ БЛОКА ПОПОЛНЕНИЯ ===== */
 
 // ===== 24) ВЕРХНИЕ КНОПКИ =====
 $('btnInfo').addEventListener('click', () => {
