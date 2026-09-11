@@ -82,7 +82,6 @@ body::before{
 .wheel-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:14;}
 .wheel-progress{fill:none;stroke:url(#wheelGrad);stroke-width:14;stroke-linecap:butt;transition:stroke-dashoffset .5s ease;}
 
-/* Точка-стрелка, которая ходит по кругу */
 .wheel-spinner{
     position:absolute;
     top:50%;left:50%;
@@ -94,7 +93,6 @@ body::before{
     z-index:5;
     will-change:transform;
 }
-/* Маркер-стрелка сверху */
 .wheel-spinner .marker{
     position:absolute;
     top:-6px;left:50%;
@@ -105,7 +103,6 @@ body::before{
     border-top:20px solid #ffffff;
     filter:drop-shadow(0 0 8px #00ff88) drop-shadow(0 0 16px #00ff88) drop-shadow(0 0 24px rgba(0,255,136,.6));
 }
-/* Свечение под маркером */
 .wheel-spinner .marker-glow{
     position:absolute;
     top:14px;left:50%;
@@ -238,7 +235,6 @@ body::before{
     <div class="content">
 
         <div class="screen active" id="screenUpgrade">
-            <!-- ВЕРХ: слот + колесо + слот -->
             <div class="upgrade-top">
                 <div class="slot-panel" id="slotLeft">
                     <div class="slot-label">ВЫБЕРИТЕ ПРЕДМЕТ</div>
@@ -259,7 +255,6 @@ body::before{
                                 stroke-dasharray="439.82" stroke-dashoffset="439.82"/>
                     </svg>
 
-                    <!-- Стрелка-маркер -->
                     <div class="wheel-spinner" id="wheelSpinner">
                         <div class="marker"></div>
                         <div class="marker-glow"></div>
@@ -278,7 +273,6 @@ body::before{
             <button class="upgrade-btn" id="upgradeBtn" disabled>⚡ ПРОКАЧАТЬ</button>
             <div class="upgrade-info" id="upgradeInfo">Выберите предмет и цель</div>
 
-            <!-- НИЗ: 2 колонки -->
             <div class="bottombar">
                 <div class="inv-section">
                     <div class="inv-header">
@@ -400,7 +394,6 @@ function render(){
     balanceDisplay.textContent = Math.floor(state.balance);
     invCount.textContent = state.inventory.length + ' шт.';
 
-    // инвентарь
     if (state.inventory.length === 0){
         invGrid.innerHTML = '<div class="inv-empty">Нет предметов</div>';
     } else {
@@ -412,7 +405,6 @@ function render(){
             </div>`).join('');
     }
 
-    // цели
     targetGrid.innerHTML = GIFTS.map((g,i) => `
         <div class="inv-item ${state.selectedRight===i?'selected':''}" data-target="${i}">
             <img src="${g.image}" onerror="this.style.display='none'">
@@ -420,7 +412,6 @@ function render(){
             <div class="inv-price">⭐${g.price}</div>
         </div>`).join('');
 
-    // левый слот
     const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
     if (leftItem){
         slotLeft.classList.add('filled');
@@ -436,7 +427,6 @@ function render(){
         slotLeft.innerHTML = `<div class="slot-label">ВЫБЕРИТЕ ПРЕДМЕТ</div><div class="slot-empty">➕</div>`;
     }
 
-    // правый слот
     const rightItem = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
     if (rightItem){
         slotRight.classList.add('filled');
@@ -470,7 +460,6 @@ function updateChance(){
     const chance = calcChance();
     chanceText.textContent = chance.toFixed(1) + '%';
 
-    // круг: длина 2*PI*70 = 439.82
     const CIRC = 439.82;
     wheelProgress.setAttribute('stroke-dasharray', CIRC);
     wheelProgress.setAttribute('stroke-dashoffset', CIRC - (CIRC * chance / 100));
@@ -510,7 +499,7 @@ targetGrid.addEventListener('click', e => {
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-// ===== АПГРЕЙД С ВРАЩЕНИЕМ СТРЕЛКИ =====
+// ===== АПГРЕЙД С ЧЕСТНОЙ СТРЕЛКОЙ =====
 upgradeBtn.addEventListener('click', function(){
     if (state.isUpgrading) return;
     const left = state.inventory.find(x => x.id === state.selectedLeft);
@@ -523,38 +512,32 @@ upgradeBtn.addEventListener('click', function(){
     upgradeInfo.textContent = '🌀 Прокачка...';
     if (navigator.vibrate) navigator.vibrate([30,60,30]);
 
-    // 1) РЕШАЕМ ЗАРАНЕЕ: выигрыш или проигрыш
-    const success = Math.random() * 100 < chance;
+    // ===== ГЛАВНОЕ ИСПРАВЛЕНИЕ =====
+    // 1) Сначала выбираем СЛУЧАЙНЫЙ угол 0..360 — куда попадёт стрелка
+    const finalAngleDeg = Math.random() * 360;
 
-    // 2) Куда должна попасть стрелка (угол в градусах от верха по часовой)
-    //    Зелёный сектор = 0..chance, пустой = chance..100
-    let targetAngleDeg;
-    if (success){
-        // Внутри выигрышного сектора, чуть подальше от границ
-        const minA = 1;
-        const maxA = Math.max(minA + 0.5, chance - 1);
-        targetAngleDeg = minA + Math.random() * (maxA - minA);
-    } else {
-        // Внутри пустой части, чуть подальше от границы
-        const minA = Math.min(99, chance + 1);
-        const maxA = 99;
-        targetAngleDeg = minA + Math.random() * (maxA - minA);
-    }
+    // 2) Сектор шанса в градусах: 75% = 270°, 20% = 72° и т.д.
+    const chanceDeg = chance * 3.6;
 
-    // 3) Обороты: 4-6 полных кругов + финальный угол
+    // 3) Успех определяется ИСКЛЮЧИТЕЛЬНО позицией стрелки:
+    //    попала в закрашенный сектор (0 .. chanceDeg) → выигрыш
+    //    попала в пустую часть (chanceDeg .. 360) → проигрыш
+    const success = finalAngleDeg < chanceDeg;
+
+    // 4) Обороты: 4-6 полных кругов + финальный угол
     const turns = 4 + Math.floor(Math.random() * 3);
-    const finalRotation = turns * 360 + targetAngleDeg;
+    const finalRotation = turns * 360 + finalAngleDeg;
 
-    // 4) Сброс стрелки в 0 без анимации
+    // 5) Сброс стрелки в 0 без анимации
     wheelSpinner.style.transition = 'none';
     wheelSpinner.style.transform = 'rotate(0deg)';
     void wheelSpinner.offsetWidth;
 
-    // 5) Запуск анимации
+    // 6) Запуск анимации
     wheelSpinner.style.transition = 'transform 4s cubic-bezier(.17,.67,.3,1)';
     wheelSpinner.style.transform = `rotate(${finalRotation}deg)`;
 
-    // 6) Через 4 секунды — результат
+    // 7) Через 4 секунды — результат
     setTimeout(() => {
         state.inventory = state.inventory.filter(x => x.id !== left.id);
 
