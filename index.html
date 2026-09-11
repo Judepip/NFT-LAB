@@ -1205,8 +1205,9 @@ function showVolumeModal(){
 }
 
 /* ============================================================ */
-/* ===== 23) TON CONNECT — ПОПОЛНЕНИЕ (ЗАМЕНА КНОПКИ КОПИРОВАНИЯ) */
+/* ===== 23) ПОПОЛНЕНИЕ + TON CONNECT ===== */
 /* ============================================================ */
+
 const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
 const MANIFEST_URL = 'https://judepip.github.io/NFT-LAB/tonconnect-manifest.json';
 
@@ -1221,7 +1222,7 @@ const DEPOSIT_PACKAGES = [
 let tonConnectUI = null;
 let selectedAmount = null;
 
-// Динамическая загрузка TonConnectUI
+// ===== Загрузка SDK TON Connect =====
 function initTonConnect(){
     if (typeof window.TonConnectUI === 'undefined'){
         const script = document.createElement('script');
@@ -1252,6 +1253,7 @@ function setupTonConnect(){
     updateWalletStatus();
 }
 
+// ===== Обновление статуса (подключён/нет + кнопка ОПЛАТИТЬ) =====
 function updateWalletStatus(){
     const statusEl = document.getElementById('walletStatus');
     const payBtn = document.getElementById('payBtn');
@@ -1269,16 +1271,20 @@ function updateWalletStatus(){
 
     if (!tonConnectUI || !tonConnectUI.connected){
         payBtn.disabled = true;
+        payBtn.style.opacity = '.4';
         payInfo.textContent = 'Подключите кошелёк';
     } else if (!selectedAmount){
         payBtn.disabled = true;
+        payBtn.style.opacity = '.4';
         payInfo.textContent = 'Выберите сумму';
     } else {
         payBtn.disabled = false;
+        payBtn.style.opacity = '1';
         payInfo.textContent = 'Нажмите ОПЛАТИТЬ для подтверждения';
     }
 }
 
+// ===== Модалка пополнения =====
 function showDepositModal(defaultTab){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1293,11 +1299,11 @@ function showDepositModal(defaultTab){
         if (activeTab === 'ton'){
             body = `
                 <div class="deposit-note">
-                    Отправьте <b>Toncoin</b> через подключённый кошелёк — звёзды зачислятся автоматически в течение 1-2 минут. Курс фиксированный.
+                    Подключите <b>TON-кошелёк</b> и выберите сумму — звёзды зачислятся автоматически после подтверждения транзакции. Курс фиксированный.
                 </div>
 
-                <!-- Контейнер для встроенной кнопки TON Connect -->
-                <div id="ton-connect-button" style="margin-bottom:10px;display:flex;justify-content:center;"></div>
+                <!-- Кнопка TON Connect -->
+                <div id="ton-connect-button" style="margin:6px 0 10px;display:flex;justify-content:center;"></div>
                 <div id="walletStatus" style="display:none;text-align:center;font-size:10px;color:var(--neon);margin-bottom:10px;word-break:break-all;"></div>
 
                 <div class="deposit-packages">
@@ -1349,6 +1355,7 @@ function showDepositModal(defaultTab){
             </div>
         `;
 
+        // Табы
         overlay.querySelectorAll('.deposit-tab').forEach(t => {
             t.addEventListener('click', () => {
                 activeTab = t.dataset.tab;
@@ -1357,12 +1364,13 @@ function showDepositModal(defaultTab){
             });
         });
 
+        // Закрытие
         overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
             Sound.click(); overlay.remove();
         });
 
         if (activeTab === 'ton'){
-            // Пересоздаём TonConnectUI внутри нового контейнера
+            // Пересоздаём кнопку TON Connect внутри нового контейнера
             setTimeout(() => {
                 if (tonConnectUI){
                     try { tonConnectUI.uiOptions = { buttonRootId: 'ton-connect-button' }; } catch(e){}
@@ -1372,9 +1380,14 @@ function showDepositModal(defaultTab){
                 updateWalletStatus();
             }, 0);
 
+            // Выбор пакета
             overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
                 pkg.addEventListener('click', () => {
-                    overlay.querySelectorAll('.deposit-pkg').forEach(p => p.classList.remove('selected'));
+                    overlay.querySelectorAll('.deposit-pkg').forEach(p => {
+                        p.classList.remove('selected');
+                        p.style.borderColor = '';
+                        p.style.background = '';
+                    });
                     pkg.classList.add('selected');
                     pkg.style.borderColor = 'var(--neon)';
                     pkg.style.background = 'rgba(0,255,136,.08)';
@@ -1387,6 +1400,7 @@ function showDepositModal(defaultTab){
                 });
             });
 
+            // Кнопка ОПЛАТИТЬ
             const payBtn = overlay.querySelector('#payBtn');
             if (payBtn){
                 payBtn.addEventListener('click', async () => {
@@ -1402,7 +1416,7 @@ function showDepositModal(defaultTab){
 
                     const transaction = {
                         validUntil: Math.floor(Date.now() / 1000) + 300,
-                        network: '-239',
+                        network: '-239', // mainnet
                         messages: [{
                             address: RECIPIENT_ADDRESS,
                             amount: amountNano
@@ -1415,6 +1429,7 @@ function showDepositModal(defaultTab){
                         info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
                         btn.textContent = 'ОТПРАВЛЕНО';
 
+                        // Уведомляем бота для серверной проверки
                         try {
                             tg.sendData(JSON.stringify({
                                 action: 'topup_request',
@@ -1429,6 +1444,7 @@ function showDepositModal(defaultTab){
 
                         setTimeout(() => {
                             overlay.remove();
+                            selectedAmount = null;
                         }, 2500);
                     } catch (e){
                         console.error('❌ Ошибка транзакции:', e);
@@ -1454,7 +1470,8 @@ function showDepositModal(defaultTab){
     document.body.appendChild(overlay);
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
-/* ===== КОНЕЦ TON CONNECT ===== */
+
+/* ===== КОНЕЦ БЛОКА ПОПОЛНЕНИЯ ===== */
 
 // ===== 24) ВЕРХНИЕ КНОПКИ =====
 $('btnInfo').addEventListener('click', () => {
