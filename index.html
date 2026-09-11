@@ -32,7 +32,7 @@ body::before{
 #app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;padding:8px 10px;}
 
 /* HEADER */
-.header{display:flex;justify-content:space-between;align-items:center;padding:8px 4px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.header{display:flex;justify-content:space-between;align-items:center;padding:8px 4px 10px;border-bottom:1px solid var(--border);flex-shrink:0;}
 .header h1{font-size:16px;background:linear-gradient(135deg,var(--neon),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1px;}
 .balance{background:var(--glass);border:1px solid var(--border);border-radius:30px;padding:6px 14px;font-size:13px;color:var(--gold);backdrop-filter:blur(8px);}
 
@@ -44,71 +44,122 @@ body::before{
 .screen.active{display:block;}
 @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
-/* ===== UPGRADE SCREEN ===== */
-.upgrade-wrap{display:grid;grid-template-columns:1fr 90px 1fr;gap:8px;align-items:center;margin-bottom:10px;}
+/* ===== UPGRADE ===== */
+.upgrade-wrap{
+    display:grid;
+    grid-template-columns:1fr 160px 1fr;
+    gap:8px;
+    align-items:center;
+    margin-bottom:10px;
+}
 
-/* Слоты */
+/* Слоты (маленькие) */
 .slot-panel{
-    background:var(--glass);border:1px solid var(--border);border-radius:14px;
-    padding:10px 8px;min-height:170px;display:flex;flex-direction:column;
+    background:var(--glass);border:1px solid var(--border);border-radius:12px;
+    padding:8px 6px;min-height:130px;display:flex;flex-direction:column;
     align-items:center;justify-content:center;position:relative;
     backdrop-filter:blur(8px);transition:.2s;
 }
-.slot-panel.filled{border-color:var(--neon);box-shadow:0 0 20px rgba(0,255,136,.15);}
-.slot-panel .slot-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;text-align:center;}
-.slot-panel .slot-empty{font-size:32px;opacity:.3;}
+.slot-panel.filled{border-color:var(--neon);box-shadow:0 0 16px rgba(0,255,136,.15);}
+.slot-panel .slot-label{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;text-align:center;}
+.slot-panel .slot-empty{font-size:24px;opacity:.3;}
 .slot-panel .slot-item{text-align:center;}
-.slot-panel .slot-item img{width:70px;height:70px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(0,255,136,.3));}
-.slot-panel .slot-item .slot-name{font-size:10px;font-weight:600;margin-top:4px;line-height:1.2;}
-.slot-panel .slot-item .slot-price{font-size:11px;color:var(--gold);margin-top:2px;}
-.slot-panel .slot-remove{position:absolute;top:4px;right:6px;background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;font-family:var(--mono);}
+.slot-panel .slot-item img{width:50px;height:50px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,255,136,.3));}
+.slot-panel .slot-item .slot-name{font-size:9px;font-weight:600;margin-top:2px;line-height:1.1;}
+.slot-panel .slot-item .slot-price{font-size:9px;color:var(--gold);margin-top:1px;}
+.slot-panel .slot-remove{position:absolute;top:3px;right:5px;background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;font-family:var(--mono);}
 
-/* Круговой индикатор */
-.chance-circle{
-    position:relative;width:90px;height:90px;margin:0 auto;
+/* ===== КОЛЕСО (большое) ===== */
+.wheel-wrap{
+    position:relative;
+    width:160px;
+    height:160px;
+    margin:0 auto;
     display:flex;align-items:center;justify-content:center;
 }
-.chance-circle svg{transform:rotate(-90deg);}
-.chance-circle .bg-ring{fill:none;stroke:rgba(255,255,255,.08);stroke-width:6;}
-.chance-circle .progress-ring{fill:none;stroke:url(#chanceGrad);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .6s ease;}
-.chance-circle .chance-text{
-    position:absolute;font-size:15px;font-weight:700;
-    background:linear-gradient(135deg,var(--neon),var(--cyan));
+.wheel-wrap svg{transform:rotate(-90deg);}
+.wheel-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:14;}
+.wheel-progress{fill:none;stroke:url(#wheelGrad);stroke-width:14;stroke-linecap:butt;transition:stroke-dashoffset .5s ease;}
+.wheel-tick{stroke:rgba(255,255,255,.15);stroke-width:1;}
+
+/* Стрелка */
+.wheel-arrow{
+    position:absolute;
+    top:50%;left:50%;
+    width:160px;height:160px;
+    margin:-80px 0 0 -80px;
+    pointer-events:none;
+    transform:rotate(0deg);
+    transition:transform 4s cubic-bezier(.17,.67,.3,1);
+    z-index:5;
+}
+.wheel-arrow::before{
+    content:'';
+    position:absolute;
+    top:-4px;left:50%;
+    transform:translateX(-50%);
+    width:0;height:0;
+    border-left:8px solid transparent;
+    border-right:8px solid transparent;
+    border-top:16px solid #fff;
+    filter:drop-shadow(0 0 6px #00ff88) drop-shadow(0 0 12px #00ff88);
+}
+.wheel-arrow::after{
+    content:'';
+    position:absolute;
+    top:10px;left:50%;
+    transform:translateX(-50%);
+    width:2px;height:60px;
+    background:linear-gradient(to bottom, #fff, transparent);
+    opacity:.6;
+}
+
+.wheel-center-text{
+    position:absolute;
+    font-size:22px;font-weight:700;
+    background:linear-gradient(135deg,var(--neon),var(--gold));
     -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    z-index:3;
+}
+.wheel-center-sub{
+    position:absolute;
+    top:calc(50% + 18px);
+    font-size:8px;color:var(--muted);
+    letter-spacing:.5px;
+    z-index:3;
 }
 
 /* Кнопка ПРОКАЧАТЬ */
 .upgrade-btn{
     width:100%;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;
-    border:none;border-radius:30px;padding:14px;font-weight:700;font-size:16px;
+    border:none;border-radius:30px;padding:13px;font-weight:700;font-size:15px;
     font-family:var(--mono);box-shadow:0 0 30px rgba(0,255,136,.35);
     cursor:pointer;transition:.15s;letter-spacing:1px;touch-action:manipulation;
 }
 .upgrade-btn:active{transform:scale(.97);}
 .upgrade-btn:disabled{opacity:.35;pointer-events:none;}
 
-/* Инфо-строка */
-.upgrade-info{text-align:center;font-size:11px;color:var(--muted);margin-top:6px;min-height:16px;}
+.upgrade-info{text-align:center;font-size:10px;color:var(--muted);margin-top:6px;min-height:14px;}
 
 /* ===== ИНВЕНТАРЬ ===== */
-.inv-section{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px;backdrop-filter:blur(8px);}
-.inv-header{display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;font-weight:500;}
+.inv-section{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:10px;margin-bottom:8px;backdrop-filter:blur(8px);}
+.inv-header{display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px;font-weight:500;}
 .inv-header .count{color:var(--muted);}
-.inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
 .inv-item{
     aspect-ratio:1/1;background:radial-gradient(circle at 30% 30%,#1a2a4a,#0d1428);
-    border:1px solid rgba(0,255,136,.2);border-radius:10px;
+    border:1px solid rgba(0,255,136,.2);border-radius:8px;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:4px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;
+    padding:3px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;
 }
-.inv-item.selected{border-color:var(--neon);box-shadow:0 0 20px rgba(0,255,136,.4);}
+.inv-item.selected{border-color:var(--neon);box-shadow:0 0 14px rgba(0,255,136,.4);}
 .inv-item:active{transform:scale(.94);}
-.inv-item img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(0,255,136,.3));}
-.inv-item .inv-name{font-size:7px;text-align:center;color:var(--text);margin-top:3px;line-height:1.1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%;}
-.inv-item .inv-price{font-size:8px;color:var(--gold);font-weight:600;margin-top:1px;}
-.inv-empty{color:var(--muted);text-align:center;padding:20px;font-size:12px;}
+.inv-item img{width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 0 5px rgba(0,255,136,.3));}
+.inv-item .inv-name{font-size:6px;text-align:center;color:var(--text);margin-top:2px;line-height:1.1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%;}
+.inv-item .inv-price{font-size:7px;color:var(--gold);font-weight:600;margin-top:1px;}
+.inv-empty{color:var(--muted);text-align:center;padding:16px;font-size:11px;}
 
-/* ===== МОДАЛ РЕЗУЛЬТАТА ===== */
+/* ===== МОДАЛ ===== */
 .modal-overlay{
     position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(14px);
     z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;
@@ -116,15 +167,15 @@ body::before{
 }
 .modal-content{
     background:radial-gradient(circle at 30% 30%,#1a2a4a,#0d1428);
-    border:2px solid var(--neon);border-radius:24px;padding:28px 22px;
-    max-width:340px;width:100%;text-align:center;position:relative;overflow:hidden;
+    border:2px solid var(--neon);border-radius:24px;padding:24px 20px;
+    max-width:320px;width:100%;text-align:center;position:relative;overflow:hidden;
 }
 .modal-content.win{border-color:var(--neon);box-shadow:0 0 60px rgba(0,255,136,.3);}
 .modal-content.lose{border-color:var(--red);box-shadow:0 0 60px rgba(255,68,102,.3);}
-.modal-content img{width:120px;height:120px;object-fit:contain;margin-bottom:10px;filter:drop-shadow(0 0 20px rgba(0,255,136,.4));}
-.modal-title{font-size:20px;font-weight:700;margin-bottom:6px;}
-.modal-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
-.modal-btn{background:var(--neon);color:#0a0e1a;border:none;border-radius:30px;padding:12px 32px;font-weight:700;font-size:14px;font-family:var(--mono);cursor:pointer;width:100%;}
+.modal-content img{width:110px;height:110px;object-fit:contain;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(0,255,136,.4));}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.modal-btn{background:var(--neon);color:#0a0e1a;border:none;border-radius:30px;padding:11px 30px;font-weight:700;font-size:13px;font-family:var(--mono);cursor:pointer;width:100%;}
 .modal-btn:active{transform:scale(.96);}
 
 /* ===== НАВИГАЦИЯ ===== */
@@ -143,10 +194,11 @@ body::before{
 .stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;}
 
 @media(max-width:380px){
-    .upgrade-wrap{grid-template-columns:1fr 70px 1fr;}
-    .chance-circle{width:70px;height:70px;}
-    .chance-circle .chance-text{font-size:12px;}
-    .slot-panel .slot-item img{width:55px;height:55px;}
+    .upgrade-wrap{grid-template-columns:1fr 130px 1fr;gap:5px;}
+    .wheel-wrap{width:130px;height:130px;}
+    .wheel-arrow{width:130px;height:130px;margin:-65px 0 0 -65px;}
+    .wheel-center-text{font-size:18px;}
+    .slot-panel .slot-item img{width:42px;height:42px;}
     .inv-grid{grid-template-columns:repeat(3,1fr);}
 }
 </style>
@@ -161,32 +213,38 @@ body::before{
 
     <div class="content">
 
-        <!-- ЭКРАН АПГРЕЙДА -->
         <div class="screen active" id="screenUpgrade">
             <div class="upgrade-wrap">
-                <!-- ЛЕВЫЙ СЛОТ: мой предмет -->
+                <!-- ЛЕВЫЙ СЛОТ -->
                 <div class="slot-panel" id="slotLeft">
                     <div class="slot-label">ВЫБЕРИТЕ ПРЕДМЕТ</div>
                     <div class="slot-empty">➕</div>
                 </div>
 
-                <!-- ЦЕНТР: круг шанса -->
-                <div class="chance-circle">
-                    <svg width="90" height="90" viewBox="0 0 90 90">
+                <!-- КОЛЕСО СО СТРЕЛКОЙ -->
+                <div class="wheel-wrap" id="wheelWrap">
+                    <svg width="160" height="160" viewBox="0 0 160 160">
                         <defs>
-                            <linearGradient id="chanceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <linearGradient id="wheelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" stop-color="#00ff88"/>
-                                <stop offset="100%" stop-color="#ffd700"/>
+                                <stop offset="50%" stop-color="#ffd700"/>
+                                <stop offset="100%" stop-color="#ff4466"/>
                             </linearGradient>
                         </defs>
-                        <circle class="bg-ring" cx="45" cy="45" r="38"/>
-                        <circle class="progress-ring" id="progressRing" cx="45" cy="45" r="38"
-                                stroke-dasharray="238.76" stroke-dashoffset="238.76"/>
+                        <!-- Деления по кругу -->
+                        <g id="ticks"></g>
+                        <!-- Фон -->
+                        <circle class="wheel-bg" cx="80" cy="80" r="66"/>
+                        <!-- Прогресс (шанс) -->
+                        <circle class="wheel-progress" id="wheelProgress" cx="80" cy="80" r="66"
+                                stroke-dasharray="414.69" stroke-dashoffset="414.69"/>
                     </svg>
-                    <div class="chance-text" id="chanceText">0%</div>
+                    <div class="wheel-arrow" id="wheelArrow"></div>
+                    <div class="wheel-center-text" id="chanceText">0%</div>
+                    <div class="wheel-center-sub" id="chanceSub">ШАНС</div>
                 </div>
 
-                <!-- ПРАВЫЙ СЛОТ: цель -->
+                <!-- ПРАВЫЙ СЛОТ -->
                 <div class="slot-panel" id="slotRight">
                     <div class="slot-label">ВЫБЕРИТЕ ЦЕЛЬ</div>
                     <div class="slot-empty">🎯</div>
@@ -196,7 +254,6 @@ body::before{
             <button class="upgrade-btn" id="upgradeBtn" disabled>⚡ ПРОКАЧАТЬ</button>
             <div class="upgrade-info" id="upgradeInfo">Выберите предмет и цель</div>
 
-            <!-- ИНВЕНТАРЬ -->
             <div class="inv-section">
                 <div class="inv-header">
                     <span>📦 Мой инвентарь</span>
@@ -205,7 +262,6 @@ body::before{
                 <div class="inv-grid" id="invGrid"></div>
             </div>
 
-            <!-- ЦЕЛИ -->
             <div class="inv-section">
                 <div class="inv-header">
                     <span>🎯 Выбрать цель</span>
@@ -215,7 +271,6 @@ body::before{
             </div>
         </div>
 
-        <!-- ЭКРАН ПРОФИЛЯ -->
         <div class="screen" id="screenProfile">
             <div class="profile-card">
                 <div class="profile-avatar">👤</div>
@@ -228,17 +283,17 @@ body::before{
             </div>
         </div>
 
-        <!-- ЭКРАН ИНФО -->
         <div class="screen" id="screenInfo">
             <div class="inv-section">
                 <div class="inv-header"><span>ℹ️ Как играть</span></div>
                 <div style="font-size:12px;line-height:1.7;color:var(--muted);">
                     <p>1️⃣ Выберите предмет из инвентаря слева</p>
                     <p>2️⃣ Выберите цель справа (что хотите получить)</p>
-                    <p>3️⃣ Шанс = цена_вашего / цена_цели</p>
+                    <p>3️⃣ Колесо показывает ваш шанс (зелёный сектор)</p>
                     <p>4️⃣ Нажмите <b style="color:var(--neon)">ПРОКАЧАТЬ</b></p>
-                    <p>✅ Успех — получаете цель, предмет слева сгорает</p>
-                    <p>❌ Неудача — предмет слева сгорает, цель не получаете</p>
+                    <p>🎯 Стрелка крутится и останавливается</p>
+                    <p>✅ Попала в зелёный сектор → выигрыш</p>
+                    <p>❌ Попала в пустую часть → предмет сгорает</p>
                 </div>
             </div>
         </div>
@@ -278,17 +333,17 @@ const GIFTS = [
 ];
 
 // ===== СОСТОЯНИЕ =====
-const KEY = 'lab_upgrade_v1';
+const KEY = 'lab_upgrade_v2';
 function defaultState(){
     return {
         inventory: [
-            // стартовый инвентарь для теста (можно убрать)
             { id:'g1', name:'Мишка', price:15, image: BASE+'/images/Мишка.gif' },
             { id:'g2', name:'Кольцо', price:100, image: BASE+'/images/Кольцо.gif' },
+            { id:'g3', name:'Кубок', price:100, image: BASE+'/images/Кубок.gif' },
         ],
         balance: 1000,
-        selectedLeft: null,   // id предмета слева
-        selectedRight: null,  // name/price цели справа
+        selectedLeft: null,
+        selectedRight: null,
         isUpgrading: false,
     };
 }
@@ -306,11 +361,35 @@ const invCount = $('invCount');
 const slotLeft = $('slotLeft');
 const slotRight = $('slotRight');
 const chanceText = $('chanceText');
-const progressRing = $('progressRing');
+const wheelProgress = $('wheelProgress');
+const wheelArrow = $('wheelArrow');
 const upgradeBtn = $('upgradeBtn');
 const upgradeInfo = $('upgradeInfo');
 const screens = document.querySelectorAll('.screen');
 const navBtns = document.querySelectorAll('.nav-btn');
+
+// ===== ДЕЛЕНИЯ НА КОЛЕСЕ =====
+(function drawTicks(){
+    const g = document.getElementById('ticks');
+    if (!g) return;
+    const cx=80, cy=80, r1=58, r2=66;
+    for (let i=0; i<40; i++){
+        const angle = (i / 40) * Math.PI * 2;
+        const x1 = cx + Math.cos(angle) * r1;
+        const y1 = cy + Math.sin(angle) * r1;
+        const x2 = cx + Math.cos(angle) * r2;
+        const y2 = cy + Math.sin(angle) * r2;
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+        line.setAttribute('class','wheel-tick');
+        if (i % 5 === 0){
+            line.setAttribute('stroke', 'rgba(255,255,255,.35)');
+            line.setAttribute('stroke-width', '1.5');
+        }
+        g.appendChild(line);
+    }
+})();
 
 // ===== РЕНДЕР =====
 function render(){
@@ -379,15 +458,17 @@ function calcChance(){
     const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
     if (!left || !right) return 0;
     const c = (left.price / right.price) * 100;
-    return Math.min(95, Math.max(1, c)); // ограничение 1..95%
+    return Math.min(95, Math.max(1, c));
 }
 
 function updateChance(){
     const chance = calcChance();
     chanceText.textContent = chance.toFixed(1) + '%';
-    const CIRC = 2 * Math.PI * 38; // 238.76
-    progressRing.setAttribute('stroke-dasharray', CIRC);
-    progressRing.setAttribute('stroke-dashoffset', CIRC - (CIRC * chance / 100));
+
+    // круг: общая длина 2*PI*66 = 414.69
+    const CIRC = 414.69;
+    wheelProgress.setAttribute('stroke-dasharray', CIRC);
+    wheelProgress.setAttribute('stroke-dashoffset', CIRC - (CIRC * chance / 100));
 
     const left = state.inventory.find(x => x.id === state.selectedLeft);
     const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
@@ -400,7 +481,7 @@ function updateChance(){
         upgradeInfo.textContent = '⚠️ Цель должна быть дороже';
     } else {
         upgradeBtn.disabled = false;
-        upgradeInfo.textContent = `Шанс: ${chance.toFixed(1)}% · при неудаче предмет сгорит`;
+        upgradeInfo.textContent = `Шанс: ${chance.toFixed(1)}% · сектор на колесе`;
     }
 }
 
@@ -424,7 +505,7 @@ targetGrid.addEventListener('click', e => {
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-// ===== АПГРЕЙД =====
+// ===== АПГРЕЙД С ВРАЩЕНИЕМ СТРЕЛКИ =====
 upgradeBtn.addEventListener('click', function(){
     if (state.isUpgrading) return;
     const left = state.inventory.find(x => x.id === state.selectedLeft);
@@ -437,22 +518,45 @@ upgradeBtn.addEventListener('click', function(){
     upgradeInfo.textContent = '🌀 Прокачка...';
     if (navigator.vibrate) navigator.vibrate([30,60,30]);
 
-    // анимация кнопки
-    let dots = 0;
-    const anim = setInterval(() => {
-        dots = (dots+1)%4;
-        upgradeInfo.textContent = '🌀 Прокачка' + '.'.repeat(dots);
-    }, 300);
+    // 1) РЕШАЕМ ЗАРАНЕЕ: выигрыш или проигрыш
+    const success = Math.random() * 100 < chance;
 
+    // 2) Куда должна попасть стрелка
+    // Если успех — попадаем в зелёный сектор (0..chance)
+    // Если провал — попадаем в пустую часть (chance..100)
+    let targetAngleDeg;
+    if (success){
+        // случайный угол внутри выигрышного сектора (не на границе)
+        const minA = 2;
+        const maxA = Math.max(minA, chance - 2);
+        targetAngleDeg = minA + Math.random() * (maxA - minA);
+    } else {
+        const minA = Math.min(98, chance + 2);
+        const maxA = 98;
+        targetAngleDeg = minA + Math.random() * (maxA - minA);
+    }
+
+    // 3) Обороты: 3-5 полных кругов + финальный угол
+    const turns = 3 + Math.floor(Math.random() * 3); // 3..5
+    // ВАЖНО: SVG прогресс идёт по часовой от верха (-90°), а стрелка вращается через CSS
+    // Стрелка CSS rotate: 0deg = указывает вверх. Чтобы попасть в угол targetAngleDeg от верха по часовой
+    // нужно повернуть на (turns*360 + targetAngleDeg)
+    const finalRotation = turns * 360 + targetAngleDeg;
+
+    // 4) Сбрасываем стрелку в 0 без анимации
+    wheelArrow.style.transition = 'none';
+    wheelArrow.style.transform = 'rotate(0deg)';
+    void wheelArrow.offsetWidth;
+    // 5) Запускаем анимацию
+    wheelArrow.style.transition = 'transform 4s cubic-bezier(.17,.67,.3,1)';
+    wheelArrow.style.transform = `rotate(${finalRotation}deg)`;
+
+    // 6) Через 4 секунды — результат
     setTimeout(() => {
-        clearInterval(anim);
-        const success = Math.random() * 100 < chance;
-
         // удаляем левый предмет в любом случае
         state.inventory = state.inventory.filter(x => x.id !== left.id);
 
         if (success){
-            // добавляем цель
             state.inventory.push({
                 id: 'gift_' + Date.now(),
                 name: right.name,
@@ -473,10 +577,10 @@ upgradeBtn.addEventListener('click', function(){
                 payload: { from: left.name, to: right.name, chance, success }
             }));
         } catch(e){}
-    }, 2000);
+    }, 4100);
 });
 
-// ===== МОДАЛ РЕЗУЛЬТАТА =====
+// ===== МОДАЛ =====
 function showResult(success, item, chance){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -491,7 +595,7 @@ function showResult(success, item, chance){
             </div>
             <div class="modal-sub">
                 ${success ? 'Вы получили:<br><b>'+item.name+'</b>' : 'Предмет сгорел:<br><b>'+item.name+'</b>'}
-                <br><span style="font-size:11px;">Шанс был: ${chance.toFixed(1)}%</span>
+                <br><span style="font-size:10px;">Шанс был: ${chance.toFixed(1)}%</span>
             </div>
             <button class="modal-btn" onclick="this.closest('.modal-overlay').remove()">OK</button>
         </div>`;
