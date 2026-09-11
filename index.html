@@ -218,6 +218,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .stat-box .value{font-size:20px;font-weight:600;color:var(--gold);}
 .stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
 
+/* Стиль для кнопки TON Connect — принудительно растягиваем */
+#ton-connect-button button{
+    width:100% !important;
+    min-height:48px !important;
+    font-size:14px !important;
+}
+
 @media(max-width:380px){
     .upgrade-top{grid-template-columns:1fr 140px 1fr;gap:4px;}
     .wheel-wrap{width:140px;height:140px;}
@@ -1199,11 +1206,15 @@ function showVolumeModal(){
 }
 
 /* ============================================================ */
-/* ===== 23) ПОПОЛНЕНИЕ + TON CONNECT (С ФИКСОМ ЭКСПОРТА) ===== */
+/* ===== 23) TON CONNECT — ИСПРАВЛЕННЫЙ БЛОК ===== */
 /* ============================================================ */
 
 const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
-const MANIFEST_URL = 'https://judepip.github.io/NFT-LAB/tonconnect-manifest.json';
+// Манифест должен лежать в корне домена, а не в подпапке:
+const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
+
+// Рабочий мост TON Connect (stower.money больше не резолвится)
+const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
 
 const DEPOSIT_PACKAGES = [
     { stars: 100,  ton: 1.1  },
@@ -1217,105 +1228,28 @@ let tonConnectUI = null;
 let selectedAmount = null;
 let sdkLoadingPromise = null;
 
-// ---- Извлечь класс TonConnectUI из любого формата экспорта ----
-function extractTonConnectUIClass(mod) {
-    if (!mod) return null;
-    // ES module
-    if (mod.TonConnectUI) return mod.TonConnectUI;
-    if (mod.default && mod.default.TonConnectUI) return mod.default.TonConnectUI;
-    if (typeof mod.default === 'function') return mod.default;
-    // UMD глобал
-    if (window.TON_CONNECT_UI) {
-        if (window.TON_CONNECT_UI.TonConnectUI) return window.TON_CONNECT_UI.TonConnectUI;
-        if (window.TON_CONNECT_UI.default && window.TON_CONNECT_UI.default.TonConnectUI) {
-            return window.TON_CONNECT_UI.default.TonConnectUI;
-        }
-        if (typeof window.TON_CONNECT_UI === 'function') return window.TON_CONNECT_UI;
-    }
-    if (window.TonConnectUI) {
-        if (typeof window.TonConnectUI === 'function') return window.TonConnectUI;
-        if (window.TonConnectUI.TonConnectUI) return window.TonConnectUI.TonConnectUI;
-    }
-    return null;
-}
-
 // ---- Загрузка SDK TON Connect ----
 function loadTonConnectSDK() {
     if (window.TonConnectUI && typeof window.TonConnectUI === 'function') {
-        console.log('[TON SDK] уже загружен, использую существующий');
         return Promise.resolve(window.TonConnectUI);
     }
     if (sdkLoadingPromise) return sdkLoadingPromise;
 
-    console.log('[TON SDK] начинаю загрузку');
-
     sdkLoadingPromise = new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.type = 'module';
-        script.textContent = `
-            (async () => {
-                let mod = null;
-                try {
-                    mod = await import('./tonconnect-ui.min.js');
-                    console.log('[TON SDK] локальный загружен, ключи:', mod ? Object.keys(mod).slice(0, 10) : 'null');
-                    console.log('[TON SDK] mod.default type:', typeof (mod && mod.default));
-                    console.log('[TON SDK] window.TON_CONNECT_UI:', typeof window.TON_CONNECT_UI);
-                } catch (e) {
-                    console.warn('[TON SDK] локальный не найден:', e && e.message);
-                }
-
-                // Пытаемся достать класс из всех возможных мест
-                let Cls = null;
-                if (mod) {
-                    Cls = mod.TonConnectUI
-                        || (mod.default && mod.default.TonConnectUI)
-                        || (typeof mod.default === 'function' ? mod.default : null);
-                }
-                if (!Cls && window.TON_CONNECT_UI) {
-                    Cls = window.TON_CONNECT_UI.TonConnectUI
-                        || (window.TON_CONNECT_UI.default && window.TON_CONNECT_UI.default.TonConnectUI)
-                        || (typeof window.TON_CONNECT_UI === 'function' ? window.TON_CONNECT_UI : null);
-                }
-                if (!Cls && typeof window.TonConnectUI === 'function') {
-                    Cls = window.TonConnectUI;
-                }
-
-                // Фолбэк на unpkg
-                if (!Cls) {
-                    try {
-                        const m2 = await import('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js');
-                        Cls = m2.TonConnectUI
-                            || (m2.default && m2.default.TonConnectUI)
-                            || (typeof m2.default === 'function' ? m2.default : null);
-                        console.log('[TON SDK] загружен с unpkg');
-                    } catch (e) {
-                        console.error('[TON SDK] unpkg тоже не удалось:', e && e.message);
-                    }
-                }
-
-                if (Cls) {
-                    window.TonConnectUI = Cls;
-                    console.log('[TON SDK] класс установлен:', typeof Cls);
-                    window.dispatchEvent(new Event('tonconnect-ready'));
-                } else {
-                    console.error('[TON SDK] не удалось найти класс TonConnectUI');
-                    window.dispatchEvent(new Event('tonconnect-error'));
-                }
-            })();
-        `;
-        script.onerror = () => {
-            console.error('[TON SDK] script.onerror');
-            window.dispatchEvent(new Event('tonconnect-error'));
-        };
-        document.head.appendChild(script);
-
-        window.addEventListener('tonconnect-ready', () => resolve(window.TonConnectUI), { once: true });
-        window.addEventListener('tonconnect-error', () => reject(new Error('SDK load failed')), { once: true });
-        setTimeout(() => {
-            if (!window.TonConnectUI) reject(new Error('SDK timeout'));
-        }, 10000);
+        (async () => {
+            try {
+                const mod = await import('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js');
+                const Cls = mod.TonConnectUI || (mod.default && mod.default.TonConnectUI) || mod.default;
+                if (typeof Cls !== 'function') throw new Error('TonConnectUI class not found');
+                window.TonConnectUI = Cls;
+                console.log('[TON SDK] загружен с unpkg');
+                resolve(Cls);
+            } catch (e) {
+                console.error('[TON SDK] ошибка загрузки:', e);
+                reject(e);
+            }
+        })();
     });
-
     return sdkLoadingPromise;
 }
 
@@ -1323,8 +1257,41 @@ function loadTonConnectSDK() {
 function ensureTonConnectUI() {
     if (tonConnectUI) return Promise.resolve(tonConnectUI);
     return loadTonConnectSDK().then((TonConnectUICls) => {
-        if (!TonConnectUICls) throw new Error('TonConnectUI class missing');
-        tonConnectUI = new TonConnectUICls({ manifestUrl: MANIFEST_URL });
+        tonConnectUI = new TonConnectUICls({
+            manifestUrl: MANIFEST_URL,
+            // ВАЖНО: указываем рабочий мост и передаём конфиг кошельков
+            walletsListConfiguration: {
+                includeWallets: [
+                    {
+                        appName: 'telegram-wallet',
+                        name: 'Wallet',
+                        imageUrl: 'https://wallet.tg/images/logo-288.png',
+                        aboutUrl: 'https://wallet.tg/',
+                        universalLink: 'https://t.me/wallet/start',
+                        bridgeUrl: BRIDGE_URL,
+                        platforms: ['ios', 'android', 'macos', 'windows', 'linux']
+                    },
+                    {
+                        appName: 'tonkeeper',
+                        name: 'Tonkeeper',
+                        imageUrl: 'https://tonkeeper.com/assets/tonconnect-icon.png',
+                        aboutUrl: 'https://tonkeeper.com',
+                        universalLink: 'https://app.tonkeeper.com/ton-connect',
+                        bridgeUrl: BRIDGE_URL,
+                        platforms: ['ios', 'android', 'chrome', 'firefox']
+                    },
+                    {
+                        appName: 'mytonwallet',
+                        name: 'MyTonWallet',
+                        imageUrl: 'https://mytonwallet.io/icon-256.png',
+                        aboutUrl: 'https://mytonwallet.io',
+                        universalLink: 'https://mytonwallet.io/ton-connect',
+                        bridgeUrl: BRIDGE_URL,
+                        platforms: ['chrome', 'firefox', 'ios', 'android']
+                    }
+                ]
+            }
+        });
         tonConnectUI.onStatusChange(() => {
             console.log('[TON] status change, connected =', tonConnectUI.connected);
             updateWalletStatus();
@@ -1339,19 +1306,9 @@ function ensureTonConnectUI() {
 
 // ---- Обновление статуса ----
 function updateWalletStatus() {
-    const statusEl = document.getElementById('walletStatus');
     const payBtn = document.getElementById('payBtn');
     const payInfo = document.getElementById('payInfo');
-    if (!statusEl || !payBtn || !payInfo) return;
-
-    if (tonConnectUI && tonConnectUI.connected && tonConnectUI.account) {
-        const addr = tonConnectUI.account.address;
-        const short = addr.slice(0, 6) + '...' + addr.slice(-6);
-        statusEl.style.display = 'block';
-        statusEl.textContent = '✅ Кошелёк подключён: ' + short;
-    } else {
-        statusEl.style.display = 'none';
-    }
+    if (!payBtn || !payInfo) return;
 
     if (!tonConnectUI || !tonConnectUI.connected) {
         payBtn.disabled = true;
@@ -1383,12 +1340,10 @@ function showDepositModal(defaultTab) {
         if (activeTab === 'ton') {
             body = `
                 <div class="deposit-note">
-                    Подключите <b>TON-кошелёк</b> и выберите сумму — звёзды зачислятся автоматически после подтверждения транзакции. Курс фиксированный.
+                    Подключите <b>TON-кошелёк</b> и выберите сумму — звёзды зачислятся автоматически после подтверждения транзакции.
                 </div>
 
-                <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:40px;">
-                    <div id="sdkStatus" style="color:var(--muted);font-size:10px;text-align:center;width:100%;">Загрузка кошелька...</div>
-                </div>
+                <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:48px;width:100%;"></div>
 
                 <div id="walletStatus" style="display:none;text-align:center;font-size:10px;color:var(--neon);margin:6px 0 10px;word-break:break-all;"></div>
 
@@ -1454,40 +1409,67 @@ function showDepositModal(defaultTab) {
         });
 
         if (activeTab === 'ton') {
-            const statusEl = overlay.querySelector('#sdkStatus');
-            const setStatus = (txt, color) => {
-                if (statusEl) {
-                    statusEl.textContent = txt;
-                    statusEl.style.color = color || 'var(--muted)';
-                }
-                console.log('[TON UI]', txt);
-            };
-
-            setStatus('Загрузка SDK...');
-
-            ensureTonConnectUI().then((ui) => {
+            // Ждём, пока DOM отрисуется, потом инициализируем TON Connect
+            setTimeout(async () => {
+                const ui = await ensureTonConnectUI();
                 if (!ui) {
-                    setStatus('❌ SDK не загрузился', 'var(--red)');
+                    const c = document.getElementById('ton-connect-button');
+                    if (c) c.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect. Проверьте интернет.</div>';
                     return;
                 }
-                // Прячем статус и просим SDK отрисовать кнопку в контейнере
-                if (statusEl) statusEl.remove();
+                // ВАЖНО: монтируем кнопку в контейнер через uiOptions
                 try {
                     ui.uiOptions = { buttonRootId: 'ton-connect-button' };
-                } catch (e) {
-                    console.error('[TON] uiOptions error:', e);
-                }
-                updateWalletStatus();
-            });
+                } catch(e) { console.warn(e); }
 
+                // Если uiOptions не сработал — рисуем кнопку сами
+                setTimeout(() => {
+                    const cont = document.getElementById('ton-connect-button');
+                    if (!cont) return;
+                    if (cont.querySelector('button')) return; // уже отрисована
+
+                    cont.innerHTML = '';
+                    const btn = document.createElement('button');
+                    btn.textContent = tonConnectUI && tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
+                    btn.style.cssText = `
+                        width:100%;padding:14px;border-radius:30px;border:none;
+                        background:linear-gradient(135deg,var(--neon),#00cc70);
+                        color:#0a0e1a;font-weight:700;font-size:14px;font-family:var(--mono);
+                        cursor:pointer;touch-action:manipulation;
+                    `;
+                    btn.addEventListener('click', async () => {
+                        Sound.click();
+                        if (tonConnectUI && tonConnectUI.connected) {
+                            await tonConnectUI.disconnect();
+                            btn.textContent = '💎 Подключить TON-кошелёк';
+                        } else {
+                            try {
+                                await tonConnectUI.openModal();
+                            } catch(e) {
+                                console.error('[TON] openModal error:', e);
+                                tg.showAlert('Не удалось открыть кошелёк: ' + e.message);
+                            }
+                        }
+                    });
+                    cont.appendChild(btn);
+
+                    // Обновляем текст если статус поменяется
+                    tonConnectUI.onStatusChange(() => {
+                        btn.textContent = tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
+                        updateWalletStatus();
+                    });
+                }, 300);
+
+                updateWalletStatus();
+            }, 50);
+
+            // Обработчик выбора пакета
             overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
                 pkg.addEventListener('click', () => {
                     overlay.querySelectorAll('.deposit-pkg').forEach(p => {
-                        p.classList.remove('selected');
                         p.style.borderColor = '';
                         p.style.background = '';
                     });
-                    pkg.classList.add('selected');
                     pkg.style.borderColor = 'var(--neon)';
                     pkg.style.background = 'rgba(0,255,136,.08)';
                     selectedAmount = {
@@ -1498,60 +1480,6 @@ function showDepositModal(defaultTab) {
                     updateWalletStatus();
                 });
             });
-
-            const payBtn = overlay.querySelector('#payBtn');
-            if (payBtn) {
-                payBtn.addEventListener('click', async () => {
-                    if (!tonConnectUI || !tonConnectUI.connected || !selectedAmount) return;
-
-                    const btn = payBtn;
-                    const info = overlay.querySelector('#payInfo');
-                    btn.disabled = true;
-                    btn.textContent = 'ОЖИДАНИЕ...';
-                    info.textContent = 'Откройте кошелёк и подтвердите';
-
-                    const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
-
-                    const transaction = {
-                        validUntil: Math.floor(Date.now() / 1000) + 300,
-                        network: '-239',
-                        messages: [{
-                            address: RECIPIENT_ADDRESS,
-                            amount: amountNano
-                        }]
-                    };
-
-                    try {
-                        const result = await tonConnectUI.sendTransaction(transaction);
-                        console.log('✅ Транзакция:', result.boc);
-                        info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
-                        btn.textContent = 'ОТПРАВЛЕНО';
-
-                        try {
-                            tg.sendData(JSON.stringify({
-                                action: 'topup_request',
-                                payload: {
-                                    stars: selectedAmount.stars,
-                                    ton: selectedAmount.ton,
-                                    boc: result.boc,
-                                    userId: user.id
-                                }
-                            }));
-                        } catch(e){}
-
-                        setTimeout(() => {
-                            overlay.remove();
-                            selectedAmount = null;
-                        }, 2500);
-                    } catch (e) {
-                        console.error('❌ Ошибка транзакции:', e);
-                        info.textContent = '❌ Транзакция отклонена';
-                        btn.textContent = 'ОПЛАТИТЬ';
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
-                    }
-                });
-            }
         } else {
             const botBtn = overlay.querySelector('[data-action="openBot"]');
             if (botBtn) {
@@ -1565,7 +1493,63 @@ function showDepositModal(defaultTab) {
 
     renderContent();
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) {
+            selectedAmount = null;
+            overlay.remove();
+        }
+    });
+
+    // Обработчик кнопки ОПЛАТИТЬ (вешаем один раз на overlay через делегирование)
+    overlay.addEventListener('click', async (e) => {
+        const payBtn = e.target.closest('#payBtn');
+        if (!payBtn) return;
+        if (!tonConnectUI || !tonConnectUI.connected || !selectedAmount) return;
+
+        const info = overlay.querySelector('#payInfo');
+        payBtn.disabled = true;
+        payBtn.textContent = 'ОЖИДАНИЕ...';
+        if (info) info.textContent = 'Откройте кошелёк и подтвердите';
+
+        const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [{
+                address: RECIPIENT_ADDRESS,
+                amount: amountNano
+            }]
+        };
+
+        try {
+            const result = await tonConnectUI.sendTransaction(transaction);
+            console.log('✅ Транзакция:', result.boc);
+            if (info) info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
+            payBtn.textContent = 'ОТПРАВЛЕНО';
+
+            try {
+                tg.sendData(JSON.stringify({
+                    action: 'topup_request',
+                    payload: {
+                        stars: selectedAmount.stars,
+                        ton: selectedAmount.ton,
+                        boc: result.boc,
+                        userId: user.id
+                    }
+                }));
+            } catch(e){}
+
+            setTimeout(() => {
+                selectedAmount = null;
+                overlay.remove();
+            }, 2500);
+        } catch (e) {
+            console.error('❌ Ошибка транзакции:', e);
+            if (info) info.textContent = '❌ Транзакция отклонена: ' + (e.message || '');
+            payBtn.textContent = 'ОПЛАТИТЬ';
+            payBtn.disabled = false;
+            payBtn.style.opacity = '1';
+        }
+    });
 }
 
 /* ===== КОНЕЦ БЛОКА ПОПОЛНЕНИЯ ===== */
@@ -1612,10 +1596,9 @@ initTelegram(function(){
     renderHistory();
     applySettingsToUI();
     renderQuickButtons();
-    // Прогреваем SDK сразу, чтобы к моменту открытия модалки он был готов
+    // Прогреваем SDK, чтобы к моменту открытия модалки он был готов
     loadTonConnectSDK().then(() => {
         console.log('[TON] SDK прогрет');
-        ensureTonConnectUI();
     }).catch(e => {
         console.warn('[TON] не удалось прогреть SDK:', e.message);
     });
