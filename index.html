@@ -1438,12 +1438,10 @@ function showDepositModal(defaultTab) {
                     return;
                 }
 
-                // Пробуем официальный UI
                 try {
                     ui.uiOptions = { buttonRootId: 'ton-connect-button' };
                 } catch(e) { /* ignore */ }
 
-                // Если кнопка не появилась — рисуем свою
                 setTimeout(() => {
                     if (!cont) return;
                     if (cont.querySelector('button')) return;
