@@ -359,8 +359,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
         <div class="screen" id="screenHistory">
             <div class="inv-section" style="min-height:auto;">
                 <div class="inv-header">
-                    <span>📜 История апгрейдов</span>
+                    <span>📜 История операций</span>
                     <span class="count" id="historyCount">0</span>
+                </div>
+                <div class="tabs" style="margin:8px 0 10px;">
+                    <div class="tab active" data-htab="all">ВСЕ</div>
+                    <div class="tab" data-htab="topup">💎 ПОПОЛНЕНИЯ</div>
+                    <div class="tab" data-htab="withdraw">💸 ВЫВОДЫ</div>
+                    <div class="tab" data-htab="game">⚡ ИГРА</div>
                 </div>
                 <div id="historyList" style="margin-top:8px;"></div>
             </div>
@@ -379,6 +385,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 <script>
 (function(){
 'use strict';
+
+// ===== 0) КОНФИГ БЭКЕНДА =====
+// ⚠️ Замените на URL вашего бэкенда, когда задеплоите main.py
+const API_BASE = 'http://localhost:5000';   // ← например, https://ваш-сервер.com
 
 // ===== 1) TELEGRAM =====
 let tg = null;
@@ -430,7 +440,7 @@ const GIFTS = [
 ];
 
 // ===== 3) СОСТОЯНИЕ =====
-const KEY = 'lab_upgrade_v12';
+const KEY = 'lab_upgrade_v13';
 function defaultState(){
     return {
         inventory: [],
@@ -462,7 +472,59 @@ if (!state.settings.presets) state.settings.presets = { x:[2,4,8], percent:[5,25
 if (state.settings.presets.percent.length !== 4) state.settings.presets.percent = [5,25,50,75];
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
-// ===== 4) ЗВУКИ =====
+// ===== 4) API-КЛИЕНТ =====
+async function api(path, opts = {}) {
+    const url = API_BASE + path;
+    const cfg = { headers: { 'Content-Type': 'application/json' }, ...opts };
+    if (cfg.body && typeof cfg.body !== 'string') cfg.body = JSON.stringify(cfg.body);
+    const r = await fetch(url, cfg);
+    const data = await r.json().catch(() => ({}));
+    return data;
+}
+
+async function apiRefreshBalance(){
+    if (!user.id) return;
+    try {
+        const d = await api('/api/balance?user_id=' + user.id);
+        if (d.ok) state.balance = d.balance;
+    } catch(e){ console.warn('balance api error:', e); }
+    renderBalance();
+}
+
+async function apiSpend(stars, type, meta){
+    try {
+        const d = await api('/api/spend', {
+            method: 'POST',
+            body: { user_id: user.id, stars, type, meta }
+        });
+        if (d.ok) state.balance = d.balance;
+        else console.warn('spend failed:', d.error);
+    } catch(e){ console.warn('spend api error:', e); }
+    renderBalance();
+    save();
+}
+
+async function apiEarn(stars, type, meta){
+    try {
+        const d = await api('/api/earn', {
+            method: 'POST',
+            body: { user_id: user.id, stars, type, meta }
+        });
+        if (d.ok) state.balance = d.balance;
+    } catch(e){ console.warn('earn api error:', e); }
+    renderBalance();
+    save();
+}
+
+async function apiHistory(type){
+    try {
+        const d = await api('/api/history?user_id=' + user.id + '&type=' + (type||'all') + '&limit=100');
+        if (d.ok) return d.items;
+    } catch(e){ console.warn('history api error:', e); }
+    return [];
+}
+
+// ===== 5) ЗВУКИ =====
 let audioCtx = null;
 function getAudioCtx(){
     if (!audioCtx){
@@ -513,7 +575,7 @@ let spinSoundInterval = null;
 function startSpinSound(){ stopSpinSound(); spinSoundInterval = setInterval(() => Sound.tick(), 90); }
 function stopSpinSound(){ if (spinSoundInterval){ clearInterval(spinSoundInterval); spinSoundInterval = null; } }
 
-// ===== 5) DOM =====
+// ===== 6) DOM =====
 const $ = id => document.getElementById(id);
 const balanceDisplay = $('balanceDisplay');
 const invGrid = $('invGrid');
@@ -528,14 +590,14 @@ const upgradeBtn = $('upgradeBtn');
 const upgradeInfo = $('upgradeInfo');
 const screens = document.querySelectorAll('.screen');
 const navBtns = document.querySelectorAll('.nav-btn');
-const tabs = document.querySelectorAll('.tab');
+const tabs = document.querySelectorAll('.tab[data-tab]');
 const searchName = $('searchName');
 const priceMin = $('priceMin');
 const priceMax = $('priceMax');
 const searchBtn = $('searchBtn');
 const sortBtn = $('sortBtn');
 
-// ===== 6) БЫСТРЫЕ КНОПКИ =====
+// ===== 7) БЫСТРЫЕ КНОПКИ =====
 function renderQuickButtons(){
     const container = document.getElementById('quickRight');
     if (!container) return;
@@ -555,7 +617,7 @@ function renderQuickButtons(){
     });
 }
 
-// ===== 7) ПРОФИЛЬ =====
+// ===== 8) ПРОФИЛЬ =====
 function renderProfile(){
     const fullName = (user.first_name + ' ' + (user.last_name || '')).trim() || 'Аноним';
     $('profileName').textContent = fullName;
@@ -570,35 +632,69 @@ function renderProfile(){
     $('statBalance').textContent = Math.floor(state.balance) + ' ⭐';
 }
 
-// ===== 8) ИСТОРИЯ =====
-function renderHistory(){
+function renderBalance(){
+    balanceDisplay.textContent = Math.floor(state.balance);
+    const el = $('statBalance');
+    if (el) el.textContent = Math.floor(state.balance) + ' ⭐';
+}
+
+// ===== 9) ИСТОРИЯ (серверная) =====
+async function loadServerHistory(filter){
     const list = $('historyList');
-    $('historyCount').textContent = state.history.length;
-    if (state.history.length === 0){
-        list.innerHTML = '<div class="history-empty">Пока нет записей<br><span style="font-size:10px;">Сделайте апгрейд чтобы увидеть историю</span></div>';
+    $('historyCount').textContent = '...';
+    list.innerHTML = '<div class="history-empty">Загрузка...</div>';
+    const items = await apiHistory(filter === 'all' ? null : (filter === 'game' ? null : filter));
+    let rows = items;
+    if (filter === 'game') rows = items.filter(x => ['upgrade','buy','sell'].includes(x.type));
+    $('historyCount').textContent = rows.length;
+    renderHistoryList(rows);
+}
+
+function renderHistoryList(items){
+    const list = $('historyList');
+    if (!items.length){
+        list.innerHTML = '<div class="history-empty">Пока нет записей</div>';
         return;
     }
-    list.innerHTML = state.history.slice(0, 50).map(h => `
-        <div class="history-item ${h.success?'win':'lose'}">
-            <img src="${h.image}" onerror="this.style.display='none'">
-            <div class="history-info">
-                <div class="h-title">${h.success?'✅ '+h.to:'❌ '+h.from}</div>
-                <div class="h-sub">${h.success?('из '+h.from):('было: '+h.from+' → '+h.to)}</div>
-            </div>
-            <div class="history-meta">
-                <div class="h-chance">${h.chance.toFixed(1)}%</div>
-                <div class="h-time">${h.time}</div>
-            </div>
-        </div>
-    `).join('');
+    const icons = {
+        topup:    { icon: '💎', color: 'var(--neon)',  label: 'Пополнение' },
+        withdraw: { icon: '💸', color: 'var(--gold)', label: 'Вывод' },
+        upgrade:  { icon: '⚡', color: 'var(--cyan)', label: 'Апгрейд' },
+        buy:      { icon: '🛒', color: 'var(--cyan)', label: 'Покупка' },
+        sell:     { icon: '💰', color: 'var(--gold)', label: 'Продажа' },
+    };
+    list.innerHTML = items.map(tx => {
+        const i = icons[tx.type] || { icon: '•', color: 'var(--muted)', label: tx.type };
+        const stars = tx.amount_stars > 0 ? '+' + tx.amount_stars : '' + tx.amount_stars;
+        const ton   = tx.amount_ton > 0 ? '+' + tx.amount_ton.toFixed(4) : tx.amount_ton.toFixed(4);
+        const dt = new Date(tx.created_at + 'Z').toLocaleString('ru-RU', {
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+        });
+        return `
+            <div class="history-item" style="border-left-color:${i.color}">
+                <div style="font-size:24px;">${i.icon}</div>
+                <div class="history-info">
+                    <div class="h-title">${i.label}</div>
+                    <div class="h-sub">${dt}</div>
+                </div>
+                <div class="history-meta">
+                    <div class="h-chance" style="color:${tx.amount_stars>=0?'var(--neon)':'var(--red)'}">
+                        ${stars} ⭐
+                    </div>
+                    <div class="h-time">${ton} TON</div>
+                </div>
+            </div>`;
+    }).join('');
 }
+
+// Старая функция оставлена для совместимости с апгрейдами (локальный fallback)
 function addHistory(entry){
     state.history.unshift(entry);
     if (state.history.length > 100) state.history.length = 100;
     save();
 }
 
-// ===== 9) ФИЛЬТРАЦИЯ =====
+// ===== 10) ФИЛЬТРАЦИЯ =====
 function filterGifts(list){
     const q = (state.search.name || '').toLowerCase().trim();
     const min = state.search.min !== '' ? Number(state.search.min) : null;
@@ -613,7 +709,7 @@ function filterGifts(list){
     return filtered;
 }
 
-// ===== 10) РЕНДЕР =====
+// ===== 11) РЕНДЕР =====
 function render(){
     balanceDisplay.textContent = Math.floor(state.balance);
     invCount.textContent = state.inventory.length + ' шт.';
@@ -712,7 +808,7 @@ function render(){
     save();
 }
 
-// ===== 11) ШАНС =====
+// ===== 12) ШАНС =====
 const MAX_CHANCE = 75;
 function calcChance(){
     const left = state.inventory.find(x => x.id === state.selectedLeft);
@@ -742,7 +838,7 @@ function updateChance(){
     }
 }
 
-// ===== 12) БЫСТРЫЙ ПОДБОР =====
+// ===== 13) БЫСТРЫЙ ПОДБОР =====
 function quickPickChance(targetPercent){
     let basePrice = null;
     const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
@@ -766,7 +862,7 @@ function quickPickChance(targetPercent){
     if (leftItem){
         state.selectedRight = bestIdx;
         state.rightTab = 'target';
-        document.querySelectorAll('.tab').forEach(t => {
+        document.querySelectorAll('.tab[data-tab]').forEach(t => {
             t.classList.toggle('active', t.dataset.tab === 'target');
         });
     } else {
@@ -784,7 +880,7 @@ function quickPickChance(targetPercent){
     if (navigator.vibrate) navigator.vibrate(15);
 }
 
-// ===== 13) ПОИСК =====
+// ===== 14) ПОИСК =====
 function applySearch(){
     state.search.name = searchName.value.trim();
     state.search.min  = priceMin.value.trim();
@@ -796,7 +892,7 @@ searchName.addEventListener('input', applySearch);
 priceMin.addEventListener('input', applySearch);
 priceMax.addEventListener('input', applySearch);
 
-// ===== 14) СОРТИРОВКА =====
+// ===== 15) СОРТИРОВКА =====
 sortBtn.addEventListener('click', () => {
     Sound.click();
     state.sortAsc = !state.sortAsc;
@@ -805,7 +901,7 @@ sortBtn.addEventListener('click', () => {
 });
 sortBtn.textContent = state.sortAsc ? '▲' : '▼';
 
-// ===== 15) ТАБЫ =====
+// ===== 16) ТАБЫ =====
 tabs.forEach(tab => {
     tab.addEventListener('click', function(){
         tabs.forEach(t => t.classList.remove('active'));
@@ -817,7 +913,7 @@ tabs.forEach(tab => {
     });
 });
 
-// ===== 16) КЛИКИ =====
+// ===== 17) КЛИКИ =====
 invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
@@ -847,7 +943,7 @@ rightGrid.addEventListener('click', e => {
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-// ===== 17) МОДАЛ ПОКУПКИ =====
+// ===== 18) МОДАЛ ПОКУПКИ (с API) =====
 function showBuyModal(giftIndex){
     const gift = GIFTS[giftIndex];
     if (!gift) return;
@@ -875,8 +971,10 @@ function showBuyModal(giftIndex){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
     const buyBtn = overlay.querySelector('[data-action="buy"]');
     if (buyBtn && canAfford){
-        buyBtn.addEventListener('click', () => {
-            state.balance -= gift.price;
+        buyBtn.addEventListener('click', async () => {
+            // 1) списываем звёзды на сервере
+            await apiSpend(gift.price, 'buy', { name: gift.name, price: gift.price });
+            // 2) добавляем в локальный инвентарь
             state.inventory.push({
                 id: 'gift_' + Date.now() + '_' + Math.floor(Math.random()*1000),
                 name: gift.name, price: gift.price, image: gift.image,
@@ -885,13 +983,12 @@ function showBuyModal(giftIndex){
             overlay.remove();
             render();
             tg.showAlert('✅ Куплено: ' + gift.name + ' за ⭐' + gift.price);
-            try { tg.sendData(JSON.stringify({ action:'buy_gift', payload:{name:gift.name,price:gift.price,balance:state.balance,userId:user.id} })); } catch(e){}
             if (navigator.vibrate) navigator.vibrate([20,40,20]);
         });
     }
 }
 
-// ===== 18) МОДАЛ ПРОДАЖИ =====
+// ===== 19) МОДАЛ ПРОДАЖИ (с API) =====
 function showSellModal(itemId){
     const item = state.inventory.find(x => x.id === itemId);
     if (!item) return;
@@ -915,22 +1012,22 @@ function showSellModal(itemId){
     document.body.appendChild(overlay);
     overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-    overlay.querySelector('[data-action="sell"]').addEventListener('click', () => {
+    overlay.querySelector('[data-action="sell"]').addEventListener('click', async () => {
         const idx = state.inventory.findIndex(x => x.id === itemId);
         if (idx === -1){ overlay.remove(); return; }
         state.inventory.splice(idx, 1);
-        state.balance += item.price;
         if (state.selectedLeft === itemId) state.selectedLeft = null;
+        // начисляем на сервере
+        await apiEarn(item.price, 'sell', { name: item.name, price: item.price });
         Sound.sell();
         overlay.remove();
         render();
         tg.showAlert('✅ Продано: ' + item.name + ' за ⭐' + item.price);
-        try { tg.sendData(JSON.stringify({ action:'sell_gift', payload:{name:item.name,price:item.price,balance:state.balance,userId:user.id} })); } catch(e){}
         if (navigator.vibrate) navigator.vibrate([20,40,20]);
     });
 }
 
-// ===== 19) АПГРЕЙД =====
+// ===== 20) АПГРЕЙД =====
 function doUpgrade(){
     if (state.isUpgrading) return;
     const left = state.inventory.find(x => x.id === state.selectedLeft);
@@ -959,9 +1056,11 @@ function doUpgrade(){
 
     startSpinSound();
 
-    setTimeout(() => {
+    setTimeout(async () => {
         stopSpinSound();
+        // 1) убираем левый предмет
         state.inventory = state.inventory.filter(x => x.id !== left.id);
+        // 2) если успех — добавляем правый
         if (success){
             state.inventory.push({
                 id: 'gift_' + Date.now(),
@@ -972,21 +1071,25 @@ function doUpgrade(){
         state.isUpgrading = false;
         upgradeInfo.textContent = success ? '✅ Успех!' : '❌ Неудача';
 
-        const now = new Date();
-        const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-        addHistory({
-            from: left.name, to: right.name,
-            success, chance, time: timeStr,
-            image: success ? right.image : left.image,
-        });
-
         if (success) Sound.win(); else Sound.lose();
 
+        // 3) пишем транзакцию в журнал
+        //    Апгрейд = списание левого предмета (по стоимости)
+        //    Если успех — ещё и заработок правого
+        await apiSpend(left.price, 'upgrade', { from: left.name, to: right.name, success, chance });
+        if (success) {
+            // фактически предмет не «заработан звёздами», поэтому пишем только мета
+            // но можно записать bonus от разницы:
+            // await apiEarn(right.price - left.price, 'upgrade_bonus', {from:left.name, to:right.name});
+        }
+
         render();
-        renderHistory();
         showResult(success, success ? right : left, chance);
 
-        try { tg.sendData(JSON.stringify({ action:'upgrade', payload:{from:left.name,to:right.name,chance,success,userId:user.id} })); } catch(e){}
+        // обновим историю, если она открыта
+        if (document.getElementById('screenHistory')?.classList.contains('active')){
+            loadServerHistory('all');
+        }
     }, duration*1000 + 100);
 }
 
@@ -995,7 +1098,7 @@ upgradeBtn.addEventListener('click', () => {
     doUpgrade();
 });
 
-// ===== 20) МОДАЛ РЕЗУЛЬТАТА =====
+// ===== 21) МОДАЛ РЕЗУЛЬТАТА =====
 function showResult(success, item, chance){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1017,7 +1120,7 @@ function showResult(success, item, chance){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 21) НАСТРОЙКИ =====
+// ===== 22) НАСТРОЙКИ =====
 function showSettingsModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1040,7 +1143,7 @@ function showSettingsModal(){
                 <div class="settings-desc">Настройте кнопки для быстрого подбора по коэффициенту и по проценту</div>
                 <div class="preset-row">
                     <div class="preset-card">
-                        <h4>Настройте кнопки для быстрого подбора по коэффициенту</h4>
+                        <h4>Быстрый подбор по коэффициенту</h4>
                         <div class="preset-buttons">
                             <button class="preset-btn" data-type="x" data-idx="0">x${s.presets.x[0]}</button>
                             <button class="preset-btn" data-type="x" data-idx="1">x${s.presets.x[1]}</button>
@@ -1049,7 +1152,7 @@ function showSettingsModal(){
                         </div>
                     </div>
                     <div class="preset-card">
-                        <h4>Настройте кнопки для быстрого подбора по проценту</h4>
+                        <h4>Быстрый подбор по проценту</h4>
                         <div class="preset-buttons">
                             <button class="preset-btn" data-type="p" data-idx="0">${s.presets.percent[0]}%</button>
                             <button class="preset-btn" data-type="p" data-idx="1">${s.presets.percent[1]}%</button>
@@ -1062,41 +1165,37 @@ function showSettingsModal(){
             </div>
 
             <div class="settings-section">
-                <div class="settings-section-title">
-                    <h3>Звук в апгрейде</h3>
-                </div>
+                <div class="settings-section-title"><h3>Звук в апгрейде</h3></div>
                 <div class="radio-option ${s.soundOn?'active':''}" data-setting="soundOn" data-val="true">
                     <div class="radio-circle"></div>
                     <div class="radio-info">
                         <div class="radio-title">Включен</div>
-                        <div class="radio-desc">Значение по умолчанию. Звуковые эффекты (нажатия кнопок, щелчки анимации и финальные овации) включены</div>
+                        <div class="radio-desc">Звуковые эффекты включены</div>
                     </div>
                 </div>
                 <div class="radio-option ${!s.soundOn?'active':''}" data-setting="soundOn" data-val="false">
                     <div class="radio-circle"></div>
                     <div class="radio-info">
                         <div class="radio-title">Выключен</div>
-                        <div class="radio-desc">Звуковые эффекты в апгрейде теперь в беззвучном режиме</div>
+                        <div class="radio-desc">Звук в беззвучном режиме</div>
                     </div>
                 </div>
             </div>
 
             <div class="settings-section">
-                <div class="settings-section-title">
-                    <h3>Тип прокрутки</h3>
-                </div>
+                <div class="settings-section-title"><h3>Тип прокрутки</h3></div>
                 <div class="radio-option ${!s.fastSpin?'active':''}" data-setting="fastSpin" data-val="false">
                     <div class="radio-circle"></div>
                     <div class="radio-info">
                         <div class="radio-title">Обычная</div>
-                        <div class="radio-desc">Значение по умолчанию. Стрелка крутится медленно</div>
+                        <div class="radio-desc">Стрелка крутится медленно</div>
                     </div>
                 </div>
                 <div class="radio-option ${s.fastSpin?'active':''}" data-setting="fastSpin" data-val="true">
                     <div class="radio-circle"></div>
                     <div class="radio-info">
                         <div class="radio-title">Ускоренная</div>
-                        <div class="radio-desc">Стрелка крутится более быстро, чтобы ускорить процесс игры</div>
+                        <div class="radio-desc">Стрелка крутится быстрее</div>
                     </div>
                 </div>
             </div>
@@ -1163,7 +1262,7 @@ function showSettingsModal(){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 22) ГРОМКОСТЬ =====
+// ===== 23) ГРОМКОСТЬ =====
 function showVolumeModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1205,13 +1304,11 @@ function showVolumeModal(){
 }
 
 /* ============================================================ */
-/* ===== 23) TON CONNECT — ЛОКАЛЬНАЯ ЗАГРУЗКА SDK ===== */
+/* ===== 24) TON CONNECT — ЛОКАЛЬНАЯ ЗАГРУЗКА SDK ===== */
 /* ============================================================ */
 
 const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
-// Манифест лежит рядом с index.html (в папке NFT-LAB)
 const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
-// Рабочий мост (stower.money мёртв)
 const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
 
 const DEPOSIT_PACKAGES = [
@@ -1227,7 +1324,6 @@ let selectedAmount = null;
 let sdkLoadingPromise = null;
 
 function loadTonConnectSDK() {
-    // Уже загружен?
     const existing = window.TonConnectUI || (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI);
     if (typeof existing === 'function') {
         window.TonConnectUI = existing;
@@ -1247,7 +1343,6 @@ function loadTonConnectSDK() {
                 console.log('[TON SDK] window.TonConnectUI =', typeof window.TonConnectUI);
                 console.log('[TON SDK] window.TON_CONNECT_UI =', typeof window.TON_CONNECT_UI);
 
-                // UMD-сборка кладёт класс в window.TON_CONNECT_UI.TonConnectUI
                 let Cls = null;
                 if (window.TON_CONNECT_UI) {
                     Cls = window.TON_CONNECT_UI.TonConnectUI
@@ -1285,8 +1380,7 @@ function loadTonConnectSDK() {
     });
     return sdkLoadingPromise;
 }
-    
-// ---- Гарантировать instance TonConnectUI ----
+
 function ensureTonConnectUI() {
     if (tonConnectUI) return Promise.resolve(tonConnectUI);
     return loadTonConnectSDK().then((TonConnectUICls) => {
@@ -1336,7 +1430,6 @@ function ensureTonConnectUI() {
     });
 }
 
-// ---- Обновление статуса ----
 function updateWalletStatus() {
     const payBtn = document.getElementById('payBtn');
     const payInfo = document.getElementById('payInfo');
@@ -1357,7 +1450,6 @@ function updateWalletStatus() {
     }
 }
 
-// ---- Модалка пополнения ----
 function showDepositModal(defaultTab) {
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1536,16 +1628,15 @@ function showDepositModal(defaultTab) {
         if (info) info.textContent = 'Откройте кошелёк и подтвердите';
 
         const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
-      const transaction = {
-    validUntil: Math.floor(Date.now() / 1000) + 300,
-    messages: [{
-        address: RECIPIENT_ADDRESS,
-        amount: amountNano,
-        payload: btoa('u:' + user.id + ':s:' + selectedAmount.stars)
-        // payload = base64 от "u:12345:s:100"
-        // бэкенд расшифрует и узнает кому и сколько начислить
-    }]
-};
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [{
+                address: RECIPIENT_ADDRESS,
+                amount: amountNano,
+                // memo: u:USER_ID:s:STARS — бэкенд расшифрует
+                payload: btoa('u:' + user.id + ':s:' + selectedAmount.stars)
+            }]
+        };
 
         try {
             const result = await tonConnectUI.sendTransaction(transaction);
@@ -1568,6 +1659,13 @@ function showDepositModal(defaultTab) {
             setTimeout(() => {
                 selectedAmount = null;
                 overlay.remove();
+                // Обновим баланс из бэкенда через 5 сек (когда watcher обработает)
+                setTimeout(() => {
+                    apiRefreshBalance();
+                    if (document.getElementById('screenHistory')?.classList.contains('active')){
+                        loadServerHistory('all');
+                    }
+                }, 5000);
             }, 2500);
         } catch (e) {
             console.error('❌ Ошибка транзакции:', e);
@@ -1581,11 +1679,12 @@ function showDepositModal(defaultTab) {
 
 /* ===== КОНЕЦ БЛОКА ПОПОЛНЕНИЯ ===== */
 
-// ===== 24) ВЕРХНИЕ КНОПКИ =====
+// ===== 25) ВЕРХНИЕ КНОПКИ =====
 $('btnInfo').addEventListener('click', () => {
     Sound.click();
     switchScreen('screenHistory');
     navBtns.forEach(b => b.classList.toggle('active', b.dataset.screen === 'screenHistory'));
+    loadServerHistory('all');
 });
 $('btnSettings').addEventListener('click', () => { Sound.click(); showSettingsModal(); });
 $('btnVolume').addEventListener('click', () => { Sound.click(); showVolumeModal(); });
@@ -1603,13 +1702,13 @@ function applySettingsToUI(){
     $('btnFast').classList.toggle('active', state.settings.fastSpin);
 }
 
-// ===== 25) НАВИГАЦИЯ =====
+// ===== 26) НАВИГАЦИЯ =====
 function switchScreen(id){
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
     navBtns.forEach(b => b.classList.toggle('active', b.dataset.screen === id));
     if (id === 'screenProfile') renderProfile();
-    if (id === 'screenHistory') renderHistory();
+    if (id === 'screenHistory') loadServerHistory('all');
 }
 navBtns.forEach(b => b.addEventListener('click', function(){
     Sound.click();
@@ -1617,10 +1716,18 @@ navBtns.forEach(b => b.addEventListener('click', function(){
     if (navigator.vibrate) navigator.vibrate(10);
 }));
 
-// ===== 26) СТАРТ =====
+// ===== 27) ТАБЫ ИСТОРИИ =====
+document.querySelectorAll('[data-htab]').forEach(tab => {
+    tab.addEventListener('click', function(){
+        document.querySelectorAll('[data-htab]').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        loadServerHistory(this.dataset.htab);
+    });
+});
+
+// ===== 28) СТАРТ =====
 initTelegram(function(){
     render();
-    renderHistory();
     applySettingsToUI();
     renderQuickButtons();
     // Прогреваем SDK заранее
@@ -1629,6 +1736,8 @@ initTelegram(function(){
     }).catch(e => {
         console.warn('[TON] не удалось прогреть SDK:', e.message);
     });
+    // Загружаем баланс из бэкенда
+    apiRefreshBalance();
     console.log('[UPGRADER] готов, user:', user);
 });
 })();
