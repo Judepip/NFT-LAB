@@ -12,6 +12,8 @@ window.__TG_FALLBACK__ = {
 };
 </script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- TON Core: нужен для формирования memo в транзакции -->
+<script src="https://unpkg.com/@ton/core@latest/dist/browser.js" onerror="console.warn('TON Core не загрузился')"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root{
@@ -218,11 +220,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .stat-box .value{font-size:20px;font-weight:600;color:var(--gold);}
 .stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
 
-#ton-connect-button button{
-    width:100% !important;
-    min-height:48px !important;
-    font-size:14px !important;
-}
+#ton-connect-button button{width:100% !important;min-height:48px !important;font-size:14px !important;}
 
 @media(max-width:380px){
     .upgrade-top{grid-template-columns:1fr 140px 1fr;gap:4px;}
@@ -240,7 +238,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 </head>
 <body>
 <div id="app">
-
     <div class="header">
         <h1>⚡ LAB UPGRADER</h1>
         <div class="head-icons">
@@ -254,7 +251,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     </div>
 
     <div class="content">
-
         <div class="screen active" id="screenUpgrade">
             <div class="upgrade-top">
                 <div class="slot-col">
@@ -263,7 +259,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
                         <div class="slot-empty">➕</div>
                     </div>
                 </div>
-
                 <div class="wheel-wrap">
                     <svg class="wheel-svg" width="170" height="170" viewBox="0 0 170 170">
                         <defs>
@@ -284,7 +279,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
                     <div class="wheel-center-text" id="chanceText">0%</div>
                     <div class="wheel-center-sub">ШАНС</div>
                 </div>
-
                 <div class="slot-col">
                     <div class="slot-panel" id="slotRight">
                         <div class="slot-label">ВЫБЕРИТЕ ЦЕЛЬ</div>
@@ -305,13 +299,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
                     </div>
                     <div class="inv-grid" id="invGrid"></div>
                 </div>
-
                 <div class="inv-section">
                     <div class="tabs">
                         <div class="tab active" data-tab="shop">🛒 МАГАЗИН</div>
                         <div class="tab" data-tab="target">🎯 ПРОКАЧАТЬ ДО</div>
                     </div>
-
                     <div class="search-bar">
                         <div class="search-inputs">
                             <div class="field">
@@ -331,7 +323,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
                         <button class="sort-btn" id="sortBtn">▲</button>
                         <button class="search-btn" id="searchBtn">🔍</button>
                     </div>
-
                     <div class="inv-grid" id="rightGrid"></div>
                 </div>
             </div>
@@ -371,7 +362,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
                 <div id="historyList" style="margin-top:8px;"></div>
             </div>
         </div>
-
     </div>
 
     <div class="nav-center">
@@ -379,7 +369,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
         <div class="nav-btn" data-screen="screenProfile"><span class="icon">👤</span> ПРОФИЛЬ</div>
         <div class="nav-btn" data-screen="screenHistory"><span class="icon">📜</span> ИСТОРИЯ</div>
     </div>
-
 </div>
 
 <script>
@@ -387,8 +376,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 'use strict';
 
 // ===== 0) КОНФИГ БЭКЕНДА =====
-// ⚠️ Замените на URL вашего бэкенда, когда задеплоите main.py
-const API_BASE = 'https://lab-nft-jude.mia0.amvera.tech';   // ← например, https://ваш-сервер.com
+const API_BASE = 'https://lab-nft-jude.mia0.amvera.tech';
 
 // ===== 1) TELEGRAM =====
 let tg = null;
@@ -498,7 +486,6 @@ async function apiSpend(stars, type, meta){
             body: { user_id: user.id, stars, type, meta }
         });
         if (d.ok) state.balance = d.balance;
-        else console.warn('spend failed:', d.error);
     } catch(e){ console.warn('spend api error:', e); }
     renderBalance();
     save();
@@ -560,13 +547,9 @@ const Sound = {
             playNote(f, i*0.11, 0.45, 'sine', 1);
             playNote(f*2, i*0.11 + 0.01, 0.3, 'sine', 0.25);
         });
-        playNote(523.25, 0.5, 0.7, 'sine', 0.5);
-        playNote(659.25, 0.5, 0.7, 'sine', 0.4);
-        playNote(783.99, 0.5, 0.7, 'sine', 0.4);
     },
     lose(){
         [440, 392, 329.63, 261.63].forEach((f,i) => playNote(f, i*0.13, 0.35, 'sine', 0.85));
-        playNote(196, 0.55, 0.6, 'sine', 0.5);
     },
     buy(){ playNote(659.25, 0, 0.15, 'sine', 0.9); playNote(987.77, 0.08, 0.25, 'sine', 0.8); },
     sell(){ playNote(987.77, 0, 0.15, 'sine', 0.9); playNote(659.25, 0.08, 0.25, 'sine', 0.8); },
@@ -638,7 +621,7 @@ function renderBalance(){
     if (el) el.textContent = Math.floor(state.balance) + ' ⭐';
 }
 
-// ===== 9) ИСТОРИЯ (серверная) =====
+// ===== 9) ИСТОРИЯ =====
 async function loadServerHistory(filter){
     const list = $('historyList');
     $('historyCount').textContent = '...';
@@ -687,7 +670,6 @@ function renderHistoryList(items){
     }).join('');
 }
 
-// Старая функция оставлена для совместимости с апгрейдами (локальный fallback)
 function addHistory(entry){
     state.history.unshift(entry);
     if (state.history.length > 100) state.history.length = 100;
@@ -943,7 +925,7 @@ rightGrid.addEventListener('click', e => {
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-// ===== 18) МОДАЛ ПОКУПКИ (с API) =====
+// ===== 18) МОДАЛ ПОКУПКИ =====
 function showBuyModal(giftIndex){
     const gift = GIFTS[giftIndex];
     if (!gift) return;
@@ -972,9 +954,7 @@ function showBuyModal(giftIndex){
     const buyBtn = overlay.querySelector('[data-action="buy"]');
     if (buyBtn && canAfford){
         buyBtn.addEventListener('click', async () => {
-            // 1) списываем звёзды на сервере
             await apiSpend(gift.price, 'buy', { name: gift.name, price: gift.price });
-            // 2) добавляем в локальный инвентарь
             state.inventory.push({
                 id: 'gift_' + Date.now() + '_' + Math.floor(Math.random()*1000),
                 name: gift.name, price: gift.price, image: gift.image,
@@ -988,7 +968,7 @@ function showBuyModal(giftIndex){
     }
 }
 
-// ===== 19) МОДАЛ ПРОДАЖИ (с API) =====
+// ===== 19) МОДАЛ ПРОДАЖИ =====
 function showSellModal(itemId){
     const item = state.inventory.find(x => x.id === itemId);
     if (!item) return;
@@ -1017,7 +997,6 @@ function showSellModal(itemId){
         if (idx === -1){ overlay.remove(); return; }
         state.inventory.splice(idx, 1);
         if (state.selectedLeft === itemId) state.selectedLeft = null;
-        // начисляем на сервере
         await apiEarn(item.price, 'sell', { name: item.name, price: item.price });
         Sound.sell();
         overlay.remove();
@@ -1058,9 +1037,7 @@ function doUpgrade(){
 
     setTimeout(async () => {
         stopSpinSound();
-        // 1) убираем левый предмет
         state.inventory = state.inventory.filter(x => x.id !== left.id);
-        // 2) если успех — добавляем правый
         if (success){
             state.inventory.push({
                 id: 'gift_' + Date.now(),
@@ -1073,20 +1050,11 @@ function doUpgrade(){
 
         if (success) Sound.win(); else Sound.lose();
 
-        // 3) пишем транзакцию в журнал
-        //    Апгрейд = списание левого предмета (по стоимости)
-        //    Если успех — ещё и заработок правого
         await apiSpend(left.price, 'upgrade', { from: left.name, to: right.name, success, chance });
-        if (success) {
-            // фактически предмет не «заработан звёздами», поэтому пишем только мета
-            // но можно записать bonus от разницы:
-            // await apiEarn(right.price - left.price, 'upgrade_bonus', {from:left.name, to:right.name});
-        }
 
         render();
         showResult(success, success ? right : left, chance);
 
-        // обновим историю, если она открыта
         if (document.getElementById('screenHistory')?.classList.contains('active')){
             loadServerHistory('all');
         }
@@ -1138,12 +1106,11 @@ function showSettingsModal(){
             <div class="settings-section">
                 <div class="settings-section-title">
                     <h3>Быстрый подбор</h3>
-                    <span class="default-label">По умолчанию</span>
                 </div>
-                <div class="settings-desc">Настройте кнопки для быстрого подбора по коэффициенту и по проценту</div>
+                <div class="settings-desc">Настройте кнопки для быстрого подбора</div>
                 <div class="preset-row">
                     <div class="preset-card">
-                        <h4>Быстрый подбор по коэффициенту</h4>
+                        <h4>По коэффициенту</h4>
                         <div class="preset-buttons">
                             <button class="preset-btn" data-type="x" data-idx="0">x${s.presets.x[0]}</button>
                             <button class="preset-btn" data-type="x" data-idx="1">x${s.presets.x[1]}</button>
@@ -1152,7 +1119,7 @@ function showSettingsModal(){
                         </div>
                     </div>
                     <div class="preset-card">
-                        <h4>Быстрый подбор по проценту</h4>
+                        <h4>По проценту</h4>
                         <div class="preset-buttons">
                             <button class="preset-btn" data-type="p" data-idx="0">${s.presets.percent[0]}%</button>
                             <button class="preset-btn" data-type="p" data-idx="1">${s.presets.percent[1]}%</button>
@@ -1304,7 +1271,7 @@ function showVolumeModal(){
 }
 
 /* ============================================================ */
-/* ===== 24) TON CONNECT — ЛОКАЛЬНАЯ ЗАГРУЗКА SDK ===== */
+/* ===== 24) TON CONNECT + АВТОНАЧИСЛЕНИЕ ЧЕРЕЗ MEMO ===== */
 /* ============================================================ */
 
 const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
@@ -1323,6 +1290,25 @@ let tonConnectUI = null;
 let selectedAmount = null;
 let sdkLoadingPromise = null;
 
+// Формирование payload (cell) с текстовым комментарием
+function buildCommentPayload(comment) {
+    // Проверяем, загрузилась ли библиотека @ton/core
+    if (!window.TonCore || !window.TonCore.beginCell) {
+        console.error('[TON] @ton/core не загружен');
+        return null;
+    }
+    try {
+        const cell = window.TonCore.beginCell()
+            .storeUint(0, 32)                       // op-code для текстового комментария
+            .storeStringTail(comment)               // "u:USER_ID:s:STARS"
+            .endCell();
+        return cell.toBoc().toString('base64');
+    } catch (e) {
+        console.error('[TON] Ошибка формирования payload:', e);
+        return null;
+    }
+}
+
 function loadTonConnectSDK() {
     const existing = window.TonConnectUI || (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI);
     if (typeof existing === 'function') {
@@ -1339,10 +1325,6 @@ function loadTonConnectSDK() {
             script.async = true;
 
             script.onload = () => {
-                console.log('[TON SDK] onload:', src);
-                console.log('[TON SDK] window.TonConnectUI =', typeof window.TonConnectUI);
-                console.log('[TON SDK] window.TON_CONNECT_UI =', typeof window.TON_CONNECT_UI);
-
                 let Cls = null;
                 if (window.TON_CONNECT_UI) {
                     Cls = window.TON_CONNECT_UI.TonConnectUI
@@ -1355,10 +1337,9 @@ function loadTonConnectSDK() {
 
                 if (typeof Cls === 'function') {
                     window.TonConnectUI = Cls;
-                    console.log('[TON SDK] класс найден:', typeof Cls);
+                    console.log('[TON SDK] класс найден');
                     resolve(Cls);
                 } else if (!isFallback) {
-                    console.warn('[TON SDK] класс не найден в', src);
                     tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
                 } else {
                     reject(new Error('TonConnectUI class not found'));
@@ -1366,7 +1347,6 @@ function loadTonConnectSDK() {
             };
 
             script.onerror = () => {
-                console.warn('[TON SDK] ошибка загрузки:', src);
                 if (!isFallback) {
                     tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
                 } else {
@@ -1422,7 +1402,6 @@ function ensureTonConnectUI() {
             console.log('[TON] status change, connected =', tonConnectUI.connected);
             updateWalletStatus();
         });
-        console.log('[TON] instance создан');
         return tonConnectUI;
     }).catch((e) => {
         console.error('[TON] ошибка ensureTonConnectUI:', e);
@@ -1492,12 +1471,6 @@ function showDepositModal(defaultTab) {
                 <div class="deposit-note">
                     Отправьте <b>NFT-подарок</b> нашему боту в Telegram. Мы оценим его и зачислим звёзды на ваш баланс.
                 </div>
-                <div class="deposit-note" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3);">
-                    <b style="color:var(--gold);">Как это работает:</b><br>
-                    1. Перешлите подарок нашему боту<br>
-                    2. Бот оценит его по рыночной цене<br>
-                    3. Звёзды будут начислены автоматически
-                </div>
                 <button class="volume-test-btn" data-action="openBot" style="background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.4);color:var(--gold);">
                     🎁 ОТКРЫТЬ БОТА ДЛЯ ОТПРАВКИ
                 </button>
@@ -1535,13 +1508,11 @@ function showDepositModal(defaultTab) {
                 const ui = await ensureTonConnectUI();
                 const cont = document.getElementById('ton-connect-button');
                 if (!ui) {
-                    if (cont) cont.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect. Проверьте интернет.</div>';
+                    if (cont) cont.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect.</div>';
                     return;
                 }
 
-                try {
-                    ui.uiOptions = { buttonRootId: 'ton-connect-button' };
-                } catch(e) { /* ignore */ }
+                try { ui.uiOptions = { buttonRootId: 'ton-connect-button' }; } catch(e){}
 
                 setTimeout(() => {
                     if (!cont) return;
@@ -1562,9 +1533,8 @@ function showDepositModal(defaultTab) {
                             await tonConnectUI.disconnect();
                             btn.textContent = '💎 Подключить TON-кошелёк';
                         } else {
-                            try {
-                                await tonConnectUI.openModal();
-                            } catch(e) {
+                            try { await tonConnectUI.openModal(); }
+                            catch(e) {
                                 console.error('[TON] openModal error:', e);
                                 tg.showAlert('Не удалось открыть кошелёк: ' + e.message);
                             }
@@ -1627,44 +1597,47 @@ function showDepositModal(defaultTab) {
         payBtn.textContent = 'ОЖИДАНИЕ...';
         if (info) info.textContent = 'Откройте кошелёк и подтвердите';
 
+        // Формируем комментарий: u:USER_ID:s:STARS
+        const comment = `u:${user.id}:s:${selectedAmount.stars}`;
+        const payload = buildCommentPayload(comment);
+
+        if (!payload) {
+            if (info) info.textContent = '❌ Ошибка: не удалось сформировать memo. Перезагрузите приложение.';
+            payBtn.textContent = 'ОПЛАТИТЬ';
+            payBtn.disabled = false;
+            payBtn.style.opacity = '1';
+            return;
+        }
+
+        console.log('[TON] Отправляю транзакцию с memo:', comment);
+
         const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
-       const transaction = {
-    validUntil: Math.floor(Date.now() / 1000) + 300,
-    messages: [{
-        address: RECIPIENT_ADDRESS,
-        amount: amountNano
-    }]
-};
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [{
+                address: RECIPIENT_ADDRESS,
+                amount: amountNano,
+                payload: payload           // ← вот здесь memo (cell в base64)
+            }]
+        };
 
         try {
             const result = await tonConnectUI.sendTransaction(transaction);
-            console.log('✅ Транзакция:', result.boc);
+            console.log('✅ Транзакция с memo отправлена:', result.boc);
             if (info) info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
             payBtn.textContent = 'ОТПРАВЛЕНО';
-
-            try {
-                tg.sendData(JSON.stringify({
-                    action: 'topup_request',
-                    payload: {
-                        stars: selectedAmount.stars,
-                        ton: selectedAmount.ton,
-                        boc: result.boc,
-                        userId: user.id
-                    }
-                }));
-            } catch(e){}
 
             setTimeout(() => {
                 selectedAmount = null;
                 overlay.remove();
-                // Обновим баланс из бэкенда через 5 сек (когда watcher обработает)
+                // Обновим баланс через 30 секунд, когда watcher обработает транзакцию
                 setTimeout(() => {
                     apiRefreshBalance();
                     if (document.getElementById('screenHistory')?.classList.contains('active')){
                         loadServerHistory('all');
                     }
-                }, 5000);
-            }, 2500);
+                }, 25000);
+            }, 2000);
         } catch (e) {
             console.error('❌ Ошибка транзакции:', e);
             if (info) info.textContent = '❌ Транзакция отклонена: ' + (e.message || '');
@@ -1728,13 +1701,11 @@ initTelegram(function(){
     render();
     applySettingsToUI();
     renderQuickButtons();
-    // Прогреваем SDK заранее
     loadTonConnectSDK().then(() => {
         console.log('[TON] SDK прогрет');
     }).catch(e => {
         console.warn('[TON] не удалось прогреть SDK:', e.message);
     });
-    // Загружаем баланс из бэкенда
     apiRefreshBalance();
     console.log('[UPGRADER] готов, user:', user);
 });
