@@ -1628,15 +1628,13 @@ function showDepositModal(defaultTab) {
         if (info) info.textContent = 'Откройте кошелёк и подтвердите';
 
         const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
-        const transaction = {
-            validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [{
-                address: RECIPIENT_ADDRESS,
-                amount: amountNano,
-                // memo: u:USER_ID:s:STARS — бэкенд расшифрует
-                payload: btoa('u:' + user.id + ':s:' + selectedAmount.stars)
-            }]
-        };
+       const transaction = {
+    validUntil: Math.floor(Date.now() / 1000) + 300,
+    messages: [{
+        address: RECIPIENT_ADDRESS,
+        amount: amountNano
+    }]
+};
 
         try {
             const result = await tonConnectUI.sendTransaction(transaction);
