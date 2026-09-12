@@ -218,7 +218,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .stat-box .value{font-size:20px;font-weight:600;color:var(--gold);}
 .stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
 
-/* Стиль для кнопки TON Connect — принудительно растягиваем */
 #ton-connect-button button{
     width:100% !important;
     min-height:48px !important;
@@ -1206,14 +1205,13 @@ function showVolumeModal(){
 }
 
 /* ============================================================ */
-/* ===== 23) TON CONNECT — ИСПРАВЛЕННЫЙ БЛОК ===== */
+/* ===== 23) TON CONNECT — ЛОКАЛЬНАЯ ЗАГРУЗКА SDK ===== */
 /* ============================================================ */
 
 const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
-// Манифест должен лежать в корне домена, а не в подпапке:
-const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
-
-// Рабочий мост TON Connect (stower.money больше не резолвится)
+// Манифест лежит рядом с index.html (в папке NFT-LAB)
+const MANIFEST_URL = './tonconnect-manifest.json';
+// Рабочий мост (stower.money мёртв)
 const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
 
 const DEPOSIT_PACKAGES = [
@@ -1228,7 +1226,7 @@ let tonConnectUI = null;
 let selectedAmount = null;
 let sdkLoadingPromise = null;
 
-// ---- Загрузка SDK TON Connect ----
+// ---- Загрузка SDK TON Connect: ЛОКАЛЬНО с фолбэком на unpkg ----
 function loadTonConnectSDK() {
     if (window.TonConnectUI && typeof window.TonConnectUI === 'function') {
         return Promise.resolve(window.TonConnectUI);
@@ -1236,19 +1234,45 @@ function loadTonConnectSDK() {
     if (sdkLoadingPromise) return sdkLoadingPromise;
 
     sdkLoadingPromise = new Promise((resolve, reject) => {
-        (async () => {
-            try {
-                const mod = await import('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js');
-                const Cls = mod.TonConnectUI || (mod.default && mod.default.TonConnectUI) || mod.default;
-                if (typeof Cls !== 'function') throw new Error('TonConnectUI class not found');
-                window.TonConnectUI = Cls;
-                console.log('[TON SDK] загружен с unpkg');
-                resolve(Cls);
-            } catch (e) {
-                console.error('[TON SDK] ошибка загрузки:', e);
-                reject(e);
-            }
-        })();
+        const tryLoad = (src, isFallback) => {
+            console.log('[TON SDK] пробую:', src);
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+
+            script.onload = () => {
+                console.log('[TON SDK] onload:', src, '| window.TonConnectUI =', typeof window.TonConnectUI);
+                let Cls = null;
+                if (typeof window.TonConnectUI === 'function') {
+                    Cls = window.TonConnectUI;
+                } else if (window.TonConnectUI && typeof window.TonConnectUI.TonConnectUI === 'function') {
+                    Cls = window.TonConnectUI.TonConnectUI;
+                } else if (window.TonConnectUI && typeof window.TonConnectUI.default === 'function') {
+                    Cls = window.TonConnectUI.default;
+                }
+                if (Cls) {
+                    window.TonConnectUI = Cls;
+                    resolve(Cls);
+                } else if (!isFallback) {
+                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                } else {
+                    reject(new Error('TonConnectUI class not found'));
+                }
+            };
+
+            script.onerror = () => {
+                console.warn('[TON SDK] ошибка загрузки:', src);
+                if (!isFallback) {
+                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                } else {
+                    reject(new Error('SDK load failed'));
+                }
+            };
+
+            document.head.appendChild(script);
+        };
+        // Локальный файл в первую очередь
+        tryLoad('./tonconnect-ui.min.js', false);
     });
     return sdkLoadingPromise;
 }
@@ -1259,7 +1283,6 @@ function ensureTonConnectUI() {
     return loadTonConnectSDK().then((TonConnectUICls) => {
         tonConnectUI = new TonConnectUICls({
             manifestUrl: MANIFEST_URL,
-            // ВАЖНО: указываем рабочий мост и передаём конфиг кошельков
             walletsListConfiguration: {
                 includeWallets: [
                     {
@@ -1345,8 +1368,6 @@ function showDepositModal(defaultTab) {
 
                 <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:48px;width:100%;"></div>
 
-                <div id="walletStatus" style="display:none;text-align:center;font-size:10px;color:var(--neon);margin:6px 0 10px;word-break:break-all;"></div>
-
                 <div class="deposit-packages">
                     ${DEPOSIT_PACKAGES.map(p => `
                         <div class="deposit-pkg" data-stars="${p.stars}" data-ton="${p.ton}">
@@ -1409,24 +1430,23 @@ function showDepositModal(defaultTab) {
         });
 
         if (activeTab === 'ton') {
-            // Ждём, пока DOM отрисуется, потом инициализируем TON Connect
             setTimeout(async () => {
                 const ui = await ensureTonConnectUI();
+                const cont = document.getElementById('ton-connect-button');
                 if (!ui) {
-                    const c = document.getElementById('ton-connect-button');
-                    if (c) c.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect. Проверьте интернет.</div>';
+                    if (cont) cont.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect. Проверьте интернет.</div>';
                     return;
                 }
-                // ВАЖНО: монтируем кнопку в контейнер через uiOptions
+
+                // Пробуем официальный UI
                 try {
                     ui.uiOptions = { buttonRootId: 'ton-connect-button' };
-                } catch(e) { console.warn(e); }
+                } catch(e) { /* ignore */ }
 
-                // Если uiOptions не сработал — рисуем кнопку сами
+                // Если кнопка не появилась — рисуем свою
                 setTimeout(() => {
-                    const cont = document.getElementById('ton-connect-button');
                     if (!cont) return;
-                    if (cont.querySelector('button')) return; // уже отрисована
+                    if (cont.querySelector('button')) return;
 
                     cont.innerHTML = '';
                     const btn = document.createElement('button');
@@ -1453,7 +1473,6 @@ function showDepositModal(defaultTab) {
                     });
                     cont.appendChild(btn);
 
-                    // Обновляем текст если статус поменяется
                     tonConnectUI.onStatusChange(() => {
                         btn.textContent = tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
                         updateWalletStatus();
@@ -1463,7 +1482,6 @@ function showDepositModal(defaultTab) {
                 updateWalletStatus();
             }, 50);
 
-            // Обработчик выбора пакета
             overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
                 pkg.addEventListener('click', () => {
                     overlay.querySelectorAll('.deposit-pkg').forEach(p => {
@@ -1500,7 +1518,6 @@ function showDepositModal(defaultTab) {
         }
     });
 
-    // Обработчик кнопки ОПЛАТИТЬ (вешаем один раз на overlay через делегирование)
     overlay.addEventListener('click', async (e) => {
         const payBtn = e.target.closest('#payBtn');
         if (!payBtn) return;
@@ -1596,7 +1613,7 @@ initTelegram(function(){
     renderHistory();
     applySettingsToUI();
     renderQuickButtons();
-    // Прогреваем SDK, чтобы к моменту открытия модалки он был готов
+    // Прогреваем SDK заранее
     loadTonConnectSDK().then(() => {
         console.log('[TON] SDK прогрет');
     }).catch(e => {
