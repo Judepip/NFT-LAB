@@ -12,12 +12,10 @@ window.__TG_FALLBACK__ = {
 };
 </script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- TON Core: загрузка через ESM с Buffer-полифилом -->
 <script type="module">
   try {
     const bufferMod = await import('https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm');
     window.Buffer = bufferMod.Buffer || (bufferMod.default && bufferMod.default.Buffer) || bufferMod.default;
-
     const tonCore = await import('https://cdn.jsdelivr.net/npm/@ton/core@0.49.1/+esm');
     window.TonCore = {
       beginCell: tonCore.beginCell,
@@ -32,102 +30,26 @@ window.__TG_FALLBACK__ = {
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 
-/* ===== ЭКРАН ЗАГРУЗКИ ===== */
 #loader {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background: radial-gradient(circle at 50% 50%, #131a2c 0%, #0a0e1a 70%);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    z-index: 9999; display: flex; align-items: center; justify-content: center;
     transition: opacity .6s ease, visibility .6s ease;
 }
-#loader.hidden {
-    opacity: 0;
-    visibility: hidden;
-}
-.loader-content {
-    position: relative;
-    text-align: center;
-    width: 240px;
-    height: 240px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-}
-.loader-logo {
-    font-size: 64px;
-    z-index: 3;
-    position: relative;
-    filter: drop-shadow(0 0 20px #00ff88) drop-shadow(0 0 40px #00d4ff);
-    animation: logoPulse 1.5s ease-in-out infinite;
-}
-@keyframes logoPulse {
-    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px #00ff88) drop-shadow(0 0 40px #00d4ff); }
-    50%      { transform: scale(1.15); filter: drop-shadow(0 0 30px #00ff88) drop-shadow(0 0 60px #00d4ff); }
-}
-.loader-ring {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 150px;
-    height: 150px;
-    margin: -75px 0 0 -75px;
-    border: 3px solid transparent;
-    border-top-color: #00ff88;
-    border-right-color: #00d4ff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    z-index: 1;
-}
-.loader-ring-2 {
-    width: 190px;
-    height: 190px;
-    margin: -95px 0 0 -95px;
-    border-top-color: #00d4ff;
-    border-right-color: #00ff88;
-    animation: spin 1.5s linear infinite reverse;
-    opacity: 0.5;
-}
-@keyframes spin {
-    100% { transform: rotate(360deg); }
-}
-.loader-title {
-    position: absolute;
-    bottom: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    background: linear-gradient(135deg, #00ff88, #00d4ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    z-index: 3;
-    white-space: nowrap;
-}
-.loader-sub {
-    position: absolute;
-    bottom: -48px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 11px;
-    color: #8899bb;
-    letter-spacing: 1px;
-    z-index: 3;
-    white-space: nowrap;
-}
+#loader.hidden { opacity: 0; visibility: hidden; }
+.loader-content { position: relative; text-align: center; width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.loader-logo { font-size: 64px; z-index: 3; position: relative; filter: drop-shadow(0 0 20px #00ff88) drop-shadow(0 0 40px #00d4ff); animation: logoPulse 1.5s ease-in-out infinite; }
+@keyframes logoPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+.loader-ring { position: absolute; top: 50%; left: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; border: 3px solid transparent; border-top-color: #00ff88; border-right-color: #00d4ff; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; }
+.loader-ring-2 { width: 190px; height: 190px; margin: -95px 0 0 -95px; border-top-color: #00d4ff; border-right-color: #00ff88; animation: spin 1.5s linear infinite reverse; opacity: 0.5; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.loader-title { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: 700; letter-spacing: 3px; background: linear-gradient(135deg, #00ff88, #00d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; z-index: 3; white-space: nowrap; }
+.loader-sub { position: absolute; bottom: -48px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #8899bb; letter-spacing: 1px; z-index: 3; white-space: nowrap; }
 
 :root{
-    --bg:#0a0e1a;
-    --neon:#00ff88; --cyan:#00d4ff;
-    --glass:rgba(18,24,43,.75);
-    --border:rgba(0,255,136,.15);
-    --border2:rgba(255,255,255,.08);
-    --text:#e8f0f8; --muted:#8899bb;
-    --gold:#ffd700; --red:#ff4466;
+    --bg:#0a0e1a; --neon:#00ff88; --cyan:#00d4ff;
+    --glass:rgba(18,24,43,.75); --border:rgba(0,255,136,.15); --border2:rgba(255,255,255,.08);
+    --text:#e8f0f8; --muted:#8899bb; --gold:#ffd700; --red:#ff4466;
     --mono:'JetBrains Mono','Roboto Mono',monospace;
 }
 html,body{height:100%;overflow:hidden;font-family:var(--mono);background:var(--bg);color:var(--text);user-select:none;-webkit-tap-highlight-color:transparent;}
@@ -325,7 +247,67 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .stat-box .value{font-size:20px;font-weight:600;color:var(--gold);}
 .stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
 
-#ton-connect-button button{width:100% !important;min-height:48px !important;font-size:14px !important;}
+/* ===== НОВЫЕ СТИЛИ ДЛЯ ВЫВОДА И ПОПОЛНЕНИЯ ===== */
+.withdraw-gifts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 4px;
+    margin-bottom: 10px;
+}
+.withdraw-gift {
+    background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
+    border: 1px solid rgba(255,215,0,.2);
+    border-radius: 8px;
+    padding: 6px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: .15s;
+}
+.withdraw-gift.active {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(255,215,0,.5);
+    background: radial-gradient(circle at 30% 30%, #2a3a5a, #1d2248);
+}
+.withdraw-gift img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 4px;
+}
+.withdraw-gift .wg-name {
+    font-size: 9px;
+    line-height: 1.1;
+    margin-bottom: 2px;
+}
+.withdraw-gift .wg-price {
+    font-size: 9px;
+    color: var(--gold);
+    font-weight: 600;
+}
+
+.accepted-gifts {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 4px;
+    background: rgba(0,0,0,.2);
+}
+.accepted-gift {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    font-size: 11px;
+}
+.accepted-gift:last-child { border-bottom: none; }
+.accepted-gift .ag-name { color: var(--text); }
+.accepted-gift .ag-price { color: var(--gold); font-weight: 600; }
 
 @media(max-width:380px){
     .upgrade-top{grid-template-columns:1fr 140px 1fr;gap:4px;}
@@ -343,7 +325,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 </head>
 <body>
 
-<!-- ===== ЭКРАН ЗАГРУЗКИ ===== -->
 <div id="loader">
     <div class="loader-content">
         <div class="loader-logo">⚡</div>
@@ -353,7 +334,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
         <div class="loader-sub" id="loaderStatus">Загрузка...</div>
     </div>
 </div>
-<!-- ===== КОНЕЦ ЭКРАНА ЗАГРУЗКИ ===== -->
 
 <div id="app">
     <div class="header">
@@ -494,10 +474,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 (function(){
 'use strict';
 
-// ===== 0) КОНФИГ БЭКЕНДА =====
 const API_BASE = 'https://lab-nft-jude.mia0.amvera.tech';
+const RELAYER_USERNAME = 'labrelayer';
 
-// ===== 1) TELEGRAM =====
 let tg = null;
 let user = { id:0, first_name:'Аноним', last_name:'', username:null, photo_url:null };
 
@@ -531,7 +510,6 @@ function initTelegram(callback){
     check();
 }
 
-// ===== 2) ПРЕДМЕТЫ =====
 const BASE = 'https://judepip.github.io/NFT-LAB';
 const GIFTS = [
     { name:'B-Day Candle',     price:633,  image: BASE+'/images/B-Day%20Candle.gif' },
@@ -584,24 +562,17 @@ const GIFTS = [
     { name:'Сердце',           price:15,   image: BASE+'/images/%D0%A1%D0%B5%D1%80%D0%B4%D1%86%D0%B5.gif' },
 ];
 
-// ===== 3) СОСТОЯНИЕ =====
 const KEY = 'lab_upgrade_v13';
 function defaultState(){
     return {
-        inventory: [],
-        balance: 0,
-        selectedLeft: null,
-        selectedRight: null,
-        isUpgrading: false,
-        rightTab: 'shop',
+        inventory: [], balance: 0,
+        selectedLeft: null, selectedRight: null,
+        isUpgrading: false, rightTab: 'shop',
         search: { name:'', min:'', max:'' },
-        sortAsc: true,
-        history: [],
+        sortAsc: true, history: [],
         settings: {
             presets: { x: [2, 4, 8], percent: [5, 25, 50, 75] },
-            soundOn: true,
-            volume: 0.7,
-            fastSpin: false,
+            soundOn: true, volume: 0.7, fastSpin: false,
         },
     };
 }
@@ -617,7 +588,6 @@ if (!state.settings.presets) state.settings.presets = { x:[2,4,8], percent:[5,25
 if (state.settings.presets.percent.length !== 4) state.settings.presets.percent = [5,25,50,75];
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
-// ===== 4) API-КЛИЕНТ =====
 async function api(path, opts = {}) {
     const url = API_BASE + path;
     const cfg = { headers: { 'Content-Type': 'application/json' }, ...opts };
@@ -634,6 +604,23 @@ async function apiRefreshBalance(){
         if (d.ok) state.balance = d.balance;
     } catch(e){ console.warn('balance api error:', e); }
     renderBalance();
+}
+
+async function apiRefreshInventory(){
+    if (!user.id) return [];
+    try {
+        const d = await api('/api/inventory?user_id=' + user.id);
+        if (d.ok && Array.isArray(d.items)){
+            state.inventory = d.items.map(it => ({
+                id: it.id,
+                name: it.gift_name,
+                price: it.gift_price,
+                image: it.gift_image || GIFTS.find(g => g.name === it.gift_name)?.image || '',
+            }));
+            return state.inventory;
+        }
+    } catch(e){ console.warn('inventory api error:', e); }
+    return [];
 }
 
 async function apiSpend(stars, type, meta){
@@ -668,7 +655,6 @@ async function apiHistory(type){
     return [];
 }
 
-// ===== 5) ЗВУКИ =====
 let audioCtx = null;
 function getAudioCtx(){
     if (!audioCtx){
@@ -715,7 +701,6 @@ let spinSoundInterval = null;
 function startSpinSound(){ stopSpinSound(); spinSoundInterval = setInterval(() => Sound.tick(), 90); }
 function stopSpinSound(){ if (spinSoundInterval){ clearInterval(spinSoundInterval); spinSoundInterval = null; } }
 
-// ===== 6) DOM =====
 const $ = id => document.getElementById(id);
 const balanceDisplay = $('balanceDisplay');
 const invGrid = $('invGrid');
@@ -737,7 +722,6 @@ const priceMax = $('priceMax');
 const searchBtn = $('searchBtn');
 const sortBtn = $('sortBtn');
 
-// ===== 7) БЫСТРЫЕ КНОПКИ =====
 function renderQuickButtons(){
     const container = document.getElementById('quickRight');
     if (!container) return;
@@ -757,7 +741,6 @@ function renderQuickButtons(){
     });
 }
 
-// ===== 8) ПРОФИЛЬ =====
 function renderProfile(){
     const fullName = (user.first_name + ' ' + (user.last_name || '')).trim() || 'Аноним';
     $('profileName').textContent = fullName;
@@ -778,7 +761,6 @@ function renderBalance(){
     if (el) el.textContent = Math.floor(state.balance) + ' ⭐';
 }
 
-// ===== 9) ИСТОРИЯ =====
 async function loadServerHistory(filter){
     const list = $('historyList');
     $('historyCount').textContent = '...';
@@ -798,6 +780,7 @@ function renderHistoryList(items){
     }
     const icons = {
         topup:    { icon: '💎', color: 'var(--neon)',  label: 'Пополнение' },
+        topup_gift:{ icon: '🎁', color: 'var(--neon)', label: 'Подарок получен' },
         withdraw: { icon: '💸', color: 'var(--gold)', label: 'Вывод' },
         upgrade:  { icon: '⚡', color: 'var(--cyan)', label: 'Апгрейд' },
         buy:      { icon: '🛒', color: 'var(--cyan)', label: 'Покупка' },
@@ -806,7 +789,7 @@ function renderHistoryList(items){
     list.innerHTML = items.map(tx => {
         const i = icons[tx.type] || { icon: '•', color: 'var(--muted)', label: tx.type };
         const stars = tx.amount_stars > 0 ? '+' + tx.amount_stars : '' + tx.amount_stars;
-        const ton   = tx.amount_ton > 0 ? '+' + tx.amount_ton.toFixed(4) : tx.amount_ton.toFixed(4);
+        const ton   = tx.amount_ton > 0 ? '+' + tx.amount_ton.toFixed(4) : (tx.amount_ton || 0).toFixed(4);
         const dt = new Date(tx.created_at + 'Z').toLocaleString('ru-RU', {
             day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
         });
@@ -827,13 +810,6 @@ function renderHistoryList(items){
     }).join('');
 }
 
-function addHistory(entry){
-    state.history.unshift(entry);
-    if (state.history.length > 100) state.history.length = 100;
-    save();
-}
-
-// ===== 10) ФИЛЬТРАЦИЯ =====
 function filterGifts(list){
     const q = (state.search.name || '').toLowerCase().trim();
     const min = state.search.min !== '' ? Number(state.search.min) : null;
@@ -848,7 +824,6 @@ function filterGifts(list){
     return filtered;
 }
 
-// ===== 11) РЕНДЕР =====
 function render(){
     balanceDisplay.textContent = Math.floor(state.balance);
     invCount.textContent = state.inventory.length + ' шт.';
@@ -858,14 +833,14 @@ function render(){
             <div class="inv-empty" style="padding:30px 12px;">
                 <div style="font-size:32px;margin-bottom:8px;">💎</div>
                 <div style="font-size:12px;color:var(--text);margin-bottom:4px;font-weight:600;">Нет предметов</div>
-                <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">Пополните баланс и купите первый подарок</div>
+                <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">Отправьте NFT-подарок @labrelayer</div>
                 <button class="volume-test-btn" id="emptyDepositBtn" style="max-width:200px;margin:0 auto;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;">
-                    ＋ ПОПОЛНИТЬ ОТ 100 ⭐
+                    ＋ ПОПОЛНИТЬ
                 </button>
             </div>`;
         setTimeout(() => {
             const b = document.getElementById('emptyDepositBtn');
-            if (b) b.addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
+            if (b) b.addEventListener('click', () => { Sound.click(); showDepositModal(); });
         }, 0);
     } else {
         invGrid.innerHTML = state.inventory.map(it => `
@@ -947,7 +922,6 @@ function render(){
     save();
 }
 
-// ===== 12) ШАНС =====
 const MAX_CHANCE = 75;
 function calcChance(){
     const left = state.inventory.find(x => x.id === state.selectedLeft);
@@ -977,7 +951,6 @@ function updateChance(){
     }
 }
 
-// ===== 13) БЫСТРЫЙ ПОДБОР =====
 function quickPickChance(targetPercent){
     let basePrice = null;
     const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
@@ -1019,7 +992,6 @@ function quickPickChance(targetPercent){
     if (navigator.vibrate) navigator.vibrate(15);
 }
 
-// ===== 14) ПОИСК =====
 function applySearch(){
     state.search.name = searchName.value.trim();
     state.search.min  = priceMin.value.trim();
@@ -1031,7 +1003,6 @@ searchName.addEventListener('input', applySearch);
 priceMin.addEventListener('input', applySearch);
 priceMax.addEventListener('input', applySearch);
 
-// ===== 15) СОРТИРОВКА =====
 sortBtn.addEventListener('click', () => {
     Sound.click();
     state.sortAsc = !state.sortAsc;
@@ -1040,7 +1011,6 @@ sortBtn.addEventListener('click', () => {
 });
 sortBtn.textContent = state.sortAsc ? '▲' : '▼';
 
-// ===== 16) ТАБЫ =====
 tabs.forEach(tab => {
     tab.addEventListener('click', function(){
         tabs.forEach(t => t.classList.remove('active'));
@@ -1052,7 +1022,6 @@ tabs.forEach(tab => {
     });
 });
 
-// ===== 17) КЛИКИ =====
 invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
@@ -1082,7 +1051,6 @@ rightGrid.addEventListener('click', e => {
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-// ===== 18) МОДАЛ ПОКУПКИ =====
 function showBuyModal(giftIndex){
     const gift = GIFTS[giftIndex];
     if (!gift) return;
@@ -1125,7 +1093,6 @@ function showBuyModal(giftIndex){
     }
 }
 
-// ===== 19) МОДАЛ ПРОДАЖИ =====
 function showSellModal(itemId){
     const item = state.inventory.find(x => x.id === itemId);
     if (!item) return;
@@ -1163,7 +1130,6 @@ function showSellModal(itemId){
     });
 }
 
-// ===== 20) АПГРЕЙД =====
 function doUpgrade(){
     if (state.isUpgrading) return;
     const left = state.inventory.find(x => x.id === state.selectedLeft);
@@ -1223,7 +1189,6 @@ upgradeBtn.addEventListener('click', () => {
     doUpgrade();
 });
 
-// ===== 21) МОДАЛ РЕЗУЛЬТАТА =====
 function showResult(success, item, chance){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1245,7 +1210,6 @@ function showResult(success, item, chance){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 22) НАСТРОЙКИ =====
 function showSettingsModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1259,11 +1223,8 @@ function showSettingsModal(){
                 <h2>⚙ Настройки</h2>
                 <button class="settings-close" data-action="close">✕</button>
             </div>
-
             <div class="settings-section">
-                <div class="settings-section-title">
-                    <h3>Быстрый подбор</h3>
-                </div>
+                <div class="settings-section-title"><h3>Быстрый подбор</h3></div>
                 <div class="settings-desc">Настройте кнопки для быстрого подбора</div>
                 <div class="preset-row">
                     <div class="preset-card">
@@ -1287,7 +1248,6 @@ function showSettingsModal(){
                     </div>
                 </div>
             </div>
-
             <div class="settings-section">
                 <div class="settings-section-title"><h3>Звук в апгрейде</h3></div>
                 <div class="radio-option ${s.soundOn?'active':''}" data-setting="soundOn" data-val="true">
@@ -1305,7 +1265,6 @@ function showSettingsModal(){
                     </div>
                 </div>
             </div>
-
             <div class="settings-section">
                 <div class="settings-section-title"><h3>Тип прокрутки</h3></div>
                 <div class="radio-option ${!s.fastSpin?'active':''}" data-setting="fastSpin" data-val="false">
@@ -1323,7 +1282,6 @@ function showSettingsModal(){
                     </div>
                 </div>
             </div>
-
             <button class="settings-save" data-action="save">Сохранить и закрыть</button>
         </div>`;
     document.body.appendChild(overlay);
@@ -1386,7 +1344,6 @@ function showSettingsModal(){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 23) ГРОМКОСТЬ =====
 function showVolumeModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1428,148 +1385,138 @@ function showVolumeModal(){
 }
 
 /* ============================================================ */
-/* ===== 23.5) ВЫВОД ЗВЁЗД В TON ===== */
+/* ===== ВЫВОД NFT-ПОДАРКОВ через @labrelayer ===== */
 /* ============================================================ */
 
-const MIN_WITHDRAW = 500;
-const STARS_TO_TON = 0.011;   // 1 ⭐ = 0.011 TON (обратный курс к пополнению)
-
-function showWithdrawModal(){
+async function showWithdrawModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
+
+    let inventory = await apiRefreshInventory();
+    if (!inventory.length) inventory = state.inventory || [];
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
 
     function renderContent(){
+        let body = '';
+
+        if (inventory.length === 0){
+            body = `
+                <div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:12px;">
+                    <div style="font-size:40px;margin-bottom:10px;">📦</div>
+                    У вас пока нет подарков.<br>
+                    Отправьте NFT-подарок @${RELAYER_USERNAME}, чтобы начать.
+                </div>
+            `;
+        } else {
+            body = `
+                <div style="margin:10px 0 14px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
+                    Выберите подарок для вывода
+                </div>
+                <div class="withdraw-gifts">
+                    ${inventory.map(it => `
+                        <div class="withdraw-gift" data-inv-id="${it.id}">
+                            <img src="${it.image || ''}" onerror="this.style.display='none'">
+                            <div class="wg-name">${it.name}</div>
+                            <div class="wg-price">⭐${it.price}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         overlay.innerHTML = `
             <div class="modal-content" style="border-color:var(--gold);max-width:400px;text-align:left;">
                 <div class="settings-header">
-                    <h2 style="color:var(--gold);">💸 Вывод звёзд</h2>
+                    <h2 style="color:var(--gold);">💸 Вывод подарка</h2>
                     <button class="settings-close" data-action="close">✕</button>
                 </div>
 
                 <div class="deposit-note" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.25);">
-                    Выведите звёзды в <b style="color:var(--gold);">TON</b>. Минимум: <b>${MIN_WITHDRAW} ⭐</b>.
-                    Заявка обрабатывается вручную в течение 24 часов.
+                    Выберите подарок из инвентаря. Затем напишите аккаунту
+                    <b style="color:var(--gold);">@${RELAYER_USERNAME}</b> — бот вышлет его автоматически.
                 </div>
 
-                <div style="margin:14px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Сумма вывода (⭐)</div>
-                <input type="number" id="withdrawStars" min="${MIN_WITHDRAW}"
-                       placeholder="Например, ${MIN_WITHDRAW}"
-                       style="width:100%;background:#0f1525;border:1px solid var(--border2);
-                              border-radius:10px;padding:14px 16px;color:var(--text);
-                              font-family:var(--mono);font-size:14px;outline:none;margin-bottom:6px;">
+                ${body}
 
-                <div style="text-align:right;font-size:11px;color:var(--muted);margin-bottom:14px;">
-                    Получите: <b id="withdrawTonPreview" style="color:var(--cyan);">0 TON</b>
-                </div>
-
-                <div style="margin:14px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Адрес TON-кошелька</div>
-                <input type="text" id="withdrawAddress"
-                       placeholder="UQ..."
-                       style="width:100%;background:#0f1525;border:1px solid var(--border2);
-                              border-radius:10px;padding:14px 16px;color:var(--text);
-                              font-family:var(--mono);font-size:12px;outline:none;margin-bottom:6px;">
-
-                <div style="text-align:right;font-size:10px;color:var(--muted);margin-bottom:16px;">
-                    ⚠️ Убедитесь, что адрес правильный. Отменить вывод нельзя.
-                </div>
-
-                <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:14px;">
-                    Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
-                </div>
-
-                <button class="volume-test-btn" id="withdrawSubmitBtn"
-                        style="background:linear-gradient(135deg,var(--gold),#ffb700);color:#0a0e1a;border:none;font-size:14px;padding:14px;margin-top:0;">
+                <button class="volume-test-btn" id="withdrawStartBtn"
+                        style="background:linear-gradient(135deg,var(--gold),#ffb700);color:#0a0e1a;border:none;font-size:14px;padding:14px;margin-top:0;display:none;">
                     💸 ВЫВЕСТИ
                 </button>
 
                 <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:10px;">
-                    После подтверждения заявка появится в истории
+                    Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
                 </div>
             </div>
         `;
-
-        const starsInput = overlay.querySelector('#withdrawStars');
-        const addrInput = overlay.querySelector('#withdrawAddress');
-        const tonPreview = overlay.querySelector('#withdrawTonPreview');
-        const submitBtn = overlay.querySelector('#withdrawSubmitBtn');
-
-        starsInput.addEventListener('input', () => {
-            const stars = parseInt(starsInput.value, 10) || 0;
-            tonPreview.textContent = (stars * STARS_TO_TON).toFixed(4) + ' TON';
-        });
 
         overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
             Sound.click(); overlay.remove();
         });
 
-        submitBtn.addEventListener('click', async () => {
-            const stars = parseInt(starsInput.value, 10) || 0;
-            const address = (addrInput.value || '').trim();
-
-            if (!stars || stars < MIN_WITHDRAW){
-                tg.showAlert(`❌ Минимум для вывода: ${MIN_WITHDRAW} ⭐`);
-                return;
-            }
-            if (stars > state.balance){
-                tg.showAlert(`❌ Недостаточно звёзд. У вас: ${Math.floor(state.balance)} ⭐`);
-                return;
-            }
-            if (!address || address.length < 40 || address.length > 50){
-                tg.showAlert('❌ Введите корректный TON-адрес (48 символов, UQ... или EQ...)');
-                return;
-            }
-
-            Sound.click();
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'ОТПРАВКА...';
-
-            try {
-                const d = await api('/api/withdraw', {
-                    method: 'POST',
-                    body: { user_id: user.id, stars: stars, address: address }
-                });
-
-                if (d.ok){
-                    state.balance = d.balance;
-                    renderBalance();
-                    save();
-
-                    overlay.innerHTML = `
-                        <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
-                            <div style="font-size:60px;margin-bottom:12px;">✅</div>
-                            <div class="modal-title" style="color:var(--neon);">Заявка создана!</div>
-                            <div class="modal-sub">
-                                <b style="color:var(--gold);">${stars} ⭐</b> → <b style="color:var(--cyan);">${d.amount_ton} TON</b><br><br>
-                                Адрес:<br><span style="font-size:10px;word-break:break-all;">${address}</span>
-                                <br><br>
-                                Заявка обрабатывается вручную.<br>
-                                Ожидайте в течение 24 часов.
-                            </div>
-                            <button class="modal-btn" data-action="finish">OK</button>
-                        </div>
-                    `;
-                    overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
-                        Sound.click();
-                        overlay.remove();
-                        if (document.getElementById('screenHistory')?.classList.contains('active')){
-                            loadServerHistory('all');
-                        }
-                    });
-                } else {
-                    tg.showAlert('❌ Ошибка: ' + (d.error || 'попробуйте позже'));
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '💸 ВЫВЕСТИ';
-                }
-            } catch(e){
-                console.error('withdraw error:', e);
-                tg.showAlert('❌ Ошибка сети. Попробуйте позже.');
-                submitBtn.disabled = false;
-                submitBtn.textContent = '💸 ВЫВЕСТИ';
-            }
+        let selectedId = null;
+        overlay.querySelectorAll('.withdraw-gift').forEach(el => {
+            el.addEventListener('click', () => {
+                overlay.querySelectorAll('.withdraw-gift').forEach(x => x.classList.remove('active'));
+                el.classList.add('active');
+                selectedId = parseInt(el.dataset.invId, 10);
+                const btn = overlay.querySelector('#withdrawStartBtn');
+                if (btn) btn.style.display = 'block';
+                Sound.click();
+            });
         });
+
+        const btn = overlay.querySelector('#withdrawStartBtn');
+        if (btn){
+            btn.addEventListener('click', async () => {
+                if (!selectedId) return;
+                btn.disabled = true;
+                btn.textContent = 'ОТПРАВКА...';
+
+                try {
+                    const r = await fetch(API_BASE + '/api/withdraw/request', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ user_id: user.id, inventory_id: selectedId })
+                    });
+                    const d = await r.json();
+
+                    if (d.ok){
+                        Sound.click();
+                        overlay.innerHTML = `
+                            <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
+                                <div style="font-size:60px;margin-bottom:12px;">✉️</div>
+                                <div class="modal-title" style="color:var(--neon);">Заявка создана!</div>
+                                <div class="modal-sub">
+                                    Теперь напишите любое сообщение аккаунту:<br><br>
+                                    <b style="color:var(--gold);font-size:16px;">@${RELAYER_USERNAME}</b><br><br>
+                                    Бот проверит заявку и сразу отправит ваш подарок.
+                                </div>
+                                <a href="https://t.me/${RELAYER_USERNAME}" target="_blank" class="modal-btn"
+                                   style="display:block;text-decoration:none;margin-bottom:8px;background:var(--neon);color:#0a0e1a;padding:12px;border-radius:30px;font-weight:700;">
+                                    ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
+                                </a>
+                                <button class="modal-btn grey" data-action="finish">OK</button>
+                            </div>
+                        `;
+                        overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
+                            overlay.remove();
+                            apiRefreshBalance();
+                            apiRefreshInventory().then(() => render());
+                        });
+                    } else {
+                        tg.showAlert('❌ ' + (d.error || 'Ошибка'));
+                        btn.disabled = false;
+                        btn.textContent = '💸 ВЫВЕСТИ';
+                    }
+                } catch(e){
+                    tg.showAlert('❌ Ошибка сети');
+                    btn.disabled = false;
+                    btn.textContent = '💸 ВЫВЕСТИ';
+                }
+            });
+        }
     }
 
     renderContent();
@@ -1580,382 +1527,113 @@ function showWithdrawModal(){
 }
 
 /* ============================================================ */
-/* ===== 24) TON CONNECT + АВТОНАЧИСЛЕНИЕ ЧЕРЕЗ MEMO ===== */
+/* ===== ПОПОЛНЕНИЕ через NFT-подарки @labrelayer ===== */
 /* ============================================================ */
 
-const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
-const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
-const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
-
-const DEPOSIT_PACKAGES = [
-    { stars: 100,  ton: 1.1  },
-    { stars: 250,  ton: 2.7  },
-    { stars: 500,  ton: 5.5  },
-    { stars: 1000, ton: 11   },
-    { stars: 5000, ton: 54.7 },
+const ACCEPTED_GIFTS = [
+    { name: 'B-Day Candle',   price: 633   },
+    { name: 'Berry Box',      price: 859   },
+    { name: 'Big Year',       price: 448   },
+    { name: 'Bow Tie',        price: 600   },
+    { name: 'Chill Flame',    price: 499   },
+    { name: 'Crystal Ball',   price: 1215  },
+    { name: 'Desk Calendar',  price: 575   },
+    { name: 'Diamond Ring',   price: 2969  },
+    { name: 'Durov Cap',      price: 42229 },
+    { name: 'Electric Skull', price: 2490  },
+    { name: 'Eternal Candle', price: 630   },
+    { name: 'Evil Eye',       price: 759   },
+    { name: 'Fine Pen',       price: 895   },
+    { name: 'Flying Broom',   price: 1163  },
+    { name: 'Hanging Star',   price: 974   },
+    { name: 'Hex Pot',        price: 550   },
+    { name: 'Homemade Cake',  price: 630   },
+    { name: 'Ion Gem',        price: 7889  },
+    { name: 'Jack-In-The-Box',price: 500   },
+    { name: 'Kissed Frog',    price: 3865  },
+    { name: 'Liberty Figure', price: 512   },
+    { name: 'Light Sword',    price: 665   },
+    { name: 'Lol Pop',        price: 490   },
+    { name: 'Love Candle',    price: 963   },
+    { name: 'Low Rider',      price: 5388  },
+    { name: 'Mad Pumpkin',    price: 1259  },
+    { name: 'Mood Pak',       price: 513   },
+    { name: 'Neko Helmet',    price: 3775  },
+    { name: 'Party Sparkler', price: 545   },
+    { name: 'Plush Pepe',     price: 553220},
+    { name: 'Sakura Flower',  price: 1025  },
+    { name: 'Scared Cat',     price: 22489 },
+    { name: 'Signet Ring',    price: 3239  },
+    { name: 'Skull Flower',   price: 1125  },
+    { name: 'Snoop Cigar',    price: 1430  },
+    { name: 'Snoop Dogg',     price: 630   },
+    { name: 'Spy Agaric',     price: 630   },
+    { name: 'StarNotepad',    price: 550   },
+    { name: 'Top Hat',        price: 1077  },
+    { name: 'Toy Bear',       price: 3626  },
+    { name: 'Vintage Cigar',  price: 3687  },
+    { name: 'Witch Hat',      price: 629   },
+    { name: 'Букет',          price: 50    },
+    { name: 'Кольцо',         price: 100   },
+    { name: 'Кубок',          price: 100   },
+    { name: 'Мишка',          price: 15    },
+    { name: 'Роза',           price: 25    },
+    { name: 'Сердце',         price: 15    },
 ];
 
-let tonConnectUI = null;
-let selectedAmount = null;
-let sdkLoadingPromise = null;
-
-function buildCommentPayload(comment) {
-    if (!window.TonCore || !window.TonCore.beginCell) {
-        console.error('[TON] @ton/core не загружен');
-        return null;
-    }
-    try {
-        const cell = window.TonCore.beginCell()
-            .storeUint(0, 32)
-            .storeStringTail(comment)
-            .endCell();
-        return cell.toBoc().toString('base64');
-    } catch (e) {
-        console.error('[TON] Ошибка формирования payload:', e);
-        return null;
-    }
-}
-
-function loadTonConnectSDK() {
-    const existing = window.TonConnectUI || (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI);
-    if (typeof existing === 'function') {
-        window.TonConnectUI = existing;
-        return Promise.resolve(existing);
-    }
-    if (sdkLoadingPromise) return sdkLoadingPromise;
-
-    sdkLoadingPromise = new Promise((resolve, reject) => {
-        const tryLoad = (src, isFallback) => {
-            console.log('[TON SDK] пробую:', src);
-            const script = document.createElement('script');
-            script.src = src;
-            script.async = true;
-
-            script.onload = () => {
-                let Cls = null;
-                if (window.TON_CONNECT_UI) {
-                    Cls = window.TON_CONNECT_UI.TonConnectUI
-                       || window.TON_CONNECT_UI.default
-                       || (typeof window.TON_CONNECT_UI === 'function' ? window.TON_CONNECT_UI : null);
-                }
-                if (!Cls && typeof window.TonConnectUI === 'function') {
-                    Cls = window.TonConnectUI;
-                }
-
-                if (typeof Cls === 'function') {
-                    window.TonConnectUI = Cls;
-                    console.log('[TON SDK] класс найден');
-                    resolve(Cls);
-                } else if (!isFallback) {
-                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
-                } else {
-                    reject(new Error('TonConnectUI class not found'));
-                }
-            };
-
-            script.onerror = () => {
-                if (!isFallback) {
-                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
-                } else {
-                    reject(new Error('SDK load failed'));
-                }
-            };
-
-            document.head.appendChild(script);
-        };
-        tryLoad('./tonconnect-ui.min.js', false);
-    });
-    return sdkLoadingPromise;
-}
-
-function ensureTonConnectUI() {
-    if (tonConnectUI) return Promise.resolve(tonConnectUI);
-    return loadTonConnectSDK().then((TonConnectUICls) => {
-        tonConnectUI = new TonConnectUICls({
-            manifestUrl: MANIFEST_URL,
-            walletsListConfiguration: {
-                includeWallets: [
-                    {
-                        appName: 'telegram-wallet',
-                        name: 'Wallet',
-                        imageUrl: 'https://wallet.tg/images/logo-288.png',
-                        aboutUrl: 'https://wallet.tg/',
-                        universalLink: 'https://t.me/wallet/start',
-                        bridgeUrl: BRIDGE_URL,
-                        platforms: ['ios', 'android', 'macos', 'windows', 'linux']
-                    },
-                    {
-                        appName: 'tonkeeper',
-                        name: 'Tonkeeper',
-                        imageUrl: 'https://tonkeeper.com/assets/tonconnect-icon.png',
-                        aboutUrl: 'https://tonkeeper.com',
-                        universalLink: 'https://app.tonkeeper.com/ton-connect',
-                        bridgeUrl: BRIDGE_URL,
-                        platforms: ['ios', 'android', 'chrome', 'firefox']
-                    },
-                    {
-                        appName: 'mytonwallet',
-                        name: 'MyTonWallet',
-                        imageUrl: 'https://mytonwallet.io/icon-256.png',
-                        aboutUrl: 'https://mytonwallet.io',
-                        universalLink: 'https://mytonwallet.io/ton-connect',
-                        bridgeUrl: BRIDGE_URL,
-                        platforms: ['chrome', 'firefox', 'ios', 'android']
-                    }
-                ]
-            }
-        });
-        tonConnectUI.onStatusChange(() => {
-            console.log('[TON] status change, connected =', tonConnectUI.connected);
-            updateWalletStatus();
-        });
-        return tonConnectUI;
-    }).catch((e) => {
-        console.error('[TON] ошибка ensureTonConnectUI:', e);
-        return null;
-    });
-}
-
-function updateWalletStatus() {
-    const payBtn = document.getElementById('payBtn');
-    const payInfo = document.getElementById('payInfo');
-    if (!payBtn || !payInfo) return;
-
-    if (!tonConnectUI || !tonConnectUI.connected) {
-        payBtn.disabled = true;
-        payBtn.style.opacity = '.4';
-        payInfo.textContent = 'Подключите кошелёк';
-    } else if (!selectedAmount) {
-        payBtn.disabled = true;
-        payBtn.style.opacity = '.4';
-        payInfo.textContent = 'Выберите сумму';
-    } else {
-        payBtn.disabled = false;
-        payBtn.style.opacity = '1';
-        payInfo.textContent = 'Нажмите ОПЛАТИТЬ для подтверждения';
-    }
-}
-
-function showDepositModal(defaultTab) {
+function showDepositModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
 
-    let activeTab = defaultTab || 'ton';
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
 
-    function renderContent() {
-        let body = '';
-
-        if (activeTab === 'ton') {
-            body = `
-                <div class="deposit-note">
-                    Подключите <b>TON-кошелёк</b> и выберите сумму — звёзды зачислятся автоматически после подтверждения транзакции.
-                </div>
-
-                <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:48px;width:100%;"></div>
-
-                <div class="deposit-packages">
-                    ${DEPOSIT_PACKAGES.map(p => `
-                        <div class="deposit-pkg" data-stars="${p.stars}" data-ton="${p.ton}">
-                            <div class="pkg-stars">⭐ ${p.stars}</div>
-                            <div class="pkg-arrow">→</div>
-                            <div class="pkg-ton">${p.ton} TON</div>
-                        </div>
-                    `).join('')}
-                </div>
-
-                <button class="volume-test-btn" id="payBtn" disabled
-                        style="margin-top:14px;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;opacity:.4;">
-                    ОПЛАТИТЬ
-                </button>
-                <div id="payInfo" style="text-align:center;font-size:10px;color:var(--muted);margin-top:8px;min-height:14px;">
-                    Подключите кошелёк
-                </div>
-            `;
-        } else {
-            body = `
-                <div class="deposit-note">
-                    Отправьте <b>NFT-подарок</b> нашему боту в Telegram. Мы оценим его и зачислим звёзды на ваш баланс.
-                </div>
-                <button class="volume-test-btn" data-action="openBot" style="background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.4);color:var(--gold);">
-                    🎁 ОТКРЫТЬ БОТА ДЛЯ ОТПРАВКИ
-                </button>
-            `;
-        }
-
-        overlay.innerHTML = `
-            <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
-                <div class="settings-header">
-                    <h2>💎 Пополнение</h2>
-                    <button class="settings-close" data-action="close">✕</button>
-                </div>
-                <div class="deposit-tabs">
-                    <div class="deposit-tab ${activeTab==='ton'?'active':''}" data-tab="ton">💎 TONCOIN</div>
-                    <div class="deposit-tab ${activeTab==='nft'?'active':''}" data-tab="nft">🎁 NFT-ПОДАРКИ</div>
-                </div>
-                ${body}
+    overlay.innerHTML = `
+        <div class="modal-content" style="border-color:var(--neon);max-width:420px;text-align:left;">
+            <div class="settings-header">
+                <h2>💎 Пополнение</h2>
+                <button class="settings-close" data-action="close">✕</button>
             </div>
-        `;
 
-        overlay.querySelectorAll('.deposit-tab').forEach(t => {
-            t.addEventListener('click', () => {
-                activeTab = t.dataset.tab;
-                Sound.click();
-                renderContent();
-            });
-        });
+            <div class="deposit-note">
+                1. Отправьте <b>NFT-подарок</b> аккаунту <b style="color:var(--neon);">@${RELAYER_USERNAME}</b><br>
+                2. Бот автоматически зачислит его в ваш инвентарь по цене ниже
+            </div>
 
-        overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-            Sound.click(); overlay.remove();
-        });
+            <a href="https://t.me/${RELAYER_USERNAME}" target="_blank"
+               class="volume-test-btn"
+               style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
+                ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
+            </a>
 
-        if (activeTab === 'ton') {
-            setTimeout(async () => {
-                const ui = await ensureTonConnectUI();
-                const cont = document.getElementById('ton-connect-button');
-                if (!ui) {
-                    if (cont) cont.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect.</div>';
-                    return;
-                }
+            <div style="margin:10px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
+                Принимаемые подарки
+            </div>
 
-                try { ui.uiOptions = { buttonRootId: 'ton-connect-button' }; } catch(e){}
+            <div class="accepted-gifts">
+                ${ACCEPTED_GIFTS.map(g => `
+                    <div class="accepted-gift">
+                        <span class="ag-name">${g.name}</span>
+                        <span class="ag-price">⭐${g.price}</span>
+                    </div>
+                `).join('')}
+            </div>
 
-                setTimeout(() => {
-                    if (!cont) return;
-                    if (cont.querySelector('button')) return;
+            <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:12px;">
+                Зачисление происходит автоматически после получения подарка
+            </div>
+        </div>
+    `;
 
-                    cont.innerHTML = '';
-                    const btn = document.createElement('button');
-                    btn.textContent = tonConnectUI && tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
-                    btn.style.cssText = `
-                        width:100%;padding:14px;border-radius:30px;border:none;
-                        background:linear-gradient(135deg,var(--neon),#00cc70);
-                        color:#0a0e1a;font-weight:700;font-size:14px;font-family:var(--mono);
-                        cursor:pointer;touch-action:manipulation;
-                    `;
-                    btn.addEventListener('click', async () => {
-                        Sound.click();
-                        if (tonConnectUI && tonConnectUI.connected) {
-                            await tonConnectUI.disconnect();
-                            btn.textContent = '💎 Подключить TON-кошелёк';
-                        } else {
-                            try { await tonConnectUI.openModal(); }
-                            catch(e) {
-                                console.error('[TON] openModal error:', e);
-                                tg.showAlert('Не удалось открыть кошелёк: ' + e.message);
-                            }
-                        }
-                    });
-                    cont.appendChild(btn);
-
-                    tonConnectUI.onStatusChange(() => {
-                        btn.textContent = tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
-                        updateWalletStatus();
-                    });
-                }, 300);
-
-                updateWalletStatus();
-            }, 50);
-
-            overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
-                pkg.addEventListener('click', () => {
-                    overlay.querySelectorAll('.deposit-pkg').forEach(p => {
-                        p.style.borderColor = '';
-                        p.style.background = '';
-                    });
-                    pkg.style.borderColor = 'var(--neon)';
-                    pkg.style.background = 'rgba(0,255,136,.08)';
-                    selectedAmount = {
-                        stars: parseInt(pkg.dataset.stars, 10),
-                        ton: parseFloat(pkg.dataset.ton)
-                    };
-                    Sound.click();
-                    updateWalletStatus();
-                });
-            });
-        } else {
-            const botBtn = overlay.querySelector('[data-action="openBot"]');
-            if (botBtn) {
-                botBtn.addEventListener('click', () => {
-                    Sound.click();
-                    tg.showAlert('Напишите боту @lab_game_bot чтобы отправить NFT-подарок');
-                });
-            }
-        }
-    }
-
-    renderContent();
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) {
-            selectedAmount = null;
-            overlay.remove();
-        }
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
+        Sound.click(); overlay.remove();
     });
-
-    overlay.addEventListener('click', async (e) => {
-        const payBtn = e.target.closest('#payBtn');
-        if (!payBtn) return;
-        if (!tonConnectUI || !tonConnectUI.connected || !selectedAmount) return;
-
-        const info = overlay.querySelector('#payInfo');
-        payBtn.disabled = true;
-        payBtn.textContent = 'ОЖИДАНИЕ...';
-        if (info) info.textContent = 'Откройте кошелёк и подтвердите';
-
-        const comment = `u:${user.id}:s:${selectedAmount.stars}`;
-        const payload = buildCommentPayload(comment);
-
-        if (!payload) {
-            if (info) info.textContent = '❌ Ошибка: не удалось сформировать memo. Перезагрузите приложение.';
-            payBtn.textContent = 'ОПЛАТИТЬ';
-            payBtn.disabled = false;
-            payBtn.style.opacity = '1';
-            return;
-        }
-
-        console.log('[TON] Отправляю транзакцию с memo:', comment);
-
-        const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
-        const transaction = {
-            validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [{
-                address: RECIPIENT_ADDRESS,
-                amount: amountNano,
-                payload: payload
-            }]
-        };
-
-        try {
-            const result = await tonConnectUI.sendTransaction(transaction);
-            console.log('✅ Транзакция с memo отправлена:', result.boc);
-            if (info) info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
-            payBtn.textContent = 'ОТПРАВЛЕНО';
-
-            setTimeout(() => {
-                selectedAmount = null;
-                overlay.remove();
-                setTimeout(() => {
-                    apiRefreshBalance();
-                    if (document.getElementById('screenHistory')?.classList.contains('active')){
-                        loadServerHistory('all');
-                    }
-                }, 25000);
-            }, 2000);
-        } catch (e) {
-            console.error('❌ Ошибка транзакции:', e);
-            if (info) info.textContent = '❌ Транзакция отклонена: ' + (e.message || '');
-            payBtn.textContent = 'ОПЛАТИТЬ';
-            payBtn.disabled = false;
-            payBtn.style.opacity = '1';
-        }
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.remove();
     });
 }
 
-/* ===== КОНЕЦ БЛОКА ПОПОЛНЕНИЯ ===== */
-
-// ===== 25) ВЕРХНИЕ КНОПКИ =====
 $('btnInfo').addEventListener('click', () => {
     Sound.click();
     switchScreen('screenHistory');
@@ -1971,15 +1649,14 @@ $('btnFast').addEventListener('click', function(){
     save();
     tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
 });
-$('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
+$('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal(); });
 $('btnWithdraw').addEventListener('click', () => { Sound.click(); showWithdrawModal(); });
-$('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
+$('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal(); });
 
 function applySettingsToUI(){
     $('btnFast').classList.toggle('active', state.settings.fastSpin);
 }
 
-// ===== 26) НАВИГАЦИЯ =====
 function switchScreen(id){
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
@@ -1993,7 +1670,6 @@ navBtns.forEach(b => b.addEventListener('click', function(){
     if (navigator.vibrate) navigator.vibrate(10);
 }));
 
-// ===== 27) ТАБЫ ИСТОРИИ =====
 document.querySelectorAll('[data-htab]').forEach(tab => {
     tab.addEventListener('click', function(){
         document.querySelectorAll('[data-htab]').forEach(t => t.classList.remove('active'));
@@ -2002,7 +1678,6 @@ document.querySelectorAll('[data-htab]').forEach(tab => {
     });
 });
 
-// ===== 28) СТАРТ =====
 const loader = document.getElementById('loader');
 const loaderStatus = document.getElementById('loaderStatus');
 
@@ -2020,34 +1695,19 @@ function hideLoader() {
     }, 300);
 }
 
-// Прогреваем всё параллельно и скрываем лоадер, когда готово
 Promise.all([
     new Promise(resolve => {
         setLoaderStatus('Подключаем Telegram...');
         initTelegram(resolve);
     }),
-
-    new Promise(resolve => {
-        setLoaderStatus('Загружаем TON Core...');
-        const check = () => {
-            if (window.TonCore && window.TonCore.beginCell) resolve();
-            else setTimeout(check, 100);
-        };
-        check();
-    }),
-
-    new Promise(resolve => {
-        setLoaderStatus('Загружаем кошелёк...');
-        loadTonConnectSDK().then(resolve).catch(resolve);
-    }),
-
-    new Promise(resolve => setTimeout(resolve, 1500)),
-]).then(() => {
-    setLoaderStatus('Открываем приложение...');
+    new Promise(resolve => setTimeout(resolve, 800)),
+]).then(async () => {
+    setLoaderStatus('Загружаем данные...');
+    await apiRefreshBalance();
+    await apiRefreshInventory();
     render();
     applySettingsToUI();
     renderQuickButtons();
-    apiRefreshBalance();
     hideLoader();
     console.log('[UPGRADER] готов, user:', user);
 }).catch(e => {
