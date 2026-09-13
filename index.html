@@ -67,6 +67,26 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .balance{background:var(--glass);border:1px solid var(--border);border-radius:30px;padding:5px 10px;font-size:11px;color:var(--gold);backdrop-filter:blur(8px);cursor:pointer;transition:.15s;}
 .balance:active{transform:scale(.95);}
 
+/* ===== БАННЕР БУСТА ===== */
+#boostBanner{
+    display:none;
+    margin:6px 4px 0;
+    padding:8px 12px;
+    background:linear-gradient(135deg,rgba(255,215,0,.18),rgba(255,170,0,.1));
+    border:1px solid rgba(255,215,0,.45);
+    border-radius:10px;
+    font-size:11px;
+    color:var(--gold);
+    text-align:center;
+    font-weight:600;
+    animation:boostPulse 2s ease-in-out infinite;
+    flex-shrink:0;
+}
+@keyframes boostPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,215,0,0); }
+    50%      { box-shadow: 0 0 20px rgba(255,215,0,.35); }
+}
+
 .content{flex:1;overflow-y:auto;margin:6px 0;padding:2px;min-height:0;}
 .content::-webkit-scrollbar{width:3px;}
 .content::-webkit-scrollbar-thumb{background:var(--neon);border-radius:10px;}
@@ -340,6 +360,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     <div class="header">
         <h1>⚡ LAB UPGRADER</h1>
         <div class="head-icons">
+            <div class="head-icon" id="btnPromo" title="Промокод">🎟</div>
             <div class="head-icon" id="btnInfo" title="История">📜</div>
             <div class="head-icon" id="btnSettings" title="Настройки">⚙</div>
             <div class="head-icon" id="btnVolume" title="Громкость">🔊</div>
@@ -348,6 +369,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
         <div class="balance" id="balanceBtn" title="Пополнить">⭐ <span id="balanceDisplay">0</span></div>
         <div class="head-icon withdraw-icon" id="btnWithdraw" title="Вывод">−</div>
         <div class="head-icon deposit-icon" id="btnDeposit" title="Пополнить">＋</div>
+    </div>
+
+    <!-- Баннер активного буста -->
+    <div id="boostBanner">
+        🚀 Активен буст <span id="boostPercent">0</span>% · <span id="boostInfo"></span>
     </div>
 
     <div class="content">
@@ -481,7 +507,7 @@ const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
 const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
 const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
 
-// Подарки, которые НЕ поддерживаются @labrelayer (нельзя ни вывести, ни пополнить ими)
+// Подарки, которые НЕ поддерживаются @labrelayer
 const RELAYER_BLOCKED = ['Кольцо', 'Кубок', 'Мишка', 'Роза', 'Сердце'];
 
 const DEPOSIT_PACKAGES = [
@@ -671,7 +697,6 @@ async function apiRefreshBalance(){
     renderBalance();
 }
 
-// ВАЖНО: исключаем заблокированные для @labrelayer подарки прямо в источнике
 async function apiRefreshInventory(){
     if (!user.id) return [];
     try {
@@ -721,6 +746,139 @@ async function apiHistory(type){
         if (d.ok) return d.items;
     } catch(e){ console.warn('history api error:', e); }
     return [];
+}
+
+/* ===== БУСТ ===== */
+async function refreshBoostBanner(){
+    if (!user.id) return;
+    try {
+        const d = await api('/api/boost/active?user_id=' + user.id);
+        const banner = document.getElementById('boostBanner');
+        if (!banner) return;
+        if (d.ok && d.boost){
+            banner.style.display = 'block';
+            document.getElementById('boostPercent').textContent = d.boost.percent;
+            if (d.boost.type === 'once'){
+                document.getElementById('boostInfo').textContent =
+                    'на ' + d.boost.uses_left + ' пополн.';
+            } else if (d.boost.expires_at){
+                const exp = new Date(d.boost.expires_at + 'Z');
+                const hrs = Math.max(0, Math.round((exp - new Date()) / 3600000));
+                document.getElementById('boostInfo').textContent = 'ещё ' + hrs + ' ч.';
+            } else {
+                document.getElementById('boostInfo').textContent = 'активен';
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+    } catch(e){ /* ignore */ }
+}
+
+/* ===== ПРОМОКОДЫ ===== */
+async function activatePromo(code){
+    if (!code || !code.trim()) return;
+    const cleaned = code.trim().toUpperCase();
+    try {
+        const d = await api('/api/promo/redeem', {
+            method: 'POST',
+            body: { user_id: user.id, code: cleaned }
+        });
+        if (d.ok){
+            Sound.win();
+            if (typeof d.balance === 'number') state.balance = d.balance;
+            renderBalance();
+            await apiRefreshInventory();
+            render();
+            await refreshBoostBanner();
+
+            let msg = d.message || 'Промокод активирован!';
+            // Если подарок — покажем модал
+            if (d.type === 'gift' && d.gift){
+                showGiftReceivedModal(d.gift);
+            } else {
+                tg.showAlert(msg);
+            }
+        } else {
+            Sound.lose();
+            tg.showAlert('❌ ' + (d.error || 'Ошибка активации'));
+        }
+    } catch(e){
+        console.error('promo error:', e);
+        tg.showAlert('❌ Ошибка сети');
+    }
+}
+
+function showGiftReceivedModal(gift){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content win" style="border-color:var(--gold);">
+            <div style="font-size:60px;margin-bottom:12px;">🎁</div>
+            <div class="modal-title" style="color:var(--gold);">Подарок получен!</div>
+            <div class="modal-sub">
+                <b style="color:var(--gold);font-size:16px;">${gift.name}</b><br>
+                <span style="font-size:10px;">Зачислен в инвентарь · ⭐${gift.price}</span>
+            </div>
+            <button class="modal-btn gold" onclick="this.closest('.modal-overlay').remove()">OK</button>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function showPromoModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="border-color:var(--cyan);max-width:380px;text-align:left;">
+            <div class="settings-header">
+                <h2 style="color:var(--cyan);">🎟 Промокод</h2>
+                <button class="settings-close" data-action="close">✕</button>
+            </div>
+
+            <div class="deposit-note" style="background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.25);">
+                Введите промокод — получите звёзды, подарок или буст к пополнению.
+            </div>
+
+            <input type="text" id="promoInput" placeholder="ВВЕДИТЕ КОД"
+                   style="width:100%;background:#0f1525;border:1px solid var(--border2);
+                          border-radius:10px;padding:14px 16px;color:var(--text);
+                          font-family:var(--mono);font-size:16px;text-align:center;
+                          letter-spacing:3px;text-transform:uppercase;outline:none;margin:8px 0 14px;">
+
+            <button class="volume-test-btn" id="promoActivateBtn"
+                    style="background:linear-gradient(135deg,var(--cyan),#0088cc);color:#0a0e1a;border:none;font-weight:700;">
+                🎟 АКТИВИРОВАТЬ
+            </button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const input = overlay.querySelector('#promoInput');
+    const btn = overlay.querySelector('#promoActivateBtn');
+
+    btn.addEventListener('click', async () => {
+        Sound.click();
+        btn.disabled = true;
+        btn.textContent = 'ПРОВЕРКА...';
+        await activatePromo(input.value);
+        btn.disabled = false;
+        btn.textContent = '🎟 АКТИВИРОВАТЬ';
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') btn.click();
+    });
+
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
+        Sound.click(); overlay.remove();
+    });
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.remove();
+    });
 }
 
 let audioCtx = null;
@@ -853,6 +1011,8 @@ function renderHistoryList(items){
         upgrade:  { icon: '⚡', color: 'var(--cyan)', label: 'Апгрейд' },
         buy:      { icon: '🛒', color: 'var(--cyan)', label: 'Покупка' },
         sell:     { icon: '💰', color: 'var(--gold)', label: 'Продажа' },
+        promo:    { icon: '🎟', color: 'var(--cyan)', label: 'Промокод' },
+        gift:     { icon: '🎁', color: 'var(--gold)', label: 'Подарок за промокод' },
     };
     list.innerHTML = items.map(tx => {
         const i = icons[tx.type] || { icon: '•', color: 'var(--muted)', label: tx.type };
@@ -1587,8 +1747,6 @@ async function showWithdrawModal(){
 
     let inventory = await apiRefreshInventory();
     if (!inventory.length) inventory = state.inventory || [];
-
-    // Двойная защита: ещё раз фильтруем
     inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
 
     const overlay = document.createElement('div');
@@ -1939,6 +2097,7 @@ function showDepositModal(defaultTab) {
                 overlay.remove();
                 setTimeout(() => {
                     apiRefreshBalance();
+                    refreshBoostBanner();
                     if (document.getElementById('screenHistory')?.classList.contains('active')){
                         loadServerHistory('all');
                     }
@@ -1969,6 +2128,7 @@ $('btnFast').addEventListener('click', function(){
     save();
     tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
 });
+$('btnPromo').addEventListener('click', () => { Sound.click(); showPromoModal(); });
 $('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
 $('btnWithdraw').addEventListener('click', () => { Sound.click(); showWithdrawModal(); });
 $('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
@@ -2037,6 +2197,7 @@ Promise.all([
     setLoaderStatus('Загружаем данные...');
     await apiRefreshBalance();
     await apiRefreshInventory();
+    await refreshBoostBanner();
     render();
     applySettingsToUI();
     renderQuickButtons();
