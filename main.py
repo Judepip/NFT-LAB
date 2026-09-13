@@ -1,633 +1,319 @@
-import json
-import sqlite3
+"""LAB NFT UPGRADER — backend (с автоначислением через memo и поддержкой всех форматов адреса)"""
+
 import os
-import logging
-import requests
-from datetime import datetime, timedelta
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
-import uvicorn
+import time
+import json
+import base64
+import sqlite3
 import threading
-import asyncio
-from aiogram import Bot, Dispatcher, types
-from aiogram.filters import Command
-from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
-from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.client.default import DefaultBotProperties
-from dotenv import load_dotenv
+from datetime import datetime
 
-load_dotenv()
+import requests
+from flask import Flask, request, jsonify
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# ==================== КОНФИГ ====================
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-GROUP_ID = int(os.getenv("GROUP_ID", 0))  # ← ТЕПЕРЬ GROUP_ID ВМЕСТО ADMIN_ID
-MINI_APP_URL = os.getenv("MINI_APP_URL", "https://judepip.github.io/NFT-LAB")
-BOT_USERNAME = os.getenv("BOT_USERNAME", "lab_game_bot")
-PROXY_URL = os.getenv("PROXY_URL")
-YOUR_TON_ADDRESS = "UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i"
+DATA_DIR = '/data' if os.path.isdir('/data') else os.path.join(os.path.dirname(__file__), 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
+DB_PATH = os.path.join(DATA_DIR, 'lab_nft.db')
 
-if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN не установлен")
+# Адрес получателя в UQ-формате (user-friendly)
+RECIPIENT_UQ  = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i'
+# Тот же адрес в raw-формате (TonAPI возвращает именно его)
+RECIPIENT_RAW = '0:6135e9d9e7469cf56b240ea40679a8c30badbe468470a8ef7ad4b19176edc39a'
 
-# ---------- СОЗДАНИЕ БОТА ----------
-def create_bot():
-    session = None
-    if PROXY_URL:
-        logger.info(f"Используется прокси: {PROXY_URL}")
-        session = AiohttpSession(proxy=PROXY_URL)
-    return Bot(token=BOT_TOKEN, session=session)
+TON_API          = f'https://tonapi.io/v2/accounts/{RECIPIENT_UQ}/events'
+WATCH_INTERVAL   = 30
+STARS_TO_TON     = 0.011
+MIN_WITHDRAW     = 500
+MAX_WITHDRAW_DAY = 10000
 
-bot = create_bot()
-dp = Dispatcher()
 
-# ---------- БАЗА ДАННЫХ ----------
-DB_PATH = "lab_nft.db"
+# ==================== БД ====================
 
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
+def get_db():
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
+    conn.execute('PRAGMA journal_mode=WAL')
     return conn
 
+
 def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            inventory TEXT DEFAULT '[]',
-            balance REAL DEFAULT 1000.0,
-            spins INTEGER DEFAULT 0,
-            upgrades TEXT DEFAULT '[{"id":"up1","level":0},{"id":"up2","level":0},{"id":"up3","level":0}]',
-            free_spin_used_at TIMESTAMP,
-            referrer_id INTEGER DEFAULT 0,
-            referral_count INTEGER DEFAULT 0,
-            first_spin_done INTEGER DEFAULT 0,
-            can_withdraw INTEGER DEFAULT 0,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS referrals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            referrer_id INTEGER,
-            referred_id INTEGER UNIQUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (referrer_id) REFERENCES users(user_id),
-            FOREIGN KEY (referred_id) REFERENCES users(user_id)
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS withdraw_requests (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            username TEXT,
-            amount INTEGER,
-            status TEXT DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            processed_at TIMESTAMP
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ton_payments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            transaction_hash TEXT UNIQUE,
-            amount_ton REAL,
-            stars INTEGER,
-            status TEXT DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
-    logger.info("[DB] Таблицы инициализированы")
+    with get_db() as conn:
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY, username TEXT, first_name TEXT,
+                balance INTEGER DEFAULT 0, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+            CREATE TABLE IF NOT EXISTS transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
+                type TEXT NOT NULL, amount_ton REAL DEFAULT 0, amount_stars INTEGER DEFAULT 0,
+                status TEXT DEFAULT 'success', tx_hash TEXT, meta TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+            CREATE INDEX IF NOT EXISTS idx_tx_user ON transactions(user_id, created_at DESC);
+            CREATE TABLE IF NOT EXISTS ton_processed (
+                tx_hash TEXT PRIMARY KEY, user_id INTEGER,
+                processed_at TEXT DEFAULT CURRENT_TIMESTAMP);
+            CREATE TABLE IF NOT EXISTS withdrawals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
+                amount_stars INTEGER NOT NULL, amount_ton REAL NOT NULL,
+                address TEXT NOT NULL, status TEXT DEFAULT 'pending', tx_hash TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+        ''')
+        conn.commit()
+    print(f'[DB] Таблицы готовы, путь: {DB_PATH}')
 
-init_db()
 
-# ---------- ФУНКЦИИ БД ----------
-def get_user(user_id: int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
-    row = cursor.fetchone()
-    conn.close()
-    return row
-
-def create_user(user_id: int, referrer_id: int = 0):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    existing = get_user(user_id)
-    if existing:
-        return existing
-    
-    cursor.execute('''
-        INSERT INTO users (user_id, inventory, balance, spins, upgrades, referrer_id, first_spin_done, can_withdraw)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (user_id, json.dumps([]), 1000.0, 0, json.dumps([{"id":"up1","level":0},{"id":"up2","level":0},{"id":"up3","level":0}]), referrer_id, 0, 0))
-    conn.commit()
-    conn.close()
-    return get_user(user_id)
-
-def mark_first_spin_done(user_id: int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET first_spin_done = 1 WHERE user_id = ?", (user_id,))
-    conn.commit()
-    conn.close()
-
-def grant_withdraw(user_id: int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET can_withdraw = 1 WHERE user_id = ?", (user_id,))
-    conn.commit()
-    conn.close()
-    logger.info(f"✅ Пользователю {user_id} выдано право на вывод")
-
-def process_referral(referrer_id: int, referred_id: int):
-    if referrer_id == referred_id:
-        return False
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM referrals WHERE referred_id = ?", (referred_id,))
-    if cursor.fetchone():
-        conn.close()
-        return False
-    cursor.execute("INSERT INTO referrals (referrer_id, referred_id) VALUES (?, ?)", (referrer_id, referred_id))
-    cursor.execute("UPDATE users SET referral_count = referral_count + 1 WHERE user_id = ?", (referrer_id,))
-    conn.commit()
-    conn.close()
-    return True
-
-def get_referral_count(user_id: int) -> int:
-    row = get_user(user_id)
-    return row["referral_count"] if row else 0
-
-def can_withdraw(user_id: int) -> bool:
-    row = get_user(user_id)
-    if row:
-        return row["can_withdraw"] == 1
-    return False
-
-def save_user(user_id: int, inventory: list, balance: float, spins: int, upgrades: list):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        UPDATE users SET inventory = ?, balance = ?, spins = ?, upgrades = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE user_id = ?
-    ''', (json.dumps(inventory), balance, spins, json.dumps(upgrades), user_id))
-    conn.commit()
-    conn.close()
-
-def update_free_spin(user_id: int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET free_spin_used_at = CURRENT_TIMESTAMP WHERE user_id = ?", (user_id,))
-    conn.commit()
-    conn.close()
-
-def can_use_free_spin(user_id: int) -> bool:
-    row = get_user(user_id)
-    if not row or not row["free_spin_used_at"]:
-        return True
-    used = datetime.fromisoformat(row["free_spin_used_at"].replace('Z', '+00:00'))
-    return datetime.now() > used + timedelta(hours=24)
-
-def save_withdraw_request(user_id: int, username: str, amount: int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO withdraw_requests (user_id, username, amount, status)
-        VALUES (?, ?, ?, ?)
-    ''', (user_id, username, amount, 'pending'))
-    conn.commit()
-    conn.close()
-
-def get_pending_withdraws():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM withdraw_requests WHERE status = 'pending' ORDER BY created_at ASC")
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
-def update_withdraw_status(request_id: int, status: str):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE withdraw_requests SET status = ?, processed_at = CURRENT_TIMESTAMP WHERE id = ?", (status, request_id))
-    conn.commit()
-    conn.close()
-
-# ---------- TON API ----------
-def verify_ton_transaction(transaction_hash, expected_amount_ton):
-    try:
-        url = f"https://tonapi.io/v2/transactions/{transaction_hash}"
-        response = requests.get(url, timeout=10)
-        if response.status_code != 200:
-            return False
-        
-        tx_data = response.json()
-        if tx_data.get('destination') != YOUR_TON_ADDRESS:
-            return False
-        
-        amount_nano = int(float(expected_amount_ton) * 1e9)
-        if int(tx_data.get('value', 0)) < amount_nano:
-            return False
-        
-        return True
-    except Exception as e:
-        logger.error(f"Ошибка проверки транзакции: {e}")
-        return False
-
-def add_stars_to_user(user_id: int, stars: int):
-    row = get_user(user_id)
+def ensure_user(conn, user_id):
+    row = conn.execute('SELECT user_id FROM users WHERE user_id=?', (user_id,)).fetchone()
     if not row:
-        create_user(user_id)
-        row = get_user(user_id)
-    
-    inventory = json.loads(row["inventory"])
-    balance = row["balance"] + stars
-    spins = row["spins"]
-    upgrades = json.loads(row["upgrades"])
-    
-    save_user(user_id, inventory, balance, spins, upgrades)
-    return balance
+        conn.execute('INSERT INTO users (user_id) VALUES (?)', (user_id,))
 
-# ---------- ОБРАБОТЧИКИ БОТА ----------
-@dp.message(Command("start"))
-async def start_command(message: types.Message):
-    args = message.text.split()
-    referrer_id = 0
-    if len(args) > 1:
-        try:
-            referrer_id = int(args[1])
-            if referrer_id == message.from_user.id:
-                referrer_id = 0
-        except:
-            pass
-    
-    create_user(message.from_user.id, referrer_id)
-    
-    mini_app_url = MINI_APP_URL + f"?startapp={message.from_user.id}"
-    
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🚀 ОТКРЫТЬ ИГРУ",
-                    web_app=WebAppInfo(url=mini_app_url)
-                )
-            ]
-        ]
-    )
-    
+
+def log_tx(conn, user_id, tx_type, amount_stars=0, amount_ton=0.0,
+           status='success', tx_hash=None, meta=None):
+    conn.execute('''INSERT INTO transactions (user_id, type, amount_ton, amount_stars, status, tx_hash, meta)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                 (user_id, tx_type, amount_ton, amount_stars, status, tx_hash,
+                  json.dumps(meta or {}, ensure_ascii=False)))
+
+
+def add_stars(user_id, stars, tx_type='topup', amount_ton=0.0, tx_hash=None, meta=None):
+    with get_db() as conn:
+        ensure_user(conn, user_id)
+        conn.execute('UPDATE users SET balance = balance + ? WHERE user_id=?', (stars, user_id))
+        log_tx(conn, user_id, tx_type, amount_stars=stars, amount_ton=amount_ton,
+               tx_hash=tx_hash, meta=meta)
+        conn.commit()
+
+
+def already_processed(tx_hash):
+    with get_db() as conn:
+        return conn.execute('SELECT 1 FROM ton_processed WHERE tx_hash=?', (tx_hash,)).fetchone() is not None
+
+
+def mark_processed(tx_hash, user_id):
+    with get_db() as conn:
+        conn.execute('INSERT OR IGNORE INTO ton_processed (tx_hash, user_id) VALUES (?, ?)',
+                     (tx_hash, user_id))
+        conn.commit()
+
+
+# ==================== АДРЕС: ПОДДЕРЖКА UQ / EQ / RAW ====================
+
+def is_our_address(addr_str):
+    """Проверяет, что адрес — наш кошелёк, в любом формате (UQ, EQ, raw 0:...)."""
+    if not addr_str:
+        return False
+
+    # Прямое сравнение
+    if addr_str == RECIPIENT_RAW or addr_str == RECIPIENT_UQ:
+        return True
+
+    # Конвертация через tonsdk
     try:
-        photo_path = "images/welcome.png"
-        photo = FSInputFile(photo_path)
-        await message.answer_photo(
-            photo=photo,
-            caption=f"🧪 Добро пожаловать в LAB NFT!\n\n"
-                    f"Нажми кнопку ниже, чтобы открыть Mini App и начать игру!",
-            reply_markup=keyboard
-        )
+        from tonsdk.utils import Address
+        a = Address(addr_str)
+        uq = a.to_string(is_user_friendly=True, is_bounceable=False)
+        eq = a.to_string(is_user_friendly=True, is_bounceable=True)
+        raw = a.to_string(is_user_friendly=False)
+        return (uq == RECIPIENT_UQ or eq == RECIPIENT_UQ or
+                raw == RECIPIENT_RAW or raw == RECIPIENT_UQ)
     except Exception as e:
-        logger.error(f"Ошибка отправки картинки: {e}")
-        await message.answer(
-            f"🧪 Добро пожаловать в LAB NFT!\n\n"
-            f"Нажми кнопку ниже, чтобы открыть Mini App и начать игру!",
-            reply_markup=keyboard
-        )
+        print(f'[TON] is_our_address error: {e}')
+        return False
 
-@dp.message(Command("admin"))
-async def admin_command(message: types.Message):
-    # Проверяем, что сообщение из группы с ID = GROUP_ID
-    if message.chat.id != GROUP_ID:
-        await message.answer("⛔ Эта команда доступна только в специальной группе.")
-        return
-    
-    pending = get_pending_withdraws()
-    if not pending:
-        await message.answer("📭 Нет ожидающих заявок на вывод.")
-        return
-    
-    text = "📋 **Ожидающие заявки на вывод:**\n\n"
-    buttons = []
-    for req in pending:
-        text += f"🆔 #{req['id']} | @{req['username']} | {req['amount']} ⭐\n"
-        buttons.append([
-            InlineKeyboardButton(text=f"✅ #{req['id']}", callback_data=f"approve_{req['id']}"),
-            InlineKeyboardButton(text=f"❌ #{req['id']}", callback_data=f"reject_{req['id']}")
-        ])
-    
-    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
 
-@dp.callback_query(lambda c: c.data.startswith("approve_") or c.data.startswith("reject_"))
-async def process_withdraw_callback(callback: types.CallbackQuery):
-    # Проверяем, что callback из правильной группы
-    if callback.message.chat.id != GROUP_ID:
-        await callback.answer("⛔ Доступно только в специальной группе.", show_alert=True)
-        return
-    
-    action, req_id = callback.data.split("_")
-    status = "approved" if action == "approve" else "rejected"
-    update_withdraw_status(int(req_id), status)
-    await callback.message.answer(f"✅ Заявка #{req_id} обработана.")
-    await callback.answer()
+# ==================== ДЕКОДЕР MEMO ====================
 
-@dp.message(types.ContentType.WEB_APP_DATA)
-async def web_app_data_handler(message: types.Message):
+def decode_ton_comment(b64_or_text):
+    """Извлекает текст комментария (обычный текст или BOC-ячейка в base64)."""
+    if not b64_or_text:
+        return None
+
+    # Уже текст
+    if b64_or_text.startswith('u:'):
+        return b64_or_text
+
+    # Через tonsdk
     try:
-        data = json.loads(message.web_app_data.data)
-        action = data.get("action")
-        payload = data.get("payload", {})
-        user_id = message.from_user.id
-        
-        if action == "app_open":
-            referrer_id = payload.get("referrer_id", 0)
-            create_user(user_id, referrer_id)
-            
-        elif action == "roulette_spin":
-            user = get_user(user_id)
-            is_free = payload.get("is_free", False)
-            
-            if user and user["first_spin_done"] == 0:
-                mark_first_spin_done(user_id)
-                referrer_id = user["referrer_id"] or 0
-                if referrer_id > 0:
-                    success = process_referral(referrer_id, user_id)
-                    if success:
-                        try:
-                            await bot.send_message(
-                                referrer_id,
-                                f"🎉 У вас новый реферал!\n"
-                                f"👤 Пользователь прокрутил первую рулетку!\n"
-                                f"📊 Всего: {get_referral_count(referrer_id)}/7"
-                            )
-                        except:
-                            pass
-            
-            if not is_free and user and user["can_withdraw"] == 0:
-                grant_withdraw(user_id)
-            
-            if is_free:
-                update_free_spin(user_id)
-            
-        elif action == "withdraw":
-            if not can_withdraw(user_id):
-                await message.answer(f"❌ Вывод доступен только после платного спина или 7 рефералов.\nВаш прогресс: {get_referral_count(user_id)}/7")
-                return
-            
-            username = payload.get("username", "unknown")
-            amount = payload.get("amount", 25)
-            
-            save_withdraw_request(user_id, username, amount)
-            
-            # ---- ОТПРАВКА В ГРУППУ (ВМЕСТО АДМИНУ) ----
-            if GROUP_ID:
-                admin_text = (
-                    f"💸 **НОВАЯ ЗАЯВКА НА ВЫВОД**\n\n"
-                    f"👤 Пользователь: @{username}\n"
-                    f"🆔 ID: {user_id}\n"
-                    f"⭐ Сумма: {amount} звёзд\n"
-                    f"📅 Время: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-                    f"Используйте /admin в этой группе для управления заявками."
-                )
+        from tonsdk.boc import Cell
+        from tonsdk.utils import b64str_to_bytes
+        cell = Cell.one_from_boc(b64str_to_bytes(b64_or_text))
+        cs = cell.begin_parse()
+        cs.load_uint(32)
+        text = cs.load_string_tail()
+        if text:
+            return text
+    except Exception as e:
+        print(f'[TON] tonsdk parse failed: {e}')
+
+    # Резервный способ — поиск b'u:' в raw-байтах
+    try:
+        raw = base64.b64decode(b64_or_text)
+        idx = raw.find(b'u:')
+        if idx == -1:
+            return None
+        end = idx
+        while end < len(raw) and 32 <= raw[end] <= 126:
+            end += 1
+        return raw[idx:end].decode('ascii')
+    except Exception as e:
+        print(f'[TON] raw parse failed: {e}')
+        return None
+
+
+# ==================== TON WATCHER ====================
+
+def check_transactions():
+    try:
+        r = requests.get(TON_API, params={'limit': 30}, timeout=15)
+        if r.status_code != 200:
+            print(f'[TON] API status {r.status_code}')
+            return
+
+        events = r.json().get('events', [])
+        print(f'[TON] получено событий: {len(events)}')
+
+        for event in events:
+            for action in event.get('actions', []):
+                if action.get('type') != 'TonTransfer':
+                    continue
+                tr = action.get('TonTransfer', {})
+                recipient_addr = tr.get('recipient', {}).get('address', '')
+
+                if not is_our_address(recipient_addr):
+                    print(f'[TON] пропуск: адрес {recipient_addr[:20]}… не наш')
+                    continue
+
+                raw_comment = (tr.get('comment') or '').strip()
+                comment = decode_ton_comment(raw_comment)
+                if not comment or not comment.startswith('u:'):
+                    print(f'[TON] пропуск: комментарий {comment!r}')
+                    continue
+
+                parts = comment.split(':')
+                if len(parts) != 4 or parts[0] != 'u' or parts[2] != 's':
+                    print(f'[TON] пропуск: формат комментария {comment!r}')
+                    continue
+
                 try:
-                    await bot.send_message(GROUP_ID, admin_text, parse_mode="Markdown")
-                    logger.info(f"✅ Заявка отправлена в группу {GROUP_ID}")
-                except Exception as e:
-                    logger.error(f"Ошибка отправки в группу: {e}")
-                    await message.answer("⚠️ Ошибка отправки заявки. Попробуйте позже.")
-                
+                    user_id = int(parts[1])
+                    stars = int(parts[3])
+                except ValueError:
+                    continue
+
+                tx_hash = event.get('event_id') or str(event.get('lt', ''))
+                if not tx_hash or already_processed(tx_hash):
+                    continue
+
+                amount_ton = tr.get('amount', 0) / 1e9
+                add_stars(user_id, stars, 'topup', amount_ton, tx_hash, {'comment': comment})
+                mark_processed(tx_hash, user_id)
+                print(f'[TON] ✅ +{stars}⭐ → user {user_id} (memo: {comment})')
+
     except Exception as e:
-        logger.error(f"Ошибка: {e}")
+        import traceback
+        print(f'[TON] error: {e}')
+        traceback.print_exc()
 
-# ---------- FASTAPI ----------
-app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def watcher_loop():
+    print('[TON] watcher запущен')
+    while True:
+        try:
+            check_transactions()
+        except Exception as e:
+            print(f'[TON] loop error: {e}')
+        time.sleep(WATCH_INTERVAL)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/")
-@app.get("/index.html")
-async def serve_index():
-    return FileResponse("static/index.html")
+# ==================== FLASK API ====================
 
-@app.get("/api/user/{user_id}")
-async def get_user_data(user_id: int):
-    row = get_user(user_id)
-    if not row:
-        create_user(user_id)
-        row = get_user(user_id)
-    return {
-        "user_id": row["user_id"],
-        "inventory": json.loads(row["inventory"]),
-        "balance": row["balance"],
-        "spins": row["spins"],
-        "upgrades": json.loads(row["upgrades"]),
-        "referral_count": row["referral_count"] or 0,
-        "can_withdraw": row["can_withdraw"] == 1,
-        "can_free_spin": can_use_free_spin(user_id),
-        "free_spin_used_at": row["free_spin_used_at"],
-        "first_spin_done": row["first_spin_done"] or 0
-    }
+app = Flask(__name__)
 
-@app.post("/api/user/{user_id}/spin")
-async def spin_roulette(user_id: int, request: Request):
-    data = await request.json()
-    row = get_user(user_id)
-    if not row:
-        create_user(user_id)
-        row = get_user(user_id)
-    
-    inventory = json.loads(row["inventory"])
-    balance = row["balance"]
-    spins = row["spins"]
-    upgrades = json.loads(row["upgrades"])
-    is_free = data.get("is_free", False)
-    
-    if row["first_spin_done"] == 0 and row["referrer_id"] > 0:
-        process_referral(row["referrer_id"], user_id)
-        mark_first_spin_done(user_id)
-    
-    if not is_free:
-        if balance < 150:
-            raise HTTPException(400, "Недостаточно звёзд")
-        if row["can_withdraw"] == 0:
-            grant_withdraw(user_id)
-            row = get_user(user_id)
-        balance -= 150
-    else:
-        if not can_use_free_spin(user_id):
-            raise HTTPException(400, "Бесплатная рулетка ещё не доступна")
-        update_free_spin(user_id)
-    
-    spins += 1
-    
-    new_gift = {
-        "id": f"gift_{datetime.now().timestamp()}",
-        "name": data.get("prize"),
-        "image": data.get("image", ""),
-        "price": 0,
-        "is_free": is_free
-    }
-    inventory.append(new_gift)
-    save_user(user_id, inventory, balance, spins, upgrades)
-    
-    row = get_user(user_id)
-    
-    return {
-        "success": True,
-        "prize": new_gift,
-        "new_balance": balance,
-        "inventory": inventory,
-        "can_free_spin": can_use_free_spin(user_id),
-        "first_spin_done": 1,
-        "can_withdraw": row["can_withdraw"] == 1
-    }
 
-@app.post("/api/user/{user_id}/upgrade")
-async def upgrade_level(user_id: int, request: Request):
-    data = await request.json()
-    upgrade_id = data.get("upgrade_id")
-    
-    if not upgrade_id:
-        raise HTTPException(400, "Не указан ID апгрейда")
-    
-    row = get_user(user_id)
-    if not row:
-        create_user(user_id)
-        row = get_user(user_id)
-    
-    inventory = json.loads(row["inventory"])
-    balance = row["balance"]
-    spins = row["spins"]
-    upgrades = json.loads(row["upgrades"])
-    
-    upgrade = next((u for u in upgrades if u["id"] == upgrade_id), None)
-    if not upgrade:
-        raise HTTPException(404, "Апгрейд не найден")
-    
-    cost_map = {"up1": 150, "up2": 200, "up3": 100}
-    max_lvl_map = {"up1": 5, "up2": 4, "up3": 6}
-    
-    cost = cost_map.get(upgrade_id, 150) * (upgrade["level"] + 1)
-    max_lvl = max_lvl_map.get(upgrade_id, 5)
-    
-    if upgrade["level"] >= max_lvl:
-        raise HTTPException(400, "Максимальный уровень достигнут")
-    
-    if balance < cost:
-        raise HTTPException(400, "Недостаточно звёзд")
-    
-    balance -= cost
-    upgrade["level"] += 1
-    
-    save_user(user_id, inventory, balance, spins, upgrades)
-    
-    return {
-        "success": True,
-        "upgrade": upgrade,
-        "new_balance": balance
-    }
+@app.after_request
+def cors(resp):
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return resp
 
-@app.post("/api/ton/payment")
-async def ton_payment(request: Request):
-    try:
-        data = await request.json()
-        user_id = data.get("user_id")
-        amount_ton = data.get("amount_ton")
-        stars = data.get("stars")
-        transaction_hash = data.get("transaction_hash", "pending")
-        
-        if not user_id or not amount_ton or not stars:
-            raise HTTPException(400, "Недостаточно данных")
-        
-        if transaction_hash and transaction_hash != "pending":
-            is_valid = verify_ton_transaction(transaction_hash, amount_ton)
-            if not is_valid:
-                return {"success": False, "message": "Транзакция не найдена или недействительна"}
-            
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM ton_payments WHERE transaction_hash = ?", (transaction_hash,))
-            if cursor.fetchone():
-                conn.close()
-                return {"success": False, "message": "Транзакция уже обработана"}
-            
-            cursor.execute('''
-                INSERT INTO ton_payments (user_id, transaction_hash, amount_ton, stars, status)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (user_id, transaction_hash, amount_ton, stars, 'completed'))
-            conn.commit()
-            conn.close()
-            
-            new_balance = add_stars_to_user(user_id, stars)
-            logger.info(f"✅ Зачислено {stars} звёзд пользователю {user_id} за {amount_ton} TON")
-            
-            return {
-                "success": True,
-                "message": f"Зачислено {stars} звёзд",
-                "new_balance": new_balance
-            }
-        else:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO ton_payments (user_id, amount_ton, stars, status)
-                VALUES (?, ?, ?, ?)
-            ''', (user_id, amount_ton, stars, 'pending'))
-            conn.commit()
-            conn.close()
-            
-            return {
-                "success": True,
-                "message": "Платёж создан, ожидает подтверждения",
-                "status": "pending"
-            }
-            
-    except Exception as e:
-        logger.error(f"Ошибка в ton_payment: {e}")
-        raise HTTPException(500, str(e))
 
-@app.post("/api/withdraw/request")
-async def create_withdraw_request(request: Request):
-    data = await request.json()
-    user_id = data.get("user_id")
-    username = data.get("username")
-    amount = data.get("amount", 25)
-    
-    if not user_id or not username:
-        raise HTTPException(400, "Не указаны user_id или username")
-    
-    if not can_withdraw(user_id):
-        raise HTTPException(403, "Вывод заблокирован. Сделайте платный спин или пригласите 7 друзей.")
-    
-    save_withdraw_request(user_id, username, amount)
-    
-    return {
-        "success": True,
-        "message": f"Заявка на вывод {amount} ⭐ для @{username} создана"
-    }
+@app.route('/')
+def root():
+    return jsonify({'ok': True, 'service': 'LAB NFT UPGRADER', 'version': '1.0'})
 
-# ---------- ЗАПУСК ----------
-def run_bot():
-    asyncio.run(dp.start_polling(bot))
 
-if __name__ == "__main__":
-    if GROUP_ID == 0:
-        logger.warning("⚠️ GROUP_ID не установлен. Укажите его в .env файле.")
-    
-    threading.Thread(target=run_bot, daemon=True).start()
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.route('/api/health')
+def health():
+    return jsonify({'ok': True, 'time': datetime.utcnow().isoformat(), 'db': DB_PATH})
+
+
+@app.route('/api/balance')
+def api_balance():
+    user_id = int(request.args.get('user_id', 0))
+    if not user_id:
+        return jsonify({'ok': False, 'error': 'user_id required'}), 400
+    with get_db() as conn:
+        ensure_user(conn, user_id); conn.commit()
+        r = conn.execute('SELECT balance FROM users WHERE user_id=?', (user_id,)).fetchone()
+    return jsonify({'ok': True, 'balance': r['balance'] if r else 0})
+
+
+@app.route('/api/history')
+def api_history():
+    user_id = int(request.args.get('user_id', 0))
+    if not user_id:
+        return jsonify({'ok': False, 'error': 'user_id required'}), 400
+    limit = min(int(request.args.get('limit', 100)), 500)
+    tx_type = request.args.get('type')
+    q = 'SELECT * FROM transactions WHERE user_id=?'; params = [user_id]
+    if tx_type and tx_type != 'all':
+        q += ' AND type=?'; params.append(tx_type)
+    q += ' ORDER BY created_at DESC LIMIT ?'; params.append(limit)
+    with get_db() as conn:
+        rows = conn.execute(q, params).fetchall()
+    return jsonify({'ok': True, 'items': [dict(r) for r in rows]})
+
+
+@app.route('/api/spend', methods=['POST'])
+def api_spend():
+    data = request.json or {}
+    user_id = int(data.get('user_id', 0)); stars = int(data.get('stars', 0))
+    tx_type = data.get('type', 'upgrade'); meta = data.get('meta') or {}
+    if not user_id or stars <= 0:
+        return jsonify({'ok': False, 'error': 'bad params'}), 400
+    with get_db() as conn:
+        ensure_user(conn, user_id)
+        u = conn.execute('SELECT balance FROM users WHERE user_id=?', (user_id,)).fetchone()
+        if not u or u['balance'] < stars:
+            return jsonify({'ok': False, 'error': 'not enough stars'}), 400
+        conn.execute('UPDATE users SET balance = balance - ? WHERE user_id=?', (stars, user_id))
+        log_tx(conn, user_id, tx_type, amount_stars=-stars, meta=meta); conn.commit()
+        nb = conn.execute('SELECT balance FROM users WHERE user_id=?', (user_id,)).fetchone()['balance']
+    return jsonify({'ok': True, 'balance': nb})
+
+
+@app.route('/api/earn', methods=['POST'])
+def api_earn():
+    data = request.json or {}
+    user_id = int(data.get('user_id', 0)); stars = int(data.get('stars', 0))
+    tx_type = data.get('type', 'sell'); meta = data.get('meta') or {}
+    if not user_id or stars <= 0:
+        return jsonify({'ok': False, 'error': 'bad params'}), 400
+    with get_db() as conn:
+        ensure_user(conn, user_id)
+        conn.execute('UPDATE users SET balance = balance + ? WHERE user_id=?', (stars, user_id))
+        log_tx(conn, user_id, tx_type, amount_stars=stars, meta=meta); conn.commit()
+        nb = conn.execute('SELECT balance FROM users WHERE user_id=?', (user_id,)).fetchone()['balance']
+    return jsonify({'ok': True, 'balance': nb})
+
+
+# ==================== ЗАПУСК ====================
+
+if __name__ == '__main__':
+    init_db()
+    threading.Thread(target=watcher_loop, daemon=True).start()
+    print(f'[API] Flask на http://0.0.0.0:5000 (DB: {DB_PATH})')
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
