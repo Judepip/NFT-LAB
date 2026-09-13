@@ -31,6 +31,95 @@ window.__TG_FALLBACK__ = {
 </script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
+
+/* ===== ЭКРАН ЗАГРУЗКИ ===== */
+#loader {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, #131a2c 0%, #0a0e1a 70%);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity .6s ease, visibility .6s ease;
+}
+#loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+.loader-content {
+    position: relative;
+    text-align: center;
+    width: 240px;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+.loader-logo {
+    font-size: 64px;
+    z-index: 3;
+    position: relative;
+    filter: drop-shadow(0 0 20px #00ff88) drop-shadow(0 0 40px #00d4ff);
+    animation: logoPulse 1.5s ease-in-out infinite;
+}
+@keyframes logoPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px #00ff88) drop-shadow(0 0 40px #00d4ff); }
+    50%      { transform: scale(1.15); filter: drop-shadow(0 0 30px #00ff88) drop-shadow(0 0 60px #00d4ff); }
+}
+.loader-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 150px;
+    height: 150px;
+    margin: -75px 0 0 -75px;
+    border: 3px solid transparent;
+    border-top-color: #00ff88;
+    border-right-color: #00d4ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 1;
+}
+.loader-ring-2 {
+    width: 190px;
+    height: 190px;
+    margin: -95px 0 0 -95px;
+    border-top-color: #00d4ff;
+    border-right-color: #00ff88;
+    animation: spin 1.5s linear infinite reverse;
+    opacity: 0.5;
+}
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+.loader-title {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, #00ff88, #00d4ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    z-index: 3;
+    white-space: nowrap;
+}
+.loader-sub {
+    position: absolute;
+    bottom: -48px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: #8899bb;
+    letter-spacing: 1px;
+    z-index: 3;
+    white-space: nowrap;
+}
+
 :root{
     --bg:#0a0e1a;
     --neon:#00ff88; --cyan:#00d4ff;
@@ -252,6 +341,19 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 </style>
 </head>
 <body>
+
+<!-- ===== ЭКРАН ЗАГРУЗКИ ===== -->
+<div id="loader">
+    <div class="loader-content">
+        <div class="loader-logo">⚡</div>
+        <div class="loader-ring"></div>
+        <div class="loader-ring loader-ring-2"></div>
+        <div class="loader-title">LAB NFT</div>
+        <div class="loader-sub" id="loaderStatus">Загрузка...</div>
+    </div>
+</div>
+<!-- ===== КОНЕЦ ЭКРАНА ЗАГРУЗКИ ===== -->
+
 <div id="app">
     <div class="header">
         <h1>⚡ LAB UPGRADER</h1>
@@ -1746,17 +1848,58 @@ document.querySelectorAll('[data-htab]').forEach(tab => {
 });
 
 // ===== 28) СТАРТ =====
-initTelegram(function(){
+const loader = document.getElementById('loader');
+const loaderStatus = document.getElementById('loaderStatus');
+
+function setLoaderStatus(text) {
+    if (loaderStatus) loaderStatus.textContent = text;
+    console.log('[LOADER]', text);
+}
+
+function hideLoader() {
+    if (!loader) return;
+    setLoaderStatus('Готово!');
+    setTimeout(() => {
+        loader.classList.add('hidden');
+        setTimeout(() => loader.remove(), 700);
+    }, 300);
+}
+
+// Прогреваем всё параллельно и скрываем лоадер, когда готово
+Promise.all([
+    new Promise(resolve => {
+        setLoaderStatus('Подключаем Telegram...');
+        initTelegram(resolve);
+    }),
+
+    new Promise(resolve => {
+        setLoaderStatus('Загружаем TON Core...');
+        const check = () => {
+            if (window.TonCore && window.TonCore.beginCell) resolve();
+            else setTimeout(check, 100);
+        };
+        check();
+    }),
+
+    new Promise(resolve => {
+        setLoaderStatus('Загружаем кошелёк...');
+        loadTonConnectSDK().then(resolve).catch(resolve);
+    }),
+
+    // минимум 1.5 секунды, чтобы лоадер успел показаться
+    new Promise(resolve => setTimeout(resolve, 1500)),
+]).then(() => {
+    setLoaderStatus('Открываем приложение...');
     render();
     applySettingsToUI();
     renderQuickButtons();
-    loadTonConnectSDK().then(() => {
-        console.log('[TON] SDK прогрет');
-    }).catch(e => {
-        console.warn('[TON] не удалось прогреть SDK:', e.message);
-    });
     apiRefreshBalance();
+    hideLoader();
     console.log('[UPGRADER] готов, user:', user);
+}).catch(e => {
+    console.error('[START] ошибка:', e);
+    setLoaderStatus('Ошибка загрузки');
+    setTimeout(hideLoader, 1000);
 });
 })();
 </script>
