@@ -141,6 +141,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .head-icon:active{transform:scale(.9);}
 .head-icon.active{background:rgba(0,255,136,.15);border-color:var(--neon);}
 .deposit-icon{background:linear-gradient(135deg,var(--neon),#00cc70) !important;color:#0a0e1a !important;font-weight:700;font-size:16px !important;border:none !important;box-shadow:0 0 15px rgba(0,255,136,.4);}
+.withdraw-icon{background:linear-gradient(135deg,var(--gold),#ffb700) !important;color:#0a0e1a !important;font-weight:700;font-size:18px !important;border:none !important;box-shadow:0 0 15px rgba(255,215,0,.4);line-height:1;}
 .balance{background:var(--glass);border:1px solid var(--border);border-radius:30px;padding:5px 10px;font-size:11px;color:var(--gold);backdrop-filter:blur(8px);cursor:pointer;transition:.15s;}
 .balance:active{transform:scale(.95);}
 
@@ -357,13 +358,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 <div id="app">
     <div class="header">
         <h1>⚡ LAB UPGRADER</h1>
-        <div class="head-icons">
-            <div class="head-icon" id="btnInfo" title="История">📜</div>
-            <div class="head-icon" id="btnSettings" title="Настройки">⚙</div>
-            <div class="head-icon" id="btnVolume" title="Громкость">🔊</div>
-            <div class="head-icon" id="btnFast" title="Быстрый прокрут">⚡</div>
-        </div>
+      <div class="head-icons">
+    <div class="head-icon" id="btnAdmin" title="Админ-панель" style="display:none;">🔧</div>
+    <div class="head-icon" id="btnPromo" title="Промокод">🎟️</div>
+    <div class="head-icon" id="btnInfo" title="История">📜</div>
+    <div class="head-icon" id="btnSettings" title="Настройки">⚙</div>
+    <div class="head-icon" id="btnVolume" title="Громкость">🔊</div>
+    <div class="head-icon" id="btnFast" title="Быстрый прокрут">⚡</div>
+</div>
         <div class="balance" id="balanceBtn" title="Пополнить">⭐ <span id="balanceDisplay">0</span></div>
+        <div class="head-icon withdraw-icon" id="btnWithdraw" title="Вывод">−</div>
         <div class="head-icon deposit-icon" id="btnDeposit" title="Пополнить">＋</div>
     </div>
 
@@ -537,49 +541,49 @@ const GIFTS = [
     { name:'Big Year',         price:448,  image: BASE+'/images/Big%20Year.gif' },
     { name:'Bow Tie',          price:600,  image: BASE+'/images/Bow%20Tie.gif' },
     { name:'Chill Flame',      price:499,  image: BASE+'/images/Chill%20Flame.gif' },
-    { name:'Crystal Ball',     price:1215,  image: BASE+'/images/Crystal%20Ball.gif' },
+    { name:'Crystal Ball',     price:1215, image: BASE+'/images/Crystal%20Ball.gif' },
     { name:'Desk Calendar',    price:575,  image: BASE+'/images/Desk%20Calendar.gif' },
-    { name:'Diamond Ring',     price:2969,  image: BASE+'/images/Diamond%20Ring.gif' },
-    { name:'Durov Cap',        price:42229,  image: BASE+'/images/Durov%20Cap.gif' },
-    { name:'Electric Skull',   price:2490,  image: BASE+'/images/Electric%20Skull.gif' },
+    { name:'Diamond Ring',     price:2969, image: BASE+'/images/Diamond%20Ring.gif' },
+    { name:'Durov Cap',        price:42229,image: BASE+'/images/Durov%20Cap.gif' },
+    { name:'Electric Skull',   price:2490, image: BASE+'/images/Electric%20Skull.gif' },
     { name:'Eternal Candle',   price:630,  image: BASE+'/images/Eternal%20Candle.gif' },
     { name:'Evil Eye',         price:759,  image: BASE+'/images/Evil%20Eye.gif' },
     { name:'Fine Pen',         price:895,  image: BASE+'/images/Fine%20Pen.gif' },
-    { name:'Flying Broom',     price:1163,  image: BASE+'/images/Flying%20Broom.gif' },
+    { name:'Flying Broom',     price:1163, image: BASE+'/images/Flying%20Broom.gif' },
     { name:'Hanging Star',     price:974,  image: BASE+'/images/Hanging%20Star.gif' },
     { name:'Hex Pot',          price:550,  image: BASE+'/images/Hex%20Pot.gif' },
     { name:'Homemade Cake',    price:630,  image: BASE+'/images/Homemade%20Cake.gif' },
-    { name:'Ion Gem',         price:7889,  image: BASE+'/images/Iron%20Gem.gif' },
+    { name:'Ion Gem',          price:7889, image: BASE+'/images/Iron%20Gem.gif' },
     { name:'Jack-In-The-Box',  price:500,  image: BASE+'/images/Jack-In-The-Box.gif' },
-    { name:'Kissed Frog',      price:3865,  image: BASE+'/images/Kissed%20Frog.gif' },
+    { name:'Kissed Frog',      price:3865, image: BASE+'/images/Kissed%20Frog.gif' },
     { name:'Liberty Figure',   price:512,  image: BASE+'/images/Liberty%20Figure.gif' },
     { name:'Light Sword',      price:665,  image: BASE+'/images/Light%20Sword.gif' },
     { name:'Lol Pop',          price:490,  image: BASE+'/images/Lol%20Pop.gif' },
     { name:'Love Candle',      price:963,  image: BASE+'/images/Love%20Candle.gif' },
-    { name:'Low Rider',        price:5388,  image: BASE+'/images/Low%20Rider.gif' },
-    { name:'Mad Pumpkin',      price:1259,  image: BASE+'/images/Mad%20Pumpkin.gif' },
+    { name:'Low Rider',        price:5388, image: BASE+'/images/Low%20Rider.gif' },
+    { name:'Mad Pumpkin',      price:1259, image: BASE+'/images/Mad%20Pumpkin.gif' },
     { name:'Mood Pak',         price:513,  image: BASE+'/images/Mood%20Pak.gif' },
-    { name:'Neko Helmet',      price:3775,  image: BASE+'/images/Neko%20Helmet.gif' },
+    { name:'Neko Helmet',      price:3775, image: BASE+'/images/Neko%20Helmet.gif' },
     { name:'Party Sparkler',   price:545,  image: BASE+'/images/Party%20Sparkler.gif' },
-    { name:'Plush Pepe',       price:553220,  image: BASE+'/images/Plush%20Pepe.gif' },
-    { name:'Sakura Flower',    price:1025,  image: BASE+'/images/Sakura%20Flower.gif' },
-    { name:'Scared Cat',       price:22489,  image: BASE+'/images/Scared%20Cat.gif' },
-    { name:'Signet Ring',      price:3239,  image: BASE+'/images/Signet%20Ring.gif' },
-    { name:'Skull Flower',     price:1125,  image: BASE+'/images/Skull%20Flower.gif' },
-    { name:'Snoop Cigar',      price:1430,  image: BASE+'/images/Snoop%20Cigar.gif' },
+    { name:'Plush Pepe',       price:553220,image: BASE+'/images/Plush%20Pepe.gif' },
+    { name:'Sakura Flower',    price:1025, image: BASE+'/images/Sakura%20Flower.gif' },
+    { name:'Scared Cat',       price:22489,image: BASE+'/images/Scared%20Cat.gif' },
+    { name:'Signet Ring',      price:3239, image: BASE+'/images/Signet%20Ring.gif' },
+    { name:'Skull Flower',     price:1125, image: BASE+'/images/Skull%20Flower.gif' },
+    { name:'Snoop Cigar',      price:1430, image: BASE+'/images/Snoop%20Cigar.gif' },
     { name:'Snoop Dogg',       price:630,  image: BASE+'/images/Snoop%20Dogg.gif' },
     { name:'Spy Agaric',       price:630,  image: BASE+'/images/Spy%20Agaric.gif' },
     { name:'StarNotepad',      price:550,  image: BASE+'/images/StarNotepad.gif' },
-    { name:'Top Hat',          price:1077,  image: BASE+'/images/Top%20Hat.gif' },
-    { name:'Toy Bear',         price:3626,  image: BASE+'/images/Toy%20Bear.gif' },
-    { name:'Vintage Cigar',    price:3687,  image: BASE+'/images/Vintage%20Cigar.gif' },
+    { name:'Top Hat',          price:1077, image: BASE+'/images/Top%20Hat.gif' },
+    { name:'Toy Bear',         price:3626, image: BASE+'/images/Toy%20Bear.gif' },
+    { name:'Vintage Cigar',    price:3687, image: BASE+'/images/Vintage%20Cigar.gif' },
     { name:'Witch Hat',        price:629,  image: BASE+'/images/Witch%20Hat.gif' },
-    { name:'Букет',            price:50,  image: BASE+'/images/%D0%91%D1%83%D0%BA%D0%B5%D1%82.gif' },
+    { name:'Букет',            price:50,   image: BASE+'/images/%D0%91%D1%83%D0%BA%D0%B5%D1%82.gif' },
     { name:'Кольцо',           price:100,  image: BASE+'/images/%D0%9A%D0%BE%D0%BB%D1%8C%D1%86%D0%BE.gif' },
     { name:'Кубок',            price:100,  image: BASE+'/images/%D0%9A%D1%83%D0%B1%D0%BE%D0%BA.gif' },
     { name:'Мишка',            price:15,   image: BASE+'/images/%D0%9C%D0%B8%D1%88%D0%BA%D0%B0.gif' },
-    { name:'Роза',             price:25,  image: BASE+'/images/%D0%A0%D0%BE%D0%B7%D0%B0.gif' },
-    { name:'Сердце',           price:15,  image: BASE+'/images/%D0%A1%D0%B5%D1%80%D0%B4%D1%86%D0%B5.gif' },
+    { name:'Роза',             price:25,   image: BASE+'/images/%D0%A0%D0%BE%D0%B7%D0%B0.gif' },
+    { name:'Сердце',           price:15,   image: BASE+'/images/%D0%A1%D0%B5%D1%80%D0%B4%D1%86%D0%B5.gif' },
 ];
 
 // ===== 3) СОСТОЯНИЕ =====
@@ -1426,6 +1430,158 @@ function showVolumeModal(){
 }
 
 /* ============================================================ */
+/* ===== 23.5) ВЫВОД ЗВЁЗД В TON ===== */
+/* ============================================================ */
+
+const MIN_WITHDRAW = 500;
+const STARS_TO_TON = 0.011;   // 1 ⭐ = 0.011 TON (обратный курс к пополнению)
+
+function showWithdrawModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    function renderContent(){
+        overlay.innerHTML = `
+            <div class="modal-content" style="border-color:var(--gold);max-width:400px;text-align:left;">
+                <div class="settings-header">
+                    <h2 style="color:var(--gold);">💸 Вывод звёзд</h2>
+                    <button class="settings-close" data-action="close">✕</button>
+                </div>
+
+                <div class="deposit-note" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.25);">
+                    Выведите звёзды в <b style="color:var(--gold);">TON</b>. Минимум: <b>${MIN_WITHDRAW} ⭐</b>.
+                    Заявка обрабатывается вручную в течение 24 часов.
+                </div>
+
+                <div style="margin:14px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Сумма вывода (⭐)</div>
+                <input type="number" id="withdrawStars" min="${MIN_WITHDRAW}"
+                       placeholder="Например, ${MIN_WITHDRAW}"
+                       style="width:100%;background:#0f1525;border:1px solid var(--border2);
+                              border-radius:10px;padding:14px 16px;color:var(--text);
+                              font-family:var(--mono);font-size:14px;outline:none;margin-bottom:6px;">
+
+                <div style="text-align:right;font-size:11px;color:var(--muted);margin-bottom:14px;">
+                    Получите: <b id="withdrawTonPreview" style="color:var(--cyan);">0 TON</b>
+                </div>
+
+                <div style="margin:14px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Адрес TON-кошелька</div>
+                <input type="text" id="withdrawAddress"
+                       placeholder="UQ..."
+                       style="width:100%;background:#0f1525;border:1px solid var(--border2);
+                              border-radius:10px;padding:14px 16px;color:var(--text);
+                              font-family:var(--mono);font-size:12px;outline:none;margin-bottom:6px;">
+
+                <div style="text-align:right;font-size:10px;color:var(--muted);margin-bottom:16px;">
+                    ⚠️ Убедитесь, что адрес правильный. Отменить вывод нельзя.
+                </div>
+
+                <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:14px;">
+                    Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
+                </div>
+
+                <button class="volume-test-btn" id="withdrawSubmitBtn"
+                        style="background:linear-gradient(135deg,var(--gold),#ffb700);color:#0a0e1a;border:none;font-size:14px;padding:14px;margin-top:0;">
+                    💸 ВЫВЕСТИ
+                </button>
+
+                <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:10px;">
+                    После подтверждения заявка появится в истории
+                </div>
+            </div>
+        `;
+
+        const starsInput = overlay.querySelector('#withdrawStars');
+        const addrInput = overlay.querySelector('#withdrawAddress');
+        const tonPreview = overlay.querySelector('#withdrawTonPreview');
+        const submitBtn = overlay.querySelector('#withdrawSubmitBtn');
+
+        starsInput.addEventListener('input', () => {
+            const stars = parseInt(starsInput.value, 10) || 0;
+            tonPreview.textContent = (stars * STARS_TO_TON).toFixed(4) + ' TON';
+        });
+
+        overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
+            Sound.click(); overlay.remove();
+        });
+
+        submitBtn.addEventListener('click', async () => {
+            const stars = parseInt(starsInput.value, 10) || 0;
+            const address = (addrInput.value || '').trim();
+
+            if (!stars || stars < MIN_WITHDRAW){
+                tg.showAlert(`❌ Минимум для вывода: ${MIN_WITHDRAW} ⭐`);
+                return;
+            }
+            if (stars > state.balance){
+                tg.showAlert(`❌ Недостаточно звёзд. У вас: ${Math.floor(state.balance)} ⭐`);
+                return;
+            }
+            if (!address || address.length < 40 || address.length > 50){
+                tg.showAlert('❌ Введите корректный TON-адрес (48 символов, UQ... или EQ...)');
+                return;
+            }
+
+            Sound.click();
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'ОТПРАВКА...';
+
+            try {
+                const d = await api('/api/withdraw', {
+                    method: 'POST',
+                    body: { user_id: user.id, stars: stars, address: address }
+                });
+
+                if (d.ok){
+                    state.balance = d.balance;
+                    renderBalance();
+                    save();
+
+                    overlay.innerHTML = `
+                        <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
+                            <div style="font-size:60px;margin-bottom:12px;">✅</div>
+                            <div class="modal-title" style="color:var(--neon);">Заявка создана!</div>
+                            <div class="modal-sub">
+                                <b style="color:var(--gold);">${stars} ⭐</b> → <b style="color:var(--cyan);">${d.amount_ton} TON</b><br><br>
+                                Адрес:<br><span style="font-size:10px;word-break:break-all;">${address}</span>
+                                <br><br>
+                                Заявка обрабатывается вручную.<br>
+                                Ожидайте в течение 24 часов.
+                            </div>
+                            <button class="modal-btn" data-action="finish">OK</button>
+                        </div>
+                    `;
+                    overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
+                        Sound.click();
+                        overlay.remove();
+                        if (document.getElementById('screenHistory')?.classList.contains('active')){
+                            loadServerHistory('all');
+                        }
+                    });
+                } else {
+                    tg.showAlert('❌ Ошибка: ' + (d.error || 'попробуйте позже'));
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '💸 ВЫВЕСТИ';
+                }
+            } catch(e){
+                console.error('withdraw error:', e);
+                tg.showAlert('❌ Ошибка сети. Попробуйте позже.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '💸 ВЫВЕСТИ';
+            }
+        });
+    }
+
+    renderContent();
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.remove();
+    });
+}
+
+/* ============================================================ */
 /* ===== 24) TON CONNECT + АВТОНАЧИСЛЕНИЕ ЧЕРЕЗ MEMO ===== */
 /* ============================================================ */
 
@@ -1817,7 +1973,10 @@ $('btnFast').addEventListener('click', function(){
     save();
     tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
 });
+$('btnPromo').addEventListener('click', () => { Sound.click(); showPromoModal(); });
+$('btnAdmin').addEventListener('click', () => { Sound.click(); showAdminModal(); });
 $('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
+$('btnWithdraw').addEventListener('click', () => { Sound.click(); showWithdrawModal(); });
 $('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
 
 function applySettingsToUI(){
@@ -1850,6 +2009,15 @@ document.querySelectorAll('[data-htab]').forEach(tab => {
 // ===== 28) СТАРТ =====
 const loader = document.getElementById('loader');
 const loaderStatus = document.getElementById('loaderStatus');
+
+    // Проверка админа
+try {
+    const d = await api('/api/admin/check?user_id=' + user.id);
+    if (d.ok && d.is_admin){
+        document.getElementById('btnAdmin').style.display = 'flex';
+        console.log('[ADMIN] доступ разрешён');
+    }
+} catch(e){ console.warn('admin check:', e); }
 
 function setLoaderStatus(text) {
     if (loaderStatus) loaderStatus.textContent = text;
@@ -1886,7 +2054,6 @@ Promise.all([
         loadTonConnectSDK().then(resolve).catch(resolve);
     }),
 
-    // минимум 1.5 секунды, чтобы лоадер успел показаться
     new Promise(resolve => setTimeout(resolve, 1500)),
 ]).then(() => {
     setLoaderStatus('Открываем приложение...');
