@@ -358,14 +358,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 <div id="app">
     <div class="header">
         <h1>⚡ LAB UPGRADER</h1>
-      <div class="head-icons">
-    <div class="head-icon" id="btnAdmin" title="Админ-панель" style="display:none;">🔧</div>
-    <div class="head-icon" id="btnPromo" title="Промокод">🎟️</div>
-    <div class="head-icon" id="btnInfo" title="История">📜</div>
-    <div class="head-icon" id="btnSettings" title="Настройки">⚙</div>
-    <div class="head-icon" id="btnVolume" title="Громкость">🔊</div>
-    <div class="head-icon" id="btnFast" title="Быстрый прокрут">⚡</div>
-</div>
+        <div class="head-icons">
+            <div class="head-icon" id="btnInfo" title="История">📜</div>
+            <div class="head-icon" id="btnSettings" title="Настройки">⚙</div>
+            <div class="head-icon" id="btnVolume" title="Громкость">🔊</div>
+            <div class="head-icon" id="btnFast" title="Быстрый прокрут">⚡</div>
+        </div>
         <div class="balance" id="balanceBtn" title="Пополнить">⭐ <span id="balanceDisplay">0</span></div>
         <div class="head-icon withdraw-icon" id="btnWithdraw" title="Вывод">−</div>
         <div class="head-icon deposit-icon" id="btnDeposit" title="Пополнить">＋</div>
@@ -1973,8 +1971,6 @@ $('btnFast').addEventListener('click', function(){
     save();
     tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
 });
-$('btnPromo').addEventListener('click', () => { Sound.click(); showPromoModal(); });
-$('btnAdmin').addEventListener('click', () => { Sound.click(); showAdminModal(); });
 $('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
 $('btnWithdraw').addEventListener('click', () => { Sound.click(); showWithdrawModal(); });
 $('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
@@ -2009,15 +2005,6 @@ document.querySelectorAll('[data-htab]').forEach(tab => {
 // ===== 28) СТАРТ =====
 const loader = document.getElementById('loader');
 const loaderStatus = document.getElementById('loaderStatus');
-
-    // Проверка админа
-try {
-    const d = await api('/api/admin/check?user_id=' + user.id);
-    if (d.ok && d.is_admin){
-        document.getElementById('btnAdmin').style.display = 'flex';
-        console.log('[ADMIN] доступ разрешён');
-    }
-} catch(e){ console.warn('admin check:', e); }
 
 function setLoaderStatus(text) {
     if (loaderStatus) loaderStatus.textContent = text;
