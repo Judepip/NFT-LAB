@@ -67,7 +67,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .balance{background:var(--glass);border:1px solid var(--border);border-radius:30px;padding:5px 10px;font-size:11px;color:var(--gold);backdrop-filter:blur(8px);cursor:pointer;transition:.15s;}
 .balance:active{transform:scale(.95);}
 
-/* ===== БАННЕР БУСТА ===== */
 #boostBanner{
     display:none;
     margin:6px 4px 0;
@@ -371,7 +370,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
         <div class="head-icon deposit-icon" id="btnDeposit" title="Пополнить">＋</div>
     </div>
 
-    <!-- Баннер активного буста -->
     <div id="boostBanner">
         🚀 Активен буст <span id="boostPercent">0</span>% · <span id="boostInfo"></span>
     </div>
@@ -507,7 +505,10 @@ const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
 const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
 const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
 
-// Подарки, которые НЕ поддерживаются @labrelayer
+// ⚠️ Обязательная подписка
+const REQUIRED_CHANNEL = 'NFTLABDROPS';
+const REQUIRED_CHANNEL_URL = 'https://t.me/NFTLABDROPS';
+
 const RELAYER_BLOCKED = ['Кольцо', 'Кубок', 'Мишка', 'Роза', 'Сердце'];
 
 const DEPOSIT_PACKAGES = [
@@ -607,7 +608,6 @@ const GIFTS = [
     { name:'Сердце',           price:15,   image: BASE+'/images/%D0%A1%D0%B5%D1%80%D0%B4%D1%86%D0%B5.gif' },
 ];
 
-// Принимаемые @labrelayer подарки — БЕЗ Кольца, Кубка, Мишки, Розы, Сердца
 const ACCEPTED_GIFTS = [
     { name: 'B-Day Candle',   price: 633   },
     { name: 'Berry Box',      price: 859   },
@@ -748,6 +748,101 @@ async function apiHistory(type){
     return [];
 }
 
+/* ===== ОБЯЗАТЕЛЬНАЯ ПОДПИСКА ===== */
+let subscriptionVerified = false;
+let onSubscribeSuccess = null;
+
+async function checkSubscription(force = false){
+    if (subscriptionVerified && !force) return true;
+    if (!user.id){
+        subscriptionVerified = true;
+        return true;
+    }
+    try {
+        const d = await api('/api/check_subscription?user_id=' + user.id);
+        if (d.ok && d.subscribed){
+            subscriptionVerified = true;
+            return true;
+        }
+    } catch(e){ console.warn('subscription check error:', e); }
+    return false;
+}
+
+function showSubscribeModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="border-color:var(--cyan);max-width:380px;text-align:left;">
+            <div class="settings-header">
+                <h2 style="color:var(--cyan);">🔔 Подписка</h2>
+                <button class="settings-close" data-action="close">✕</button>
+            </div>
+
+            <div class="deposit-note" style="background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.25);">
+                Для продолжения нужно подписаться на канал
+                <b style="color:var(--cyan);">@${REQUIRED_CHANNEL}</b>.
+                Это займёт пару секунд.
+            </div>
+
+            <a href="${REQUIRED_CHANNEL_URL}" target="_blank"
+               class="volume-test-btn"
+               style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
+                📢 ПОДПИСАТЬСЯ НА @${REQUIRED_CHANNEL}
+            </a>
+
+            <button class="volume-test-btn" id="subscribeCheckBtn"
+                    style="background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);color:var(--neon);">
+                ✅ Я ПОДПИСАЛСЯ — ПРОВЕРИТЬ
+            </button>
+
+            <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:10px;">
+                Если вы уже подписаны — просто нажмите «Проверить»
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
+        Sound.click(); overlay.remove();
+    });
+
+    const checkBtn = overlay.querySelector('#subscribeCheckBtn');
+    checkBtn.addEventListener('click', async () => {
+        Sound.click();
+        checkBtn.disabled = true;
+        checkBtn.textContent = 'ПРОВЕРКА...';
+
+        const ok = await checkSubscription(true);
+        if (ok){
+            Sound.win();
+            overlay.remove();
+            if (typeof onSubscribeSuccess === 'function') onSubscribeSuccess();
+        } else {
+            Sound.lose();
+            checkBtn.disabled = false;
+            checkBtn.textContent = '✅ Я ПОДПИСАЛСЯ — ПРОВЕРИТЬ';
+            tg.showAlert('❌ Подписка не найдена. Подпишитесь и попробуйте снова.');
+        }
+    });
+
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.remove();
+    });
+}
+
+async function requireSubscription(action){
+    const ok = await checkSubscription();
+    if (ok){
+        action();
+        return;
+    }
+    onSubscribeSuccess = action;
+    showSubscribeModal();
+}
+
 /* ===== БУСТ ===== */
 async function refreshBoostBanner(){
     if (!user.id) return;
@@ -791,12 +886,10 @@ async function activatePromo(code){
             render();
             await refreshBoostBanner();
 
-            let msg = d.message || 'Промокод активирован!';
-            // Если подарок — покажем модал
             if (d.type === 'gift' && d.gift){
                 showGiftReceivedModal(d.gift);
             } else {
-                tg.showAlert(msg);
+                tg.showAlert(d.message || 'Промокод активирован!');
             }
         } else {
             Sound.lose();
@@ -1414,7 +1507,7 @@ function doUpgrade(){
 
 upgradeBtn.addEventListener('click', () => {
     Sound.click();
-    doUpgrade();
+    requireSubscription(() => doUpgrade());
 });
 
 function showResult(success, item, chance){
@@ -2128,10 +2221,22 @@ $('btnFast').addEventListener('click', function(){
     save();
     tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
 });
-$('btnPromo').addEventListener('click', () => { Sound.click(); showPromoModal(); });
-$('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
-$('btnWithdraw').addEventListener('click', () => { Sound.click(); showWithdrawModal(); });
-$('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
+$('btnPromo').addEventListener('click', () => {
+    Sound.click();
+    requireSubscription(() => showPromoModal());
+});
+$('btnDeposit').addEventListener('click', () => {
+    Sound.click();
+    requireSubscription(() => showDepositModal('ton'));
+});
+$('btnWithdraw').addEventListener('click', () => {
+    Sound.click();
+    requireSubscription(() => showWithdrawModal());
+});
+$('balanceBtn').addEventListener('click', () => {
+    Sound.click();
+    requireSubscription(() => showDepositModal('ton'));
+});
 
 function applySettingsToUI(){
     $('btnFast').classList.toggle('active', state.settings.fastSpin);
