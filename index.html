@@ -428,9 +428,8 @@ function initTelegram(callback){
 }
 
 // ===== 2) ПРЕДМЕТЫ =====
-const BASE = 'https://judepip.github.io/NFT-LAB';
+const BASE = 'https://judepip.github.io/NFT-LAB/bot';
 const GIFTS = [
-    // ===== НОВЫЕ ПОДАРКИ (по алфавиту) =====
     { name:'B-Day Candle',     price:200,  image: BASE+'/images/B-Day%20Candle.gif' },
     { name:'Berry Box',        price:150,  image: BASE+'/images/Berry%20Box.gif' },
     { name:'Big Year',         price:500,  image: BASE+'/images/Big%20Year.gif' },
@@ -473,8 +472,6 @@ const GIFTS = [
     { name:'Toy Bear',         price:350,  image: BASE+'/images/Toy%20Bear.gif' },
     { name:'Vintage Cigar',    price:400,  image: BASE+'/images/Vintage%20Cigar.gif' },
     { name:'Witch Hat',        price:500,  image: BASE+'/images/Witch%20Hat.gif' },
-
-    // ===== РУССКИЕ ПОДАРКИ =====
     { name:'Букет',            price:180,  image: BASE+'/images/%D0%91%D1%83%D0%BA%D0%B5%D1%82.gif' },
     { name:'Кольцо',           price:100,  image: BASE+'/images/%D0%9A%D0%BE%D0%BB%D1%8C%D1%86%D0%BE.gif' },
     { name:'Кубок',            price:100,  image: BASE+'/images/%D0%9A%D1%83%D0%B1%D0%BE%D0%BA.gif' },
@@ -1346,7 +1343,6 @@ let tonConnectUI = null;
 let selectedAmount = null;
 let sdkLoadingPromise = null;
 
-// Формирование payload (cell) с текстовым комментарием
 function buildCommentPayload(comment) {
     if (!window.TonCore || !window.TonCore.beginCell) {
         console.error('[TON] @ton/core не загружен');
@@ -1652,7 +1648,6 @@ function showDepositModal(defaultTab) {
         payBtn.textContent = 'ОЖИДАНИЕ...';
         if (info) info.textContent = 'Откройте кошелёк и подтвердите';
 
-        // Формируем комментарий: u:USER_ID:s:STARS
         const comment = `u:${user.id}:s:${selectedAmount.stars}`;
         const payload = buildCommentPayload(comment);
 
