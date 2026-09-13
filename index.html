@@ -247,7 +247,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .stat-box .value{font-size:20px;font-weight:600;color:var(--gold);}
 .stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
 
-/* ===== НОВЫЕ СТИЛИ ДЛЯ ВЫВОДА И ПОПОЛНЕНИЯ ===== */
 .withdraw-gifts {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -308,6 +307,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .accepted-gift:last-child { border-bottom: none; }
 .accepted-gift .ag-name { color: var(--text); }
 .accepted-gift .ag-price { color: var(--gold); font-weight: 600; }
+
+#ton-connect-button button{width:100% !important;min-height:48px !important;font-size:14px !important;}
 
 @media(max-width:380px){
     .upgrade-top{grid-template-columns:1fr 140px 1fr;gap:4px;}
@@ -476,6 +477,24 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 
 const API_BASE = 'https://lab-nft-jude.mia0.amvera.tech';
 const RELAYER_USERNAME = 'labrelayer';
+const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
+const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
+const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
+
+// Подарки, которые НЕ поддерживаются @labrelayer (нельзя ни вывести, ни пополнить ими)
+const RELAYER_BLOCKED = ['Кольцо', 'Кубок', 'Мишка', 'Роза', 'Сердце'];
+
+const DEPOSIT_PACKAGES = [
+    { stars: 100,  ton: 1.1  },
+    { stars: 250,  ton: 2.7  },
+    { stars: 500,  ton: 5.5  },
+    { stars: 1000, ton: 11   },
+    { stars: 5000, ton: 54.7 },
+];
+
+let tonConnectUI = null;
+let selectedAmount = null;
+let sdkLoadingPromise = null;
 
 let tg = null;
 let user = { id:0, first_name:'Аноним', last_name:'', username:null, photo_url:null };
@@ -562,6 +581,52 @@ const GIFTS = [
     { name:'Сердце',           price:15,   image: BASE+'/images/%D0%A1%D0%B5%D1%80%D0%B4%D1%86%D0%B5.gif' },
 ];
 
+// Принимаемые @labrelayer подарки — БЕЗ Кольца, Кубка, Мишки, Розы, Сердца
+const ACCEPTED_GIFTS = [
+    { name: 'B-Day Candle',   price: 633   },
+    { name: 'Berry Box',      price: 859   },
+    { name: 'Big Year',       price: 448   },
+    { name: 'Bow Tie',        price: 600   },
+    { name: 'Chill Flame',    price: 499   },
+    { name: 'Crystal Ball',   price: 1215  },
+    { name: 'Desk Calendar',  price: 575   },
+    { name: 'Diamond Ring',   price: 2969  },
+    { name: 'Durov Cap',      price: 42229 },
+    { name: 'Electric Skull', price: 2490  },
+    { name: 'Eternal Candle', price: 630   },
+    { name: 'Evil Eye',       price: 759   },
+    { name: 'Fine Pen',       price: 895   },
+    { name: 'Flying Broom',   price: 1163  },
+    { name: 'Hanging Star',   price: 974   },
+    { name: 'Hex Pot',        price: 550   },
+    { name: 'Homemade Cake',  price: 630   },
+    { name: 'Ion Gem',        price: 7889  },
+    { name: 'Jack-In-The-Box',price: 500   },
+    { name: 'Kissed Frog',    price: 3865  },
+    { name: 'Liberty Figure', price: 512   },
+    { name: 'Light Sword',    price: 665   },
+    { name: 'Lol Pop',        price: 490   },
+    { name: 'Love Candle',    price: 963   },
+    { name: 'Low Rider',      price: 5388  },
+    { name: 'Mad Pumpkin',    price: 1259  },
+    { name: 'Mood Pak',       price: 513   },
+    { name: 'Neko Helmet',    price: 3775  },
+    { name: 'Party Sparkler', price: 545   },
+    { name: 'Plush Pepe',     price: 553220},
+    { name: 'Sakura Flower',  price: 1025  },
+    { name: 'Scared Cat',     price: 22489 },
+    { name: 'Signet Ring',    price: 3239  },
+    { name: 'Skull Flower',   price: 1125  },
+    { name: 'Snoop Cigar',    price: 1430  },
+    { name: 'Snoop Dogg',     price: 630   },
+    { name: 'Spy Agaric',     price: 630   },
+    { name: 'StarNotepad',    price: 550   },
+    { name: 'Top Hat',        price: 1077  },
+    { name: 'Toy Bear',       price: 3626  },
+    { name: 'Vintage Cigar',  price: 3687  },
+    { name: 'Witch Hat',      price: 629   },
+];
+
 const KEY = 'lab_upgrade_v13';
 function defaultState(){
     return {
@@ -606,17 +671,20 @@ async function apiRefreshBalance(){
     renderBalance();
 }
 
+// ВАЖНО: исключаем заблокированные для @labrelayer подарки прямо в источнике
 async function apiRefreshInventory(){
     if (!user.id) return [];
     try {
         const d = await api('/api/inventory?user_id=' + user.id);
         if (d.ok && Array.isArray(d.items)){
-            state.inventory = d.items.map(it => ({
-                id: it.id,
-                name: it.gift_name,
-                price: it.gift_price,
-                image: it.gift_image || GIFTS.find(g => g.name === it.gift_name)?.image || '',
-            }));
+            state.inventory = d.items
+                .filter(it => !RELAYER_BLOCKED.includes(it.gift_name))
+                .map(it => ({
+                    id: it.id,
+                    name: it.gift_name,
+                    price: it.gift_price,
+                    image: it.gift_image || GIFTS.find(g => g.name === it.gift_name)?.image || '',
+                }));
             return state.inventory;
         }
     } catch(e){ console.warn('inventory api error:', e); }
@@ -833,14 +901,14 @@ function render(){
             <div class="inv-empty" style="padding:30px 12px;">
                 <div style="font-size:32px;margin-bottom:8px;">💎</div>
                 <div style="font-size:12px;color:var(--text);margin-bottom:4px;font-weight:600;">Нет предметов</div>
-                <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">Отправьте NFT-подарок @labrelayer</div>
+                <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">Пополните баланс или отправьте подарок</div>
                 <button class="volume-test-btn" id="emptyDepositBtn" style="max-width:200px;margin:0 auto;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;">
                     ＋ ПОПОЛНИТЬ
                 </button>
             </div>`;
         setTimeout(() => {
             const b = document.getElementById('emptyDepositBtn');
-            if (b) b.addEventListener('click', () => { Sound.click(); showDepositModal(); });
+            if (b) b.addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
         }, 0);
     } else {
         invGrid.innerHTML = state.inventory.map(it => `
@@ -1384,9 +1452,134 @@ function showVolumeModal(){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-/* ============================================================ */
-/* ===== ВЫВОД NFT-ПОДАРКОВ через @labrelayer ===== */
-/* ============================================================ */
+/* ===== TON CONNECT ===== */
+
+function buildCommentPayload(comment) {
+    if (!window.TonCore || !window.TonCore.beginCell) {
+        console.error('[TON] @ton/core не загружен');
+        return null;
+    }
+    try {
+        const cell = window.TonCore.beginCell()
+            .storeUint(0, 32)
+            .storeStringTail(comment)
+            .endCell();
+        return cell.toBoc().toString('base64');
+    } catch (e) {
+        console.error('[TON] Ошибка формирования payload:', e);
+        return null;
+    }
+}
+
+function loadTonConnectSDK() {
+    const existing = window.TonConnectUI || (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI);
+    if (typeof existing === 'function') {
+        window.TonConnectUI = existing;
+        return Promise.resolve(existing);
+    }
+    if (sdkLoadingPromise) return sdkLoadingPromise;
+
+    sdkLoadingPromise = new Promise((resolve, reject) => {
+        const tryLoad = (src, isFallback) => {
+            console.log('[TON SDK] пробую:', src);
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+
+            script.onload = () => {
+                let Cls = null;
+                if (window.TON_CONNECT_UI) {
+                    Cls = window.TON_CONNECT_UI.TonConnectUI
+                       || window.TON_CONNECT_UI.default
+                       || (typeof window.TON_CONNECT_UI === 'function' ? window.TON_CONNECT_UI : null);
+                }
+                if (!Cls && typeof window.TonConnectUI === 'function') {
+                    Cls = window.TonConnectUI;
+                }
+
+                if (typeof Cls === 'function') {
+                    window.TonConnectUI = Cls;
+                    console.log('[TON SDK] класс найден');
+                    resolve(Cls);
+                } else if (!isFallback) {
+                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                } else {
+                    reject(new Error('TonConnectUI class not found'));
+                }
+            };
+
+            script.onerror = () => {
+                if (!isFallback) {
+                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                } else {
+                    reject(new Error('SDK load failed'));
+                }
+            };
+
+            document.head.appendChild(script);
+        };
+        tryLoad('./tonconnect-ui.min.js', false);
+    });
+    return sdkLoadingPromise;
+}
+
+function ensureTonConnectUI() {
+    if (tonConnectUI) return Promise.resolve(tonConnectUI);
+    return loadTonConnectSDK().then((TonConnectUICls) => {
+        tonConnectUI = new TonConnectUICls({
+            manifestUrl: MANIFEST_URL,
+            walletsListConfiguration: {
+                includeWallets: [
+                    {
+                        appName: 'telegram-wallet', name: 'Wallet',
+                        imageUrl: 'https://wallet.tg/images/logo-288.png',
+                        aboutUrl: 'https://wallet.tg/', universalLink: 'https://t.me/wallet/start',
+                        bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'macos', 'windows', 'linux']
+                    },
+                    {
+                        appName: 'tonkeeper', name: 'Tonkeeper',
+                        imageUrl: 'https://tonkeeper.com/assets/tonconnect-icon.png',
+                        aboutUrl: 'https://tonkeeper.com', universalLink: 'https://app.tonkeeper.com/ton-connect',
+                        bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'chrome', 'firefox']
+                    },
+                    {
+                        appName: 'mytonwallet', name: 'MyTonWallet',
+                        imageUrl: 'https://mytonwallet.io/icon-256.png',
+                        aboutUrl: 'https://mytonwallet.io', universalLink: 'https://mytonwallet.io/ton-connect',
+                        bridgeUrl: BRIDGE_URL, platforms: ['chrome', 'firefox', 'ios', 'android']
+                    }
+                ]
+            }
+        });
+        tonConnectUI.onStatusChange(() => {
+            console.log('[TON] status change, connected =', tonConnectUI.connected);
+            updateWalletStatus();
+        });
+        return tonConnectUI;
+    }).catch((e) => {
+        console.error('[TON] ошибка ensureTonConnectUI:', e);
+        return null;
+    });
+}
+
+function updateWalletStatus() {
+    const payBtn = document.getElementById('payBtn');
+    const payInfo = document.getElementById('payInfo');
+    if (!payBtn || !payInfo) return;
+
+    if (!tonConnectUI || !tonConnectUI.connected) {
+        payBtn.disabled = true; payBtn.style.opacity = '.4';
+        payInfo.textContent = 'Подключите кошелёк';
+    } else if (!selectedAmount) {
+        payBtn.disabled = true; payBtn.style.opacity = '.4';
+        payInfo.textContent = 'Выберите сумму';
+    } else {
+        payBtn.disabled = false; payBtn.style.opacity = '1';
+        payInfo.textContent = 'Нажмите ОПЛАТИТЬ для подтверждения';
+    }
+}
+
+/* ===== ВЫВОД через @labrelayer ===== */
 
 async function showWithdrawModal(){
     const old = document.querySelector('.modal-overlay');
@@ -1394,6 +1587,9 @@ async function showWithdrawModal(){
 
     let inventory = await apiRefreshInventory();
     if (!inventory.length) inventory = state.inventory || [];
+
+    // Двойная защита: ещё раз фильтруем
+    inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -1405,7 +1601,7 @@ async function showWithdrawModal(){
             body = `
                 <div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:12px;">
                     <div style="font-size:40px;margin-bottom:10px;">📦</div>
-                    У вас пока нет подарков.<br>
+                    У вас пока нет подарков для вывода.<br>
                     Отправьте NFT-подарок @${RELAYER_USERNAME}, чтобы начать.
                 </div>
             `;
@@ -1526,111 +1722,235 @@ async function showWithdrawModal(){
     });
 }
 
-/* ============================================================ */
-/* ===== ПОПОЛНЕНИЕ через NFT-подарки @labrelayer ===== */
-/* ============================================================ */
+/* ===== ПОПОЛНЕНИЕ: TON + NFT-ПОДАРКИ ===== */
 
-const ACCEPTED_GIFTS = [
-    { name: 'B-Day Candle',   price: 633   },
-    { name: 'Berry Box',      price: 859   },
-    { name: 'Big Year',       price: 448   },
-    { name: 'Bow Tie',        price: 600   },
-    { name: 'Chill Flame',    price: 499   },
-    { name: 'Crystal Ball',   price: 1215  },
-    { name: 'Desk Calendar',  price: 575   },
-    { name: 'Diamond Ring',   price: 2969  },
-    { name: 'Durov Cap',      price: 42229 },
-    { name: 'Electric Skull', price: 2490  },
-    { name: 'Eternal Candle', price: 630   },
-    { name: 'Evil Eye',       price: 759   },
-    { name: 'Fine Pen',       price: 895   },
-    { name: 'Flying Broom',   price: 1163  },
-    { name: 'Hanging Star',   price: 974   },
-    { name: 'Hex Pot',        price: 550   },
-    { name: 'Homemade Cake',  price: 630   },
-    { name: 'Ion Gem',        price: 7889  },
-    { name: 'Jack-In-The-Box',price: 500   },
-    { name: 'Kissed Frog',    price: 3865  },
-    { name: 'Liberty Figure', price: 512   },
-    { name: 'Light Sword',    price: 665   },
-    { name: 'Lol Pop',        price: 490   },
-    { name: 'Love Candle',    price: 963   },
-    { name: 'Low Rider',      price: 5388  },
-    { name: 'Mad Pumpkin',    price: 1259  },
-    { name: 'Mood Pak',       price: 513   },
-    { name: 'Neko Helmet',    price: 3775  },
-    { name: 'Party Sparkler', price: 545   },
-    { name: 'Plush Pepe',     price: 553220},
-    { name: 'Sakura Flower',  price: 1025  },
-    { name: 'Scared Cat',     price: 22489 },
-    { name: 'Signet Ring',    price: 3239  },
-    { name: 'Skull Flower',   price: 1125  },
-    { name: 'Snoop Cigar',    price: 1430  },
-    { name: 'Snoop Dogg',     price: 630   },
-    { name: 'Spy Agaric',     price: 630   },
-    { name: 'StarNotepad',    price: 550   },
-    { name: 'Top Hat',        price: 1077  },
-    { name: 'Toy Bear',       price: 3626  },
-    { name: 'Vintage Cigar',  price: 3687  },
-    { name: 'Witch Hat',      price: 629   },
-    { name: 'Букет',          price: 50    },
-    { name: 'Кольцо',         price: 100   },
-    { name: 'Кубок',          price: 100   },
-    { name: 'Мишка',          price: 15    },
-    { name: 'Роза',           price: 25    },
-    { name: 'Сердце',         price: 15    },
-];
-
-function showDepositModal(){
+function showDepositModal(defaultTab) {
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
 
+    let activeTab = defaultTab || 'ton';
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
 
-    overlay.innerHTML = `
-        <div class="modal-content" style="border-color:var(--neon);max-width:420px;text-align:left;">
-            <div class="settings-header">
-                <h2>💎 Пополнение</h2>
-                <button class="settings-close" data-action="close">✕</button>
+    function renderContent() {
+        let body = '';
+
+        if (activeTab === 'ton') {
+            body = `
+                <div class="deposit-note">
+                    Подключите <b>TON-кошелёк</b> и выберите сумму — звёзды зачислятся автоматически после подтверждения транзакции.
+                </div>
+
+                <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:48px;width:100%;"></div>
+
+                <div class="deposit-packages">
+                    ${DEPOSIT_PACKAGES.map(p => `
+                        <div class="deposit-pkg" data-stars="${p.stars}" data-ton="${p.ton}">
+                            <div class="pkg-stars">⭐ ${p.stars}</div>
+                            <div class="pkg-arrow">→</div>
+                            <div class="pkg-ton">${p.ton} TON</div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <button class="volume-test-btn" id="payBtn" disabled
+                        style="margin-top:14px;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;opacity:.4;">
+                    ОПЛАТИТЬ
+                </button>
+                <div id="payInfo" style="text-align:center;font-size:10px;color:var(--muted);margin-top:8px;min-height:14px;">
+                    Подключите кошелёк
+                </div>
+            `;
+        } else {
+            body = `
+                <div class="deposit-note">
+                    1. Отправьте <b>NFT-подарок</b> аккаунту <b style="color:var(--neon);">@${RELAYER_USERNAME}</b><br>
+                    2. Бот автоматически зачислит его в ваш инвентарь
+                </div>
+
+                <a href="https://t.me/${RELAYER_USERNAME}" target="_blank"
+                   class="volume-test-btn"
+                   style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
+                    ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
+                </a>
+
+                <div style="margin:10px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
+                    Принимаемые подарки
+                </div>
+
+                <div class="accepted-gifts">
+                    ${ACCEPTED_GIFTS.map(g => `
+                        <div class="accepted-gift">
+                            <span class="ag-name">${g.name}</span>
+                            <span class="ag-price">⭐${g.price}</span>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:12px;">
+                    Зачисление происходит автоматически после получения подарка
+                </div>
+            `;
+        }
+
+        overlay.innerHTML = `
+            <div class="modal-content" style="border-color:var(--neon);max-width:420px;text-align:left;">
+                <div class="settings-header">
+                    <h2>💎 Пополнение</h2>
+                    <button class="settings-close" data-action="close">✕</button>
+                </div>
+
+                <div class="deposit-tabs">
+                    <div class="deposit-tab ${activeTab==='ton'?'active':''}" data-tab="ton">💎 TONCOIN</div>
+                    <div class="deposit-tab ${activeTab==='nft'?'active':''}" data-tab="nft">🎁 NFT-ПОДАРКИ</div>
+                </div>
+
+                ${body}
             </div>
+        `;
 
-            <div class="deposit-note">
-                1. Отправьте <b>NFT-подарок</b> аккаунту <b style="color:var(--neon);">@${RELAYER_USERNAME}</b><br>
-                2. Бот автоматически зачислит его в ваш инвентарь по цене ниже
-            </div>
+        overlay.querySelectorAll('.deposit-tab').forEach(t => {
+            t.addEventListener('click', () => {
+                activeTab = t.dataset.tab;
+                Sound.click();
+                renderContent();
+            });
+        });
 
-            <a href="https://t.me/${RELAYER_USERNAME}" target="_blank"
-               class="volume-test-btn"
-               style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
-                ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
-            </a>
+        overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
+            Sound.click(); overlay.remove();
+        });
 
-            <div style="margin:10px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
-                Принимаемые подарки
-            </div>
+        if (activeTab === 'ton') {
+            setTimeout(async () => {
+                const ui = await ensureTonConnectUI();
+                const cont = document.getElementById('ton-connect-button');
+                if (!ui) {
+                    if (cont) cont.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect.</div>';
+                    return;
+                }
 
-            <div class="accepted-gifts">
-                ${ACCEPTED_GIFTS.map(g => `
-                    <div class="accepted-gift">
-                        <span class="ag-name">${g.name}</span>
-                        <span class="ag-price">⭐${g.price}</span>
-                    </div>
-                `).join('')}
-            </div>
+                setTimeout(() => {
+                    if (!cont) return;
+                    if (cont.querySelector('button')) return;
 
-            <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:12px;">
-                Зачисление происходит автоматически после получения подарка
-            </div>
-        </div>
-    `;
+                    cont.innerHTML = '';
+                    const btn = document.createElement('button');
+                    btn.textContent = tonConnectUI && tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
+                    btn.style.cssText = `
+                        width:100%;padding:14px;border-radius:30px;border:none;
+                        background:linear-gradient(135deg,var(--neon),#00cc70);
+                        color:#0a0e1a;font-weight:700;font-size:14px;font-family:var(--mono);
+                        cursor:pointer;touch-action:manipulation;
+                    `;
+                    btn.addEventListener('click', async () => {
+                        Sound.click();
+                        if (tonConnectUI && tonConnectUI.connected) {
+                            await tonConnectUI.disconnect();
+                            btn.textContent = '💎 Подключить TON-кошелёк';
+                        } else {
+                            try { await tonConnectUI.openModal(); }
+                            catch(e) {
+                                console.error('[TON] openModal error:', e);
+                                tg.showAlert('Не удалось открыть кошелёк: ' + e.message);
+                            }
+                        }
+                    });
+                    cont.appendChild(btn);
 
+                    tonConnectUI.onStatusChange(() => {
+                        btn.textContent = tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
+                        updateWalletStatus();
+                    });
+                }, 300);
+
+                updateWalletStatus();
+            }, 50);
+
+            overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
+                pkg.addEventListener('click', () => {
+                    overlay.querySelectorAll('.deposit-pkg').forEach(p => {
+                        p.style.borderColor = '';
+                        p.style.background = '';
+                    });
+                    pkg.style.borderColor = 'var(--neon)';
+                    pkg.style.background = 'rgba(0,255,136,.08)';
+                    selectedAmount = {
+                        stars: parseInt(pkg.dataset.stars, 10),
+                        ton: parseFloat(pkg.dataset.ton)
+                    };
+                    Sound.click();
+                    updateWalletStatus();
+                });
+            });
+        }
+    }
+
+    renderContent();
     document.body.appendChild(overlay);
-    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-        Sound.click(); overlay.remove();
-    });
     overlay.addEventListener('click', e => {
-        if (e.target === overlay) overlay.remove();
+        if (e.target === overlay) {
+            selectedAmount = null;
+            overlay.remove();
+        }
+    });
+
+    overlay.addEventListener('click', async (e) => {
+        const payBtn = e.target.closest('#payBtn');
+        if (!payBtn) return;
+        if (!tonConnectUI || !tonConnectUI.connected || !selectedAmount) return;
+
+        const info = overlay.querySelector('#payInfo');
+        payBtn.disabled = true;
+        payBtn.textContent = 'ОЖИДАНИЕ...';
+        if (info) info.textContent = 'Откройте кошелёк и подтвердите';
+
+        const comment = `u:${user.id}:s:${selectedAmount.stars}`;
+        const payload = buildCommentPayload(comment);
+
+        if (!payload) {
+            if (info) info.textContent = '❌ Ошибка: не удалось сформировать memo.';
+            payBtn.textContent = 'ОПЛАТИТЬ';
+            payBtn.disabled = false;
+            payBtn.style.opacity = '1';
+            return;
+        }
+
+        console.log('[TON] Отправляю транзакцию с memo:', comment);
+
+        const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [{
+                address: RECIPIENT_ADDRESS,
+                amount: amountNano,
+                payload: payload
+            }]
+        };
+
+        try {
+            const result = await tonConnectUI.sendTransaction(transaction);
+            console.log('✅ Транзакция отправлена:', result.boc);
+            if (info) info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
+            payBtn.textContent = 'ОТПРАВЛЕНО';
+
+            setTimeout(() => {
+                selectedAmount = null;
+                overlay.remove();
+                setTimeout(() => {
+                    apiRefreshBalance();
+                    if (document.getElementById('screenHistory')?.classList.contains('active')){
+                        loadServerHistory('all');
+                    }
+                }, 25000);
+            }, 2000);
+        } catch (e) {
+            console.error('❌ Ошибка транзакции:', e);
+            if (info) info.textContent = '❌ Транзакция отклонена: ' + (e.message || '');
+            payBtn.textContent = 'ОПЛАТИТЬ';
+            payBtn.disabled = false;
+            payBtn.style.opacity = '1';
+        }
     });
 }
 
@@ -1649,9 +1969,9 @@ $('btnFast').addEventListener('click', function(){
     save();
     tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
 });
-$('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal(); });
+$('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
 $('btnWithdraw').addEventListener('click', () => { Sound.click(); showWithdrawModal(); });
-$('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal(); });
+$('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
 
 function applySettingsToUI(){
     $('btnFast').classList.toggle('active', state.settings.fastSpin);
@@ -1700,7 +2020,19 @@ Promise.all([
         setLoaderStatus('Подключаем Telegram...');
         initTelegram(resolve);
     }),
-    new Promise(resolve => setTimeout(resolve, 800)),
+    new Promise(resolve => {
+        setLoaderStatus('Загружаем TON Core...');
+        const check = () => {
+            if (window.TonCore && window.TonCore.beginCell) resolve();
+            else setTimeout(check, 100);
+        };
+        check();
+    }),
+    new Promise(resolve => {
+        setLoaderStatus('Загружаем кошелёк...');
+        loadTonConnectSDK().then(resolve).catch(resolve);
+    }),
+    new Promise(resolve => setTimeout(resolve, 1200)),
 ]).then(async () => {
     setLoaderStatus('Загружаем данные...');
     await apiRefreshBalance();
