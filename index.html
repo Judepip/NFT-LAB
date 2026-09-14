@@ -742,8 +742,6 @@ async function apiRefreshInventory(){
     try {
         const d = await api('/api/inventory?user_id=' + user.id);
         if (d.ok && Array.isArray(d.items)){
-            // НЕ фильтруем RELAYER_BLOCKED — подарки из магазина должны быть видны.
-            // Блокировка применяется только в showWithdrawModal.
             state.inventory = d.items.map(it => ({
                 id: it.id,
                 name: it.gift_name,
@@ -1077,7 +1075,7 @@ async function loadServerHistory(filter){
     list.innerHTML = '<div class="history-empty">Загрузка...</div>';
     const items = await apiHistory(filter === 'all' ? null : (filter === 'game' ? null : filter));
     let rows = items;
-    if (filter === 'game') rows = items.filter(x => ['upgrade','buy','sell'].includes(x.type));
+    if (filter === 'game') rows = items.filter(x => ['upgrade','buy','sell','upgrade_win','upgrade_reward'].includes(x.type));
     $('historyCount').textContent = rows.length;
     renderHistoryList(rows);
 }
@@ -1093,6 +1091,8 @@ function renderHistoryList(items){
         withdraw_request: { icon: '✉️', color: 'var(--gold)', label: 'Заявка на вывод' },
         withdraw_complete: { icon: '✅', color: 'var(--neon)', label: 'Вывод выполнен' },
         upgrade:  { icon: '⚡', color: 'var(--cyan)', label: 'Апгрейд' },
+        upgrade_win:  { icon: '🎉', color: 'var(--neon)', label: 'Апгрейд — успех' },
+        upgrade_reward: { icon: '🎁', color: 'var(--gold)', label: 'Апгрейд — награда' },
         buy:      { icon: '🛒', color: 'var(--cyan)', label: 'Покупка' },
         sell:     { icon: '💰', color: 'var(--gold)', label: 'Продажа' },
         promo:    { icon: '🎟', color: 'var(--cyan)', label: 'Промокод' },
@@ -1406,11 +1406,8 @@ function showBuyModal(idx){
                     return;
                 }
                 if (typeof d.balance === 'number') state.balance = d.balance;
-
-                // Пауза, чтобы SQLite WAL точно применил коммит
                 await new Promise(r => setTimeout(r, 150));
                 await apiRefreshInventory();
-
                 Sound.buy();
                 overlay.remove();
                 render();
@@ -1458,8 +1455,6 @@ function showSellModal(itemId){
         btn.textContent = 'ПРОДАЖА...';
 
         try {
-            // ✅ ОДИН атомарный запрос /api/sell:
-            // удаляет из инвентаря + начисляет звёзды + логирует
             const d = await api('/api/sell', {
                 method: 'POST',
                 body: { user_id: user.id, inventory_id: itemIdNum }
@@ -1473,10 +1468,7 @@ function showSellModal(itemId){
             }
 
             if (typeof d.balance === 'number') state.balance = d.balance;
-
-            // Обновляем инвентарь с сервера — там уже нет этого предмета
             await apiRefreshInventory();
-
             if (Number(state.selectedLeft) === itemIdNum) state.selectedLeft = null;
 
             Sound.sell();
@@ -1524,24 +1516,36 @@ function doUpgrade(){
 
     setTimeout(async () => {
         stopSpinSound();
-        // Для апгрейда используем /api/spend (списывает звёзды) и /api/inventory/remove
-        // Но /api/inventory/remove теперь = вывод! Поэтому используем /api/sell с 0 звёзд?
-        // Нет — для апгрейда нужно "уничтожить" предмет без начисления звёзд.
-        // Используем /api/spend с amount = 0 и удаление через отдельный эндпоинт.
-        // Пока: удаляем через /api/inventory/remove (но он берёт 25⭐).
-        // ⚠️ ВАЖНО: для апгрейда нужен отдельный эндпоинт /api/upgrade на сервере!
-        // Здесь временно оставляем логику через spend + remove.
+
+        // 1. Удаляем предмет из инвентаря БЕЗ списания 25⭐ (не вывод, а апгрейд)
         try {
-            // TODO: заменить на /api/upgrade, когда добавите на сервер
-            await api('/api/inventory/remove', {
+            const rm = await api('/api/upgrade/remove', {
                 method: 'POST',
                 body: { user_id: user.id, inventory_id: left.id }
             });
-        } catch(e){ console.warn('remove error:', e); }
+            if (!rm.ok) console.warn('upgrade/remove error:', rm.error);
+        } catch(e){ console.warn('upgrade/remove exception:', e); }
 
+        // 2. Списываем ставку (стоимость предмета)
         await apiSpend(left.price, 'upgrade', { from: left.name, to: right.name, success, chance });
 
+        // 3. При успехе — начисляем целевой предмет БЕЗ списания звёзд
+        if (success) {
+            try {
+                await api('/api/upgrade/reward', {
+                    method: 'POST',
+                    body: {
+                        user_id: user.id,
+                        gift_name: right.name,
+                        gift_price: right.price,
+                        gift_image: right.image,
+                    }
+                });
+            } catch(e){ console.warn('upgrade reward error:', e); }
+        }
+
         await apiRefreshInventory();
+        await apiRefreshBalance();
         state.selectedLeft = null;
         state.isUpgrading = false;
         upgradeInfo.textContent = success ? '✅ Успех!' : '❌ Неудача';
@@ -1916,7 +1920,6 @@ async function showWithdrawModal(){
                 btn.textContent = 'ОТПРАВКА...';
 
                 try {
-                    // /api/inventory/remove на бэкенде САМ списывает 25⭐ и создаёт заявку
                     const d = await api('/api/inventory/remove', {
                         method: 'POST',
                         body: { user_id: user.id, inventory_id: selectedId }
