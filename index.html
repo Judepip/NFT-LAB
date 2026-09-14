@@ -1721,6 +1721,18 @@ function updateWalletStatus() {
 async function showWithdrawModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
+
+    const WITHDRAW_FEE = 25;
+    await apiRefreshBalance();   // ← обновляем баланс перед проверкой
+
+    // Если звёзд не хватает — сразу открываем пополнение
+    if (state.balance < WITHDRAW_FEE){
+        Sound.lose();
+        tg.showAlert('❌ Для вывода нужно минимум ⭐' + WITHDRAW_FEE + '\nУ вас: ⭐' + Math.floor(state.balance));
+        setTimeout(() => showDepositModal('ton'), 300);
+        return;
+    }
+
     let inventory = await apiRefreshInventory();
     if (!inventory.length) inventory = state.inventory || [];
     inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
@@ -1764,9 +1776,10 @@ async function showWithdrawModal(){
                         style="background:linear-gradient(135deg,var(--gold),#ffb700);color:#0a0e1a;border:none;font-size:14px;padding:14px;margin-top:0;display:none;">
                     💸 ВЫВЕСТИ
                 </button>
-                <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:10px;">
-                    Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
-                </div>
+                <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px;">
+                Стоимость вывода: <b style="color:var(--red);">−25 ⭐</b><br>
+                Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
+            </div>
             </div>`;
         overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
         let selectedId = null;
@@ -1780,54 +1793,80 @@ async function showWithdrawModal(){
                 Sound.click();
             });
         });
-        const btn = overlay.querySelector('#withdrawStartBtn');
-        if (btn){
-            btn.addEventListener('click', async () => {
-                if (!selectedId) return;
-                btn.disabled = true;
-                btn.textContent = 'ОТПРАВКА...';
-                try {
-                    const r = await fetch(API_BASE + '/api/inventory/remove', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ user_id: user.id, inventory_id: selectedId })
-                    });
-                    const d = await r.json();
-                    if (d.ok){
-                        Sound.click();
-                        overlay.innerHTML = `
-                            <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
-                                <div style="font-size:60px;margin-bottom:12px;">✉️</div>
-                                <div class="modal-title" style="color:var(--neon);">Заявка создана!</div>
-                                <div class="modal-sub">
-                                    Теперь напишите любое сообщение аккаунту:<br><br>
-                                    <b style="color:var(--gold);font-size:16px;">@${RELAYER_USERNAME}</b><br><br>
-                                    Бот проверит заявку и сразу отправит ваш подарок.
-                                </div>
-                                <a href="https://t.me/${RELAYER_USERNAME}" target="_blank" class="modal-btn"
-                                   style="display:block;text-decoration:none;margin-bottom:8px;background:var(--neon);color:#0a0e1a;padding:12px;border-radius:30px;font-weight:700;">
-                                    ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
-                                </a>
-                                <button class="modal-btn grey" data-action="finish">OK</button>
-                            </div>`;
-                        overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
-                            overlay.remove();
-                            apiRefreshBalance();
-                            apiRefreshInventory().then(() => render());
-                        });
-                    } else {
-                        tg.showAlert('❌ ' + (d.error || 'Ошибка'));
-                        btn.disabled = false;
-                        btn.textContent = '💸 ВЫВЕСТИ';
-                    }
-                } catch(e){
-                    tg.showAlert('❌ Ошибка сети');
-                    btn.disabled = false;
-                    btn.textContent = '💸 ВЫВЕСТИ';
-                }
-            });
+       const WITHDRAW_FEE = 25;   // ← стоимость вывода в звёздах
+
+const btn = overlay.querySelector('#withdrawStartBtn');
+if (btn){
+    btn.addEventListener('click', async () => {
+        if (!selectedId) return;
+
+        // 1. Проверяем баланс
+        if (state.balance < WITHDRAW_FEE){
+            // Не хватает — открываем пополнение
+            Sound.lose();
+            tg.showAlert('❌ Недостаточно звёзд для вывода.\nНужно: ⭐' + WITHDRAW_FEE + '\nУ вас: ⭐' + Math.floor(state.balance));
+
+            // Закрываем текущий модал
+            overlay.remove();
+
+            // Открываем пополнение
+            setTimeout(() => {
+                showDepositModal('ton');
+            }, 300);
+            return;
         }
-    }
+
+        // 2. Списываем 25⭐ за вывод
+        await apiSpend(WITHDRAW_FEE, 'withdraw_fee', { action: 'withdraw' });
+
+        // 3. Создаём заявку
+        btn.disabled = true;
+        btn.textContent = 'ОТПРАВКА...';
+
+        try {
+            const r = await fetch(API_BASE + '/api/inventory/remove', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: user.id, inventory_id: selectedId })
+            });
+            const d = await r.json();
+
+            if (d.ok){
+                Sound.click();
+                overlay.innerHTML = `
+                    <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
+                        <div style="font-size:60px;margin-bottom:12px;">✉️</div>
+                        <div class="modal-title" style="color:var(--neon);">Заявка создана!</div>
+                        <div class="modal-sub">
+                            Списано за вывод: <b style="color:var(--red);">−${WITHDRAW_FEE} ⭐</b><br><br>
+                            Теперь напишите любое сообщение аккаунту:<br><br>
+                            <b style="color:var(--gold);font-size:16px;">@${RELAYER_USERNAME}</b><br><br>
+                            Бот проверит заявку и сразу отправит ваш подарок.
+                        </div>
+                        <a href="https://t.me/${RELAYER_USERNAME}" target="_blank" class="modal-btn"
+                           style="display:block;text-decoration:none;margin-bottom:8px;background:var(--neon);color:#0a0e1a;padding:12px;border-radius:30px;font-weight:700;">
+                            ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
+                        </a>
+                        <button class="modal-btn grey" data-action="finish">OK</button>
+                    </div>
+                `;
+                overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
+                    overlay.remove();
+                    apiRefreshBalance();
+                    apiRefreshInventory().then(() => render());
+                });
+            } else {
+                tg.showAlert('❌ ' + (d.error || 'Ошибка'));
+                btn.disabled = false;
+                btn.textContent = '💸 ВЫВЕСТИ';
+            }
+        } catch(e){
+            tg.showAlert('❌ Ошибка сети');
+            btn.disabled = false;
+            btn.textContent = '💸 ВЫВЕСТИ';
+        }
+    });
+}
     renderContent();
     document.body.appendChild(overlay);
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
