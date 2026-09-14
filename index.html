@@ -1114,7 +1114,7 @@ function render(){
         }, 0);
     } else {
         invGrid.innerHTML = state.inventory.map(it => `
-            <div class="inv-item ${state.selectedLeft===it.id?'selected':''}" data-id="${it.id}">
+            <div class="inv-item ${Number(state.selectedLeft)===Number(it.id)?'selected':''}" data-id="${it.id}">
                 <img src="${it.image}" onerror="this.style.display='none'">
                 <div class="inv-name">${it.name}</div>
                 <div class="inv-price">⭐${it.price}</div>
@@ -1153,7 +1153,7 @@ function render(){
         }
     }
 
-    const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
+    const leftItem = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     if (leftItem){
         slotLeft.classList.add('filled');
         slotLeft.innerHTML = `
@@ -1194,7 +1194,7 @@ function render(){
 
 const MAX_CHANCE = 75;
 function calcChance(){
-    const left = state.inventory.find(x => x.id === state.selectedLeft);
+    const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
     if (!left || !right) return 0;
     return Math.min(MAX_CHANCE, Math.max(1, (left.price / right.price) * 100));
@@ -1206,7 +1206,7 @@ function updateChance(){
     wheelProgress.setAttribute('stroke-dasharray', CIRC);
     wheelProgress.setAttribute('stroke-dashoffset', CIRC - (CIRC * chance / 100));
 
-    const left = state.inventory.find(x => x.id === state.selectedLeft);
+    const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
 
     if (!left || !right){
@@ -1289,7 +1289,7 @@ invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
     Sound.click();
-    const id = el.dataset.id;
+    const id = Number(el.dataset.id);   // ← преобразуем в число
     state.selectedLeft = id;
     render();
     showSellModal(id);
@@ -1351,7 +1351,8 @@ function showBuyModal(giftIndex){
 }
 
 function showSellModal(itemId){
-    const item = state.inventory.find(x => x.id === itemId);
+    const itemIdNum = Number(itemId);
+    const item = state.inventory.find(x => Number(x.id) === itemIdNum);
     if (!item) return;
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1397,7 +1398,7 @@ function showSellModal(itemId){
 
 function doUpgrade(){
     if (state.isUpgrading) return;
-    const left = state.inventory.find(x => x.id === state.selectedLeft);
+    const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
     if (!left || !right) return;
 
