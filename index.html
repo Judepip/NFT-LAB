@@ -509,6 +509,7 @@ const REQUIRED_CHANNEL = 'NFTLABDROPS';
 const REQUIRED_CHANNEL_URL = 'https://t.me/NFTLABDROPS';
 
 const RELAYER_BLOCKED = ['Кольцо', 'Кубок', 'Мишка', 'Роза', 'Сердце'];
+const WITHDRAW_FEE = 25;
 
 const DEPOSIT_PACKAGES = [
     { stars: 100,  ton: 1.1  },
@@ -1223,7 +1224,7 @@ function updateChance(){
 
 function quickPickChance(targetPercent){
     let basePrice = null;
-    const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
+    const leftItem = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     const rightItem = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
     if (leftItem){ basePrice = leftItem.price; }
     else if (rightItem){ basePrice = rightItem.price; }
@@ -1289,7 +1290,7 @@ invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
     Sound.click();
-    const id = Number(el.dataset.id);   // ← преобразуем в число
+    const id = Number(el.dataset.id);
     state.selectedLeft = id;
     render();
     showSellModal(id);
@@ -1311,48 +1312,76 @@ rightGrid.addEventListener('click', e => {
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-const buyBtn = overlay.querySelector('[data-action="buy"]');
-if (buyBtn && canAfford){
-    buyBtn.addEventListener('click', async () => {
-        buyBtn.disabled = true;
-        buyBtn.textContent = 'ПОКУПКА...';
+/* ===== КУПИТЬ ПОДАРОК ИЗ МАГАЗИНА ===== */
+function showBuyModal(idx){
+    const gift = GIFTS[idx];
+    if (!gift) return;
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const canAfford = state.balance >= gift.price;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content buy">
+            <img src="${gift.image}" onerror="this.style.display='none'">
+            <div class="modal-title">${gift.name}</div>
+            <div class="modal-sub">
+                Цена: <b style="color:var(--gold)">⭐ ${gift.price}</b><br>
+                <span style="font-size:10px;">Ваш баланс: ⭐ ${Math.floor(state.balance)}</span>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn grey" data-action="close">ОТМЕНА</button>
+                <button class="modal-btn gold" data-action="buy" ${canAfford?'':'disabled'}>
+                    ${canAfford ? '🛒 КУПИТЬ' : '❌ НЕ ХВАТАЕТ'}
+                </button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
 
-        try {
-            // ✅ Вызываем новый эндпоинт, который сохраняет подарок на сервере
-            const d = await api('/api/buy', {
-                method: 'POST',
-                body: {
-                    user_id: user.id,
-                    gift_name: gift.name,
-                    gift_price: gift.price,
-                    gift_image: gift.image,
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
+        Sound.click(); overlay.remove();
+    });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    const buyBtn = overlay.querySelector('[data-action="buy"]');
+    if (buyBtn && canAfford){
+        buyBtn.addEventListener('click', async () => {
+            buyBtn.disabled = true;
+            buyBtn.textContent = 'ПОКУПКА...';
+            try {
+                const d = await api('/api/buy', {
+                    method: 'POST',
+                    body: {
+                        user_id: user.id,
+                        gift_name: gift.name,
+                        gift_price: gift.price,
+                        gift_image: gift.image,
+                    }
+                });
+                if (!d.ok){
+                    tg.showAlert('❌ ' + (d.error || 'Ошибка покупки'));
+                    buyBtn.disabled = false;
+                    buyBtn.textContent = 'КУПИТЬ';
+                    return;
                 }
-            });
-
-            if (!d.ok){
-                tg.showAlert('❌ ' + (d.error || 'Ошибка покупки'));
+                if (typeof d.balance === 'number') state.balance = d.balance;
+                await apiRefreshInventory();
+                Sound.buy();
+                overlay.remove();
+                render();
+                tg.showAlert('✅ Куплено: ' + gift.name + ' за ⭐' + gift.price);
+                if (navigator.vibrate) navigator.vibrate([20,40,20]);
+            } catch(e){
+                console.error('buy error:', e);
+                tg.showAlert('❌ Ошибка сети');
                 buyBtn.disabled = false;
                 buyBtn.textContent = 'КУПИТЬ';
-                return;
             }
-
-            // Обновляем баланс и инвентарь с сервера
-            if (typeof d.balance === 'number') state.balance = d.balance;
-            await apiRefreshInventory();
-
-            Sound.buy();
-            overlay.remove();
-            render();
-            tg.showAlert('✅ Куплено: ' + gift.name + ' за ⭐' + gift.price);
-            if (navigator.vibrate) navigator.vibrate([20,40,20]);
-        } catch(e){
-            console.error('buy error:', e);
-            tg.showAlert('❌ Ошибка сети');
-            buyBtn.disabled = false;
-            buyBtn.textContent = 'КУПИТЬ';
-        }
-    });
+        });
+    }
 }
+
+/* ===== ПРОДАТЬ ===== */
 function showSellModal(itemId){
     const itemIdNum = Number(itemId);
     const item = state.inventory.find(x => Number(x.id) === itemIdNum);
@@ -1378,19 +1407,17 @@ function showSellModal(itemId){
     overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
     overlay.querySelector('[data-action="sell"]').addEventListener('click', async () => {
-        const idx = state.inventory.findIndex(x => x.id === itemId);
+        const idx = state.inventory.findIndex(x => Number(x.id) === itemIdNum);
         if (idx === -1){ overlay.remove(); return; }
-        // Удаляем с сервера
         try {
             await api('/api/inventory/remove', {
                 method: 'POST',
-                body: { user_id: user.id, inventory_id: itemId }
+                body: { user_id: user.id, inventory_id: itemIdNum }
             });
         } catch(e){ console.warn('remove error:', e); }
-        // Начисляем звёзды
         await apiEarn(item.price, 'sell', { name: item.name, price: item.price });
         await apiRefreshInventory();
-        if (state.selectedLeft === itemId) state.selectedLeft = null;
+        if (Number(state.selectedLeft) === itemIdNum) state.selectedLeft = null;
         Sound.sell();
         overlay.remove();
         render();
@@ -1399,6 +1426,7 @@ function showSellModal(itemId){
     });
 }
 
+/* ===== АПГРЕЙД ===== */
 function doUpgrade(){
     if (state.isUpgrading) return;
     const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
@@ -1429,7 +1457,6 @@ function doUpgrade(){
 
     setTimeout(async () => {
         stopSpinSound();
-        // Удаляем левый предмет с сервера
         try {
             await api('/api/inventory/remove', {
                 method: 'POST',
@@ -1437,7 +1464,6 @@ function doUpgrade(){
             });
         } catch(e){ console.warn('remove error:', e); }
 
-        // Списываем звёзды
         await apiSpend(left.price, 'upgrade', { from: left.name, to: right.name, success, chance });
 
         await apiRefreshInventory();
@@ -1482,6 +1508,7 @@ function showResult(success, item, chance){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
+/* ===== НАСТРОЙКИ ===== */
 function showSettingsModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1725,10 +1752,8 @@ async function showWithdrawModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
 
-    const WITHDRAW_FEE = 25;
-    await apiRefreshBalance();   // ← обновляем баланс перед проверкой
+    await apiRefreshBalance();
 
-    // Если звёзд не хватает — сразу открываем пополнение
     if (state.balance < WITHDRAW_FEE){
         Sound.lose();
         tg.showAlert('❌ Для вывода нужно минимум ⭐' + WITHDRAW_FEE + '\nУ вас: ⭐' + Math.floor(state.balance));
@@ -1741,6 +1766,7 @@ async function showWithdrawModal(){
     inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+
     function renderContent(){
         let body = '';
         if (inventory.length === 0){
@@ -1780,11 +1806,12 @@ async function showWithdrawModal(){
                     💸 ВЫВЕСТИ
                 </button>
                 <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px;">
-                Стоимость вывода: <b style="color:var(--red);">−25 ⭐</b><br>
-                Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
-            </div>
+                    Стоимость вывода: <b style="color:var(--red);">−${WITHDRAW_FEE} ⭐</b><br>
+                    Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
+                </div>
             </div>`;
         overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+
         let selectedId = null;
         overlay.querySelectorAll('.withdraw-gift').forEach(el => {
             el.addEventListener('click', () => {
@@ -1796,80 +1823,71 @@ async function showWithdrawModal(){
                 Sound.click();
             });
         });
-       const WITHDRAW_FEE = 25;   // ← стоимость вывода в звёздах
 
-const btn = overlay.querySelector('#withdrawStartBtn');
-if (btn){
-    btn.addEventListener('click', async () => {
-        if (!selectedId) return;
+        const btn = overlay.querySelector('#withdrawStartBtn');
+        if (btn){
+            btn.addEventListener('click', async () => {
+                if (!selectedId) return;
 
-        // 1. Проверяем баланс
-        if (state.balance < WITHDRAW_FEE){
-            // Не хватает — открываем пополнение
-            Sound.lose();
-            tg.showAlert('❌ Недостаточно звёзд для вывода.\nНужно: ⭐' + WITHDRAW_FEE + '\nУ вас: ⭐' + Math.floor(state.balance));
-
-            // Закрываем текущий модал
-            overlay.remove();
-
-            // Открываем пополнение
-            setTimeout(() => {
-                showDepositModal('ton');
-            }, 300);
-            return;
-        }
-
-        // 2. Списываем 25⭐ за вывод
-        await apiSpend(WITHDRAW_FEE, 'withdraw_fee', { action: 'withdraw' });
-
-        // 3. Создаём заявку
-        btn.disabled = true;
-        btn.textContent = 'ОТПРАВКА...';
-
-        try {
-            const r = await fetch(API_BASE + '/api/inventory/remove', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: user.id, inventory_id: selectedId })
-            });
-            const d = await r.json();
-
-            if (d.ok){
-                Sound.click();
-                overlay.innerHTML = `
-                    <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
-                        <div style="font-size:60px;margin-bottom:12px;">✉️</div>
-                        <div class="modal-title" style="color:var(--neon);">Заявка создана!</div>
-                        <div class="modal-sub">
-                            Списано за вывод: <b style="color:var(--red);">−${WITHDRAW_FEE} ⭐</b><br><br>
-                            Теперь напишите любое сообщение аккаунту:<br><br>
-                            <b style="color:var(--gold);font-size:16px;">@${RELAYER_USERNAME}</b><br><br>
-                            Бот проверит заявку и сразу отправит ваш подарок.
-                        </div>
-                        <a href="https://t.me/${RELAYER_USERNAME}" target="_blank" class="modal-btn"
-                           style="display:block;text-decoration:none;margin-bottom:8px;background:var(--neon);color:#0a0e1a;padding:12px;border-radius:30px;font-weight:700;">
-                            ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
-                        </a>
-                        <button class="modal-btn grey" data-action="finish">OK</button>
-                    </div>
-                `;
-                overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
+                if (state.balance < WITHDRAW_FEE){
+                    Sound.lose();
+                    tg.showAlert('❌ Недостаточно звёзд для вывода.\nНужно: ⭐' + WITHDRAW_FEE + '\nУ вас: ⭐' + Math.floor(state.balance));
                     overlay.remove();
-                    apiRefreshBalance();
-                    apiRefreshInventory().then(() => render());
-                });
-            } else {
-                tg.showAlert('❌ ' + (d.error || 'Ошибка'));
-                btn.disabled = false;
-                btn.textContent = '💸 ВЫВЕСТИ';
-            }
-        } catch(e){
-            tg.showAlert('❌ Ошибка сети');
-            btn.disabled = false;
-            btn.textContent = '💸 ВЫВЕСТИ';
+                    setTimeout(() => { showDepositModal('ton'); }, 300);
+                    return;
+                }
+
+                await apiSpend(WITHDRAW_FEE, 'withdraw_fee', { action: 'withdraw' });
+
+                btn.disabled = true;
+                btn.textContent = 'ОТПРАВКА...';
+
+                try {
+                    const r = await fetch(API_BASE + '/api/inventory/remove', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ user_id: user.id, inventory_id: selectedId })
+                    });
+                    const d = await r.json();
+
+                    if (d.ok){
+                        Sound.click();
+                        overlay.innerHTML = `
+                            <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
+                                <div style="font-size:60px;margin-bottom:12px;">✉️</div>
+                                <div class="modal-title" style="color:var(--neon);">Заявка создана!</div>
+                                <div class="modal-sub">
+                                    Списано за вывод: <b style="color:var(--red);">−${WITHDRAW_FEE} ⭐</b><br><br>
+                                    Теперь напишите любое сообщение аккаунту:<br><br>
+                                    <b style="color:var(--gold);font-size:16px;">@${RELAYER_USERNAME}</b><br><br>
+                                    Бот проверит заявку и сразу отправит ваш подарок.
+                                </div>
+                                <a href="https://t.me/${RELAYER_USERNAME}" target="_blank" class="modal-btn"
+                                   style="display:block;text-decoration:none;margin-bottom:8px;background:var(--neon);color:#0a0e1a;padding:12px;border-radius:30px;font-weight:700;">
+                                    ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
+                                </a>
+                                <button class="modal-btn grey" data-action="finish">OK</button>
+                            </div>
+                        `;
+                        overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
+                            overlay.remove();
+                            apiRefreshBalance();
+                            apiRefreshInventory().then(() => render());
+                        });
+                    } else {
+                        tg.showAlert('❌ ' + (d.error || 'Ошибка'));
+                        btn.disabled = false;
+                        btn.textContent = '💸 ВЫВЕСТИ';
+                    }
+                } catch(e){
+                    tg.showAlert('❌ Ошибка сети');
+                    btn.disabled = false;
+                    btn.textContent = '💸 ВЫВЕСТИ';
+                }
+            });
         }
-    });
-}
+    }
+
     renderContent();
     document.body.appendChild(overlay);
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
@@ -1882,6 +1900,7 @@ function showDepositModal(defaultTab) {
     let activeTab = defaultTab || 'ton';
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+
     function renderContent() {
         let body = '';
         if (activeTab === 'ton') {
@@ -1946,6 +1965,7 @@ function showDepositModal(defaultTab) {
             t.addEventListener('click', () => { activeTab = t.dataset.tab; Sound.click(); renderContent(); });
         });
         overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+
         if (activeTab === 'ton') {
             setTimeout(async () => {
                 const ui = await ensureTonConnectUI();
@@ -2020,7 +2040,7 @@ function showDepositModal(defaultTab) {
             messages: [{ address: RECIPIENT_ADDRESS, amount: amountNano, payload: payload }]
         };
         try {
-            const result = await tonConnectUI.sendTransaction(transaction);
+            await tonConnectUI.sendTransaction(transaction);
             if (info) info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
             payBtn.textContent = 'ОТПРАВЛЕНО';
             setTimeout(() => {
