@@ -1517,7 +1517,7 @@ function doUpgrade(){
     setTimeout(async () => {
         stopSpinSound();
 
-        // 1. Удаляем предмет из инвентаря БЕЗ списания 25⭐ (не вывод, а апгрейд)
+        // 1. Удаляем предмет из инвентаря БЕЗ списания 25⭐
         try {
             const rm = await api('/api/upgrade/remove', {
                 method: 'POST',
@@ -1826,7 +1826,7 @@ function updateWalletStatus() {
     }
 }
 
-/* ===== ВЫВОД через @labrelayer ===== */
+/* ===== ВЫВОД через @labrelayer — можно выводить несколько подряд ===== */
 async function showWithdrawModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1840,11 +1840,19 @@ async function showWithdrawModal(){
         return;
     }
 
-    let inventory = await apiRefreshInventory();
-    if (!inventory.length) inventory = state.inventory || [];
-    inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    // Список подарков для вывода (без RELAYER_BLOCKED)
+    let inventory = [];
+
+    async function refreshList(){
+        inventory = await apiRefreshInventory();
+        if (!inventory.length) inventory = state.inventory || [];
+        inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
+    }
 
     function renderContent(){
         let body = '';
@@ -1877,7 +1885,8 @@ async function showWithdrawModal(){
                 </div>
                 <div class="deposit-note" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.25);">
                     Выберите подарок из инвентаря. Затем напишите аккаунту
-                    <b style="color:var(--gold);">@${RELAYER_USERNAME}</b> — бот вышлет его автоматически.
+                    <b style="color:var(--gold);">@${RELAYER_USERNAME}</b> — бот вышлет его автоматически.<br>
+                    <span style="color:var(--muted);font-size:10px;">Можно создавать несколько заявок подряд.</span>
                 </div>
                 ${body}
                 <button class="volume-test-btn" id="withdrawStartBtn"
@@ -1952,10 +1961,19 @@ async function showWithdrawModal(){
                                style="display:block;text-decoration:none;margin-bottom:8px;background:var(--neon);color:#0a0e1a;padding:12px;border-radius:30px;font-weight:700;">
                                 ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
                             </a>
-                            <button class="modal-btn grey" data-action="finish">OK</button>
+                            <button class="modal-btn grey" data-action="next">ВЫВЕСТИ ЕЩЁ</button>
+                            <button class="modal-btn grey" data-action="finish" style="margin-top:8px;">ЗАКРЫТЬ</button>
                         </div>
                     `;
+                    // 🔁 «Вывести ещё» — перезагружает список и оставляет модалку открытой
+                    overlay.querySelector('[data-action="next"]').addEventListener('click', async () => {
+                        Sound.click();
+                        await apiRefreshBalance();
+                        await refreshList();
+                        renderContent();
+                    });
                     overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
+                        Sound.click();
                         overlay.remove();
                         apiRefreshBalance();
                         apiRefreshInventory().then(() => render());
@@ -1969,9 +1987,8 @@ async function showWithdrawModal(){
         }
     }
 
+    await refreshList();
     renderContent();
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 /* ===== ПОПОЛНЕНИЕ: TON + NFT-ПОДАРКИ ===== */
