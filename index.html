@@ -1311,45 +1311,48 @@ rightGrid.addEventListener('click', e => {
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-function showBuyModal(giftIndex){
-    const gift = GIFTS[giftIndex];
-    if (!gift) return;
-    const old = document.querySelector('.modal-overlay');
-    if (old) old.remove();
-    const canAfford = state.balance >= gift.price;
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content buy">
-            <img src="${gift.image}" onerror="this.style.display='none'">
-            <div class="modal-title">${gift.name}</div>
-            <div class="modal-sub">
-                Цена: <b style="color:var(--gold)">⭐ ${gift.price}</b><br>
-                У вас: <b style="color:var(--gold)">⭐ ${Math.floor(state.balance)}</b>
-                ${!canAfford ? '<br><span style="color:var(--red)">Недостаточно звёзд</span>' : ''}
-            </div>
-            <div class="modal-actions">
-                <button class="modal-btn grey" data-action="close">ОТМЕНА</button>
-                <button class="modal-btn gold" data-action="buy" ${!canAfford?'disabled style="opacity:.4"':''}>КУПИТЬ</button>
-            </div>
-        </div>`;
-    document.body.appendChild(overlay);
-    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-    const buyBtn = overlay.querySelector('[data-action="buy"]');
-    if (buyBtn && canAfford){
-        buyBtn.addEventListener('click', async () => {
-            await apiSpend(gift.price, 'buy', { name: gift.name, price: gift.price });
+const buyBtn = overlay.querySelector('[data-action="buy"]');
+if (buyBtn && canAfford){
+    buyBtn.addEventListener('click', async () => {
+        buyBtn.disabled = true;
+        buyBtn.textContent = 'ПОКУПКА...';
+
+        try {
+            // ✅ Вызываем новый эндпоинт, который сохраняет подарок на сервере
+            const d = await api('/api/buy', {
+                method: 'POST',
+                body: {
+                    user_id: user.id,
+                    gift_name: gift.name,
+                    gift_price: gift.price,
+                    gift_image: gift.image,
+                }
+            });
+
+            if (!d.ok){
+                tg.showAlert('❌ ' + (d.error || 'Ошибка покупки'));
+                buyBtn.disabled = false;
+                buyBtn.textContent = 'КУПИТЬ';
+                return;
+            }
+
+            // Обновляем баланс и инвентарь с сервера
+            if (typeof d.balance === 'number') state.balance = d.balance;
             await apiRefreshInventory();
+
             Sound.buy();
             overlay.remove();
             render();
             tg.showAlert('✅ Куплено: ' + gift.name + ' за ⭐' + gift.price);
             if (navigator.vibrate) navigator.vibrate([20,40,20]);
-        });
-    }
+        } catch(e){
+            console.error('buy error:', e);
+            tg.showAlert('❌ Ошибка сети');
+            buyBtn.disabled = false;
+            buyBtn.textContent = 'КУПИТЬ';
+        }
+    });
 }
-
 function showSellModal(itemId){
     const itemIdNum = Number(itemId);
     const item = state.inventory.find(x => Number(x.id) === itemIdNum);
