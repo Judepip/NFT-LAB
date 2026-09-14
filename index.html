@@ -505,7 +505,6 @@ const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
 const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
 const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
 
-// ⚠️ Обязательная подписка
 const REQUIRED_CHANNEL = 'NFTLABDROPS';
 const REQUIRED_CHANNEL_URL = 'https://t.me/NFTLABDROPS';
 
@@ -750,22 +749,16 @@ async function apiHistory(type){
     return [];
 }
 
-/* ===== ОБЯЗАТЕЛЬНАЯ ПОДПИСКА ===== */
+/* ===== ПОДПИСКА ===== */
 let subscriptionVerified = false;
 let onSubscribeSuccess = null;
 
 async function checkSubscription(force = false){
     if (subscriptionVerified && !force) return true;
-    if (!user.id){
-        subscriptionVerified = true;
-        return true;
-    }
+    if (!user.id){ subscriptionVerified = true; return true; }
     try {
         const d = await api('/api/check_subscription?user_id=' + user.id);
-        if (d.ok && d.subscribed){
-            subscriptionVerified = true;
-            return true;
-        }
+        if (d.ok && d.subscribed){ subscriptionVerified = true; return true; }
     } catch(e){ console.warn('subscription check error:', e); }
     return false;
 }
@@ -773,7 +766,6 @@ async function checkSubscription(force = false){
 function showSubscribeModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
-
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
@@ -782,41 +774,32 @@ function showSubscribeModal(){
                 <h2 style="color:var(--cyan);">🔔 Подписка</h2>
                 <button class="settings-close" data-action="close">✕</button>
             </div>
-
             <div class="deposit-note" style="background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.25);">
                 Для продолжения нужно подписаться на канал
                 <b style="color:var(--cyan);">@${REQUIRED_CHANNEL}</b>.
                 Это займёт пару секунд.
             </div>
-
             <a href="${REQUIRED_CHANNEL_URL}" target="_blank"
                class="volume-test-btn"
                style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
                 📢 ПОДПИСАТЬСЯ НА @${REQUIRED_CHANNEL}
             </a>
-
             <button class="volume-test-btn" id="subscribeCheckBtn"
                     style="background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);color:var(--neon);">
                 ✅ Я ПОДПИСАЛСЯ — ПРОВЕРИТЬ
             </button>
-
             <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:10px;">
                 Если вы уже подписаны — просто нажмите «Проверить»
             </div>
         </div>
     `;
     document.body.appendChild(overlay);
-
-    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-        Sound.click(); overlay.remove();
-    });
-
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
     const checkBtn = overlay.querySelector('#subscribeCheckBtn');
     checkBtn.addEventListener('click', async () => {
         Sound.click();
         checkBtn.disabled = true;
         checkBtn.textContent = 'ПРОВЕРКА...';
-
         const ok = await checkSubscription(true);
         if (ok){
             Sound.win();
@@ -829,18 +812,12 @@ function showSubscribeModal(){
             tg.showAlert('❌ Подписка не найдена. Подпишитесь и попробуйте снова.');
         }
     });
-
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) overlay.remove();
-    });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 async function requireSubscription(action){
     const ok = await checkSubscription();
-    if (ok){
-        action();
-        return;
-    }
+    if (ok){ action(); return; }
     onSubscribeSuccess = action;
     showSubscribeModal();
 }
@@ -856,8 +833,7 @@ async function refreshBoostBanner(){
             banner.style.display = 'block';
             document.getElementById('boostPercent').textContent = d.boost.percent;
             if (d.boost.type === 'once'){
-                document.getElementById('boostInfo').textContent =
-                    'на ' + d.boost.uses_left + ' пополн.';
+                document.getElementById('boostInfo').textContent = 'на ' + d.boost.uses_left + ' пополн.';
             } else if (d.boost.expires_at){
                 const exp = new Date(d.boost.expires_at + 'Z');
                 const hrs = Math.max(0, Math.round((exp - new Date()) / 3600000));
@@ -887,7 +863,6 @@ async function activatePromo(code){
             await apiRefreshInventory();
             render();
             await refreshBoostBanner();
-
             if (d.type === 'gift' && d.gift){
                 showGiftReceivedModal(d.gift);
             } else {
@@ -933,17 +908,14 @@ function showPromoModal(){
                 <h2 style="color:var(--cyan);">🎟 Промокод</h2>
                 <button class="settings-close" data-action="close">✕</button>
             </div>
-
             <div class="deposit-note" style="background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.25);">
                 Введите промокод — получите звёзды, подарок или буст к пополнению.
             </div>
-
             <input type="text" id="promoInput" placeholder="ВВЕДИТЕ КОД"
                    style="width:100%;background:#0f1525;border:1px solid var(--border2);
                           border-radius:10px;padding:14px 16px;color:var(--text);
                           font-family:var(--mono);font-size:16px;text-align:center;
                           letter-spacing:3px;text-transform:uppercase;outline:none;margin:8px 0 14px;">
-
             <button class="volume-test-btn" id="promoActivateBtn"
                     style="background:linear-gradient(135deg,var(--cyan),#0088cc);color:#0a0e1a;border:none;font-weight:700;">
                 🎟 АКТИВИРОВАТЬ
@@ -951,10 +923,8 @@ function showPromoModal(){
         </div>
     `;
     document.body.appendChild(overlay);
-
     const input = overlay.querySelector('#promoInput');
     const btn = overlay.querySelector('#promoActivateBtn');
-
     btn.addEventListener('click', async () => {
         Sound.click();
         btn.disabled = true;
@@ -963,25 +933,14 @@ function showPromoModal(){
         btn.disabled = false;
         btn.textContent = '🎟 АКТИВИРОВАТЬ';
     });
-
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') btn.click();
-    });
-
-    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-        Sound.click(); overlay.remove();
-    });
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) overlay.remove();
-    });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') btn.click(); });
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 let audioCtx = null;
 function getAudioCtx(){
-    if (!audioCtx){
-        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-        catch(e){ return null; }
-    }
+    if (!audioCtx){ try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return null; } }
     return audioCtx;
 }
 function playNote(freq, startTime, duration, type='sine', volumeMul=1){
@@ -1006,15 +965,8 @@ function playNote(freq, startTime, duration, type='sine', volumeMul=1){
 const Sound = {
     click(){ playNote(1200, 0, 0.08, 'sine', 0.9); playNote(1800, 0.005, 0.06, 'sine', 0.4); },
     tick(){ playNote(700 + Math.random() * 300, 0, 0.06, 'triangle', 0.5); },
-    win(){
-        [523.25, 659.25, 783.99, 1046.50].forEach((f,i) => {
-            playNote(f, i*0.11, 0.45, 'sine', 1);
-            playNote(f*2, i*0.11 + 0.01, 0.3, 'sine', 0.25);
-        });
-    },
-    lose(){
-        [440, 392, 329.63, 261.63].forEach((f,i) => playNote(f, i*0.13, 0.35, 'sine', 0.85));
-    },
+    win(){ [523.25, 659.25, 783.99, 1046.50].forEach((f,i) => { playNote(f, i*0.11, 0.45, 'sine', 1); playNote(f*2, i*0.11 + 0.01, 0.3, 'sine', 0.25); }); },
+    lose(){ [440, 392, 329.63, 261.63].forEach((f,i) => playNote(f, i*0.13, 0.35, 'sine', 0.85)); },
     buy(){ playNote(659.25, 0, 0.15, 'sine', 0.9); playNote(987.77, 0.08, 0.25, 'sine', 0.8); },
     sell(){ playNote(987.77, 0, 0.15, 'sine', 0.9); playNote(659.25, 0.08, 0.25, 'sine', 0.8); },
 };
@@ -1056,9 +1008,7 @@ function renderQuickButtons(){
         return `<button class="qc-btn ${colorClass}" data-chance="${pct}">${pct}%</button>`;
     }).join('');
     container.querySelectorAll('.qc-btn').forEach(btn => {
-        btn.addEventListener('click', function(){
-            quickPickChance(Number(this.dataset.chance));
-        });
+        btn.addEventListener('click', function(){ quickPickChance(Number(this.dataset.chance)); });
     });
 }
 
@@ -1095,10 +1045,7 @@ async function loadServerHistory(filter){
 
 function renderHistoryList(items){
     const list = $('historyList');
-    if (!items.length){
-        list.innerHTML = '<div class="history-empty">Пока нет записей</div>';
-        return;
-    }
+    if (!items.length){ list.innerHTML = '<div class="history-empty">Пока нет записей</div>'; return; }
     const icons = {
         topup:    { icon: '💎', color: 'var(--neon)',  label: 'Пополнение' },
         topup_gift:{ icon: '🎁', color: 'var(--neon)', label: 'Подарок получен' },
@@ -1278,22 +1225,15 @@ function quickPickChance(targetPercent){
     let basePrice = null;
     const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
     const rightItem = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
-
-    if (leftItem){
-        basePrice = leftItem.price;
-    } else if (rightItem){
-        basePrice = rightItem.price;
-    } else {
-        tg.showAlert('Сначала выберите предмет слева или цель справа');
-        return;
-    }
+    if (leftItem){ basePrice = leftItem.price; }
+    else if (rightItem){ basePrice = rightItem.price; }
+    else { tg.showAlert('Сначала выберите предмет слева или цель справа'); return; }
     const wantedPrice = basePrice * 100 / targetPercent;
     let bestIdx = 0, bestDiff = Infinity;
     GIFTS.forEach((g, i) => {
         const diff = Math.abs(g.price - wantedPrice);
         if (diff < bestDiff){ bestDiff = diff; bestIdx = i; }
     });
-
     if (leftItem){
         state.selectedRight = bestIdx;
         state.rightTab = 'target';
@@ -1360,10 +1300,7 @@ rightGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
     Sound.click();
-    if (el.dataset.buy !== undefined){
-        showBuyModal(parseInt(el.dataset.buy, 10));
-        return;
-    }
+    if (el.dataset.buy !== undefined){ showBuyModal(parseInt(el.dataset.buy, 10)); return; }
     if (el.dataset.target !== undefined){
         state.selectedRight = parseInt(el.dataset.target, 10);
         render();
@@ -1403,10 +1340,7 @@ function showBuyModal(giftIndex){
     if (buyBtn && canAfford){
         buyBtn.addEventListener('click', async () => {
             await apiSpend(gift.price, 'buy', { name: gift.name, price: gift.price });
-            state.inventory.push({
-                id: 'gift_' + Date.now() + '_' + Math.floor(Math.random()*1000),
-                name: gift.name, price: gift.price, image: gift.image,
-            });
+            await apiRefreshInventory();
             Sound.buy();
             overlay.remove();
             render();
@@ -1442,9 +1376,17 @@ function showSellModal(itemId){
     overlay.querySelector('[data-action="sell"]').addEventListener('click', async () => {
         const idx = state.inventory.findIndex(x => x.id === itemId);
         if (idx === -1){ overlay.remove(); return; }
-        state.inventory.splice(idx, 1);
-        if (state.selectedLeft === itemId) state.selectedLeft = null;
+        // Удаляем с сервера
+        try {
+            await api('/api/inventory/remove', {
+                method: 'POST',
+                body: { user_id: user.id, inventory_id: itemId }
+            });
+        } catch(e){ console.warn('remove error:', e); }
+        // Начисляем звёзды
         await apiEarn(item.price, 'sell', { name: item.name, price: item.price });
+        await apiRefreshInventory();
+        if (state.selectedLeft === itemId) state.selectedLeft = null;
         Sound.sell();
         overlay.remove();
         render();
@@ -1483,20 +1425,23 @@ function doUpgrade(){
 
     setTimeout(async () => {
         stopSpinSound();
-        state.inventory = state.inventory.filter(x => x.id !== left.id);
-        if (success){
-            state.inventory.push({
-                id: 'gift_' + Date.now(),
-                name: right.name, price: right.price, image: right.image,
+        // Удаляем левый предмет с сервера
+        try {
+            await api('/api/inventory/remove', {
+                method: 'POST',
+                body: { user_id: user.id, inventory_id: left.id }
             });
-        }
+        } catch(e){ console.warn('remove error:', e); }
+
+        // Списываем звёзды
+        await apiSpend(left.price, 'upgrade', { from: left.name, to: right.name, success, chance });
+
+        await apiRefreshInventory();
         state.selectedLeft = null;
         state.isUpgrading = false;
         upgradeInfo.textContent = success ? '✅ Успех!' : '❌ Неудача';
 
         if (success) Sound.win(); else Sound.lose();
-
-        await apiSpend(left.price, 'upgrade', { from: left.name, to: right.name, success, chance });
 
         render();
         showResult(success, success ? right : left, chance);
@@ -1536,7 +1481,6 @@ function showResult(success, item, chance){
 function showSettingsModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
-
     const s = state.settings;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -1608,7 +1552,6 @@ function showSettingsModal(){
             <button class="settings-save" data-action="save">Сохранить и закрыть</button>
         </div>`;
     document.body.appendChild(overlay);
-
     overlay.querySelectorAll('.preset-btn').forEach(btn => {
         btn.addEventListener('click', function(){
             const type = this.dataset.type;
@@ -1618,19 +1561,13 @@ function showSettingsModal(){
             if (newVal !== null){
                 const num = Number(newVal);
                 if (!isNaN(num) && num > 0 && num <= 100){
-                    if (type === 'x'){
-                        state.settings.presets.x[idx] = num;
-                        this.textContent = 'x' + num;
-                    } else {
-                        state.settings.presets.percent[idx] = num;
-                        this.textContent = num + '%';
-                    }
+                    if (type === 'x'){ state.settings.presets.x[idx] = num; this.textContent = 'x' + num; }
+                    else { state.settings.presets.percent[idx] = num; this.textContent = num + '%'; }
                     Sound.click();
                 }
             }
         });
     });
-
     overlay.querySelectorAll('.preset-reset').forEach(btn => {
         btn.addEventListener('click', function(){
             const type = this.dataset.reset;
@@ -1644,7 +1581,6 @@ function showSettingsModal(){
             Sound.click();
         });
     });
-
     overlay.querySelectorAll('.radio-option').forEach(opt => {
         opt.addEventListener('click', function(){
             const setting = this.dataset.setting;
@@ -1655,7 +1591,6 @@ function showSettingsModal(){
             Sound.click();
         });
     });
-
     overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
     overlay.querySelector('[data-action="save"]').addEventListener('click', () => {
         Sound.click();
@@ -1691,7 +1626,6 @@ function showVolumeModal(){
             </div>
         </div>`;
     document.body.appendChild(overlay);
-
     const slider = overlay.querySelector('#volSlider');
     const value = overlay.querySelector('#volValue');
     slider.addEventListener('input', () => {
@@ -1701,83 +1635,48 @@ function showVolumeModal(){
     });
     slider.addEventListener('change', () => { save(); Sound.click(); });
     overlay.querySelector('#testSound').addEventListener('click', () => Sound.win());
-    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-        save(); Sound.click(); overlay.remove();
-    });
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { save(); Sound.click(); overlay.remove(); });
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 /* ===== TON CONNECT ===== */
-
 function buildCommentPayload(comment) {
-    if (!window.TonCore || !window.TonCore.beginCell) {
-        console.error('[TON] @ton/core не загружен');
-        return null;
-    }
+    if (!window.TonCore || !window.TonCore.beginCell) { console.error('[TON] @ton/core не загружен'); return null; }
     try {
-        const cell = window.TonCore.beginCell()
-            .storeUint(0, 32)
-            .storeStringTail(comment)
-            .endCell();
+        const cell = window.TonCore.beginCell().storeUint(0, 32).storeStringTail(comment).endCell();
         return cell.toBoc().toString('base64');
-    } catch (e) {
-        console.error('[TON] Ошибка формирования payload:', e);
-        return null;
-    }
+    } catch (e) { console.error('[TON] Ошибка формирования payload:', e); return null; }
 }
-
 function loadTonConnectSDK() {
     const existing = window.TonConnectUI || (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI);
-    if (typeof existing === 'function') {
-        window.TonConnectUI = existing;
-        return Promise.resolve(existing);
-    }
+    if (typeof existing === 'function') { window.TonConnectUI = existing; return Promise.resolve(existing); }
     if (sdkLoadingPromise) return sdkLoadingPromise;
-
     sdkLoadingPromise = new Promise((resolve, reject) => {
         const tryLoad = (src, isFallback) => {
-            console.log('[TON SDK] пробую:', src);
             const script = document.createElement('script');
             script.src = src;
             script.async = true;
-
             script.onload = () => {
                 let Cls = null;
                 if (window.TON_CONNECT_UI) {
-                    Cls = window.TON_CONNECT_UI.TonConnectUI
-                       || window.TON_CONNECT_UI.default
+                    Cls = window.TON_CONNECT_UI.TonConnectUI || window.TON_CONNECT_UI.default
                        || (typeof window.TON_CONNECT_UI === 'function' ? window.TON_CONNECT_UI : null);
                 }
-                if (!Cls && typeof window.TonConnectUI === 'function') {
-                    Cls = window.TonConnectUI;
-                }
-
-                if (typeof Cls === 'function') {
-                    window.TonConnectUI = Cls;
-                    console.log('[TON SDK] класс найден');
-                    resolve(Cls);
-                } else if (!isFallback) {
-                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
-                } else {
-                    reject(new Error('TonConnectUI class not found'));
-                }
+                if (!Cls && typeof window.TonConnectUI === 'function') Cls = window.TonConnectUI;
+                if (typeof Cls === 'function') { window.TonConnectUI = Cls; resolve(Cls); }
+                else if (!isFallback) tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                else reject(new Error('TonConnectUI class not found'));
             };
-
             script.onerror = () => {
-                if (!isFallback) {
-                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
-                } else {
-                    reject(new Error('SDK load failed'));
-                }
+                if (!isFallback) tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                else reject(new Error('SDK load failed'));
             };
-
             document.head.appendChild(script);
         };
         tryLoad('./tonconnect-ui.min.js', false);
     });
     return sdkLoadingPromise;
 }
-
 function ensureTonConnectUI() {
     if (tonConnectUI) return Promise.resolve(tonConnectUI);
     return loadTonConnectSDK().then((TonConnectUICls) => {
@@ -1785,43 +1684,26 @@ function ensureTonConnectUI() {
             manifestUrl: MANIFEST_URL,
             walletsListConfiguration: {
                 includeWallets: [
-                    {
-                        appName: 'telegram-wallet', name: 'Wallet',
-                        imageUrl: 'https://wallet.tg/images/logo-288.png',
-                        aboutUrl: 'https://wallet.tg/', universalLink: 'https://t.me/wallet/start',
-                        bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'macos', 'windows', 'linux']
-                    },
-                    {
-                        appName: 'tonkeeper', name: 'Tonkeeper',
-                        imageUrl: 'https://tonkeeper.com/assets/tonconnect-icon.png',
-                        aboutUrl: 'https://tonkeeper.com', universalLink: 'https://app.tonkeeper.com/ton-connect',
-                        bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'chrome', 'firefox']
-                    },
-                    {
-                        appName: 'mytonwallet', name: 'MyTonWallet',
-                        imageUrl: 'https://mytonwallet.io/icon-256.png',
-                        aboutUrl: 'https://mytonwallet.io', universalLink: 'https://mytonwallet.io/ton-connect',
-                        bridgeUrl: BRIDGE_URL, platforms: ['chrome', 'firefox', 'ios', 'android']
-                    }
+                    { appName: 'telegram-wallet', name: 'Wallet', imageUrl: 'https://wallet.tg/images/logo-288.png',
+                      aboutUrl: 'https://wallet.tg/', universalLink: 'https://t.me/wallet/start',
+                      bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'macos', 'windows', 'linux'] },
+                    { appName: 'tonkeeper', name: 'Tonkeeper', imageUrl: 'https://tonkeeper.com/assets/tonconnect-icon.png',
+                      aboutUrl: 'https://tonkeeper.com', universalLink: 'https://app.tonkeeper.com/ton-connect',
+                      bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'chrome', 'firefox'] },
+                    { appName: 'mytonwallet', name: 'MyTonWallet', imageUrl: 'https://mytonwallet.io/icon-256.png',
+                      aboutUrl: 'https://mytonwallet.io', universalLink: 'https://mytonwallet.io/ton-connect',
+                      bridgeUrl: BRIDGE_URL, platforms: ['chrome', 'firefox', 'ios', 'android'] }
                 ]
             }
         });
-        tonConnectUI.onStatusChange(() => {
-            console.log('[TON] status change, connected =', tonConnectUI.connected);
-            updateWalletStatus();
-        });
+        tonConnectUI.onStatusChange(() => { updateWalletStatus(); });
         return tonConnectUI;
-    }).catch((e) => {
-        console.error('[TON] ошибка ensureTonConnectUI:', e);
-        return null;
-    });
+    }).catch((e) => { console.error('[TON] ошибка ensureTonConnectUI:', e); return null; });
 }
-
 function updateWalletStatus() {
     const payBtn = document.getElementById('payBtn');
     const payInfo = document.getElementById('payInfo');
     if (!payBtn || !payInfo) return;
-
     if (!tonConnectUI || !tonConnectUI.connected) {
         payBtn.disabled = true; payBtn.style.opacity = '.4';
         payInfo.textContent = 'Подключите кошелёк';
@@ -1835,29 +1717,23 @@ function updateWalletStatus() {
 }
 
 /* ===== ВЫВОД через @labrelayer ===== */
-
 async function showWithdrawModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
-
     let inventory = await apiRefreshInventory();
     if (!inventory.length) inventory = state.inventory || [];
     inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
-
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-
     function renderContent(){
         let body = '';
-
         if (inventory.length === 0){
             body = `
                 <div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:12px;">
                     <div style="font-size:40px;margin-bottom:10px;">📦</div>
                     У вас пока нет подарков для вывода.<br>
                     Отправьте NFT-подарок @${RELAYER_USERNAME}, чтобы начать.
-                </div>
-            `;
+                </div>`;
         } else {
             body = `
                 <div style="margin:10px 0 14px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
@@ -1869,41 +1745,29 @@ async function showWithdrawModal(){
                             <img src="${it.image || ''}" onerror="this.style.display='none'">
                             <div class="wg-name">${it.name}</div>
                             <div class="wg-price">⭐${it.price}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+                        </div>`).join('')}
+                </div>`;
         }
-
         overlay.innerHTML = `
             <div class="modal-content" style="border-color:var(--gold);max-width:400px;text-align:left;">
                 <div class="settings-header">
                     <h2 style="color:var(--gold);">💸 Вывод подарка</h2>
                     <button class="settings-close" data-action="close">✕</button>
                 </div>
-
                 <div class="deposit-note" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.25);">
                     Выберите подарок из инвентаря. Затем напишите аккаунту
                     <b style="color:var(--gold);">@${RELAYER_USERNAME}</b> — бот вышлет его автоматически.
                 </div>
-
                 ${body}
-
                 <button class="volume-test-btn" id="withdrawStartBtn"
                         style="background:linear-gradient(135deg,var(--gold),#ffb700);color:#0a0e1a;border:none;font-size:14px;padding:14px;margin-top:0;display:none;">
                     💸 ВЫВЕСТИ
                 </button>
-
                 <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:10px;">
                     Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
                 </div>
-            </div>
-        `;
-
-        overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-            Sound.click(); overlay.remove();
-        });
-
+            </div>`;
+        overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
         let selectedId = null;
         overlay.querySelectorAll('.withdraw-gift').forEach(el => {
             el.addEventListener('click', () => {
@@ -1915,22 +1779,19 @@ async function showWithdrawModal(){
                 Sound.click();
             });
         });
-
         const btn = overlay.querySelector('#withdrawStartBtn');
         if (btn){
             btn.addEventListener('click', async () => {
                 if (!selectedId) return;
                 btn.disabled = true;
                 btn.textContent = 'ОТПРАВКА...';
-
                 try {
-                    const r = await fetch(API_BASE + '/api/withdraw/request', {
+                    const r = await fetch(API_BASE + '/api/inventory/remove', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({ user_id: user.id, inventory_id: selectedId })
                     });
                     const d = await r.json();
-
                     if (d.ok){
                         Sound.click();
                         overlay.innerHTML = `
@@ -1947,8 +1808,7 @@ async function showWithdrawModal(){
                                     ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
                                 </a>
                                 <button class="modal-btn grey" data-action="finish">OK</button>
-                            </div>
-                        `;
+                            </div>`;
                         overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
                             overlay.remove();
                             apiRefreshBalance();
@@ -1967,113 +1827,82 @@ async function showWithdrawModal(){
             });
         }
     }
-
     renderContent();
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) overlay.remove();
-    });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 /* ===== ПОПОЛНЕНИЕ: TON + NFT-ПОДАРКИ ===== */
-
 function showDepositModal(defaultTab) {
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
-
     let activeTab = defaultTab || 'ton';
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-
     function renderContent() {
         let body = '';
-
         if (activeTab === 'ton') {
             body = `
                 <div class="deposit-note">
                     Подключите <b>TON-кошелёк</b> и выберите сумму — звёзды зачислятся автоматически после подтверждения транзакции.
                 </div>
-
                 <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:48px;width:100%;"></div>
-
                 <div class="deposit-packages">
                     ${DEPOSIT_PACKAGES.map(p => `
                         <div class="deposit-pkg" data-stars="${p.stars}" data-ton="${p.ton}">
                             <div class="pkg-stars">⭐ ${p.stars}</div>
                             <div class="pkg-arrow">→</div>
                             <div class="pkg-ton">${p.ton} TON</div>
-                        </div>
-                    `).join('')}
+                        </div>`).join('')}
                 </div>
-
                 <button class="volume-test-btn" id="payBtn" disabled
                         style="margin-top:14px;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;opacity:.4;">
                     ОПЛАТИТЬ
                 </button>
                 <div id="payInfo" style="text-align:center;font-size:10px;color:var(--muted);margin-top:8px;min-height:14px;">
                     Подключите кошелёк
-                </div>
-            `;
+                </div>`;
         } else {
             body = `
                 <div class="deposit-note">
                     1. Отправьте <b>NFT-подарок</b> аккаунту <b style="color:var(--neon);">@${RELAYER_USERNAME}</b><br>
                     2. Бот автоматически зачислит его в ваш инвентарь
                 </div>
-
                 <a href="https://t.me/${RELAYER_USERNAME}" target="_blank"
                    class="volume-test-btn"
                    style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
                     ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
                 </a>
-
                 <div style="margin:10px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
                     Принимаемые подарки
                 </div>
-
                 <div class="accepted-gifts">
                     ${ACCEPTED_GIFTS.map(g => `
                         <div class="accepted-gift">
                             <span class="ag-name">${g.name}</span>
                             <span class="ag-price">⭐${g.price}</span>
-                        </div>
-                    `).join('')}
+                        </div>`).join('')}
                 </div>
-
                 <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:12px;">
                     Зачисление происходит автоматически после получения подарка
-                </div>
-            `;
+                </div>`;
         }
-
         overlay.innerHTML = `
             <div class="modal-content" style="border-color:var(--neon);max-width:420px;text-align:left;">
                 <div class="settings-header">
                     <h2>💎 Пополнение</h2>
                     <button class="settings-close" data-action="close">✕</button>
                 </div>
-
                 <div class="deposit-tabs">
                     <div class="deposit-tab ${activeTab==='ton'?'active':''}" data-tab="ton">💎 TONCOIN</div>
                     <div class="deposit-tab ${activeTab==='nft'?'active':''}" data-tab="nft">🎁 NFT-ПОДАРКИ</div>
                 </div>
-
                 ${body}
-            </div>
-        `;
-
+            </div>`;
         overlay.querySelectorAll('.deposit-tab').forEach(t => {
-            t.addEventListener('click', () => {
-                activeTab = t.dataset.tab;
-                Sound.click();
-                renderContent();
-            });
+            t.addEventListener('click', () => { activeTab = t.dataset.tab; Sound.click(); renderContent(); });
         });
-
-        overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-            Sound.click(); overlay.remove();
-        });
-
+        overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
         if (activeTab === 'ton') {
             setTimeout(async () => {
                 const ui = await ensureTonConnectUI();
@@ -2082,20 +1911,16 @@ function showDepositModal(defaultTab) {
                     if (cont) cont.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect.</div>';
                     return;
                 }
-
                 setTimeout(() => {
                     if (!cont) return;
                     if (cont.querySelector('button')) return;
-
                     cont.innerHTML = '';
                     const btn = document.createElement('button');
                     btn.textContent = tonConnectUI && tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
-                    btn.style.cssText = `
-                        width:100%;padding:14px;border-radius:30px;border:none;
+                    btn.style.cssText = `width:100%;padding:14px;border-radius:30px;border:none;
                         background:linear-gradient(135deg,var(--neon),#00cc70);
                         color:#0a0e1a;font-weight:700;font-size:14px;font-family:var(--mono);
-                        cursor:pointer;touch-action:manipulation;
-                    `;
+                        cursor:pointer;touch-action:manipulation;`;
                     btn.addEventListener('click', async () => {
                         Sound.click();
                         if (tonConnectUI && tonConnectUI.connected) {
@@ -2103,64 +1928,42 @@ function showDepositModal(defaultTab) {
                             btn.textContent = '💎 Подключить TON-кошелёк';
                         } else {
                             try { await tonConnectUI.openModal(); }
-                            catch(e) {
-                                console.error('[TON] openModal error:', e);
-                                tg.showAlert('Не удалось открыть кошелёк: ' + e.message);
-                            }
+                            catch(e) { tg.showAlert('Не удалось открыть кошелёк: ' + e.message); }
                         }
                     });
                     cont.appendChild(btn);
-
                     tonConnectUI.onStatusChange(() => {
                         btn.textContent = tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
                         updateWalletStatus();
                     });
                 }, 300);
-
                 updateWalletStatus();
             }, 50);
-
             overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
                 pkg.addEventListener('click', () => {
-                    overlay.querySelectorAll('.deposit-pkg').forEach(p => {
-                        p.style.borderColor = '';
-                        p.style.background = '';
-                    });
+                    overlay.querySelectorAll('.deposit-pkg').forEach(p => { p.style.borderColor = ''; p.style.background = ''; });
                     pkg.style.borderColor = 'var(--neon)';
                     pkg.style.background = 'rgba(0,255,136,.08)';
-                    selectedAmount = {
-                        stars: parseInt(pkg.dataset.stars, 10),
-                        ton: parseFloat(pkg.dataset.ton)
-                    };
+                    selectedAmount = { stars: parseInt(pkg.dataset.stars, 10), ton: parseFloat(pkg.dataset.ton) };
                     Sound.click();
                     updateWalletStatus();
                 });
             });
         }
     }
-
     renderContent();
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) {
-            selectedAmount = null;
-            overlay.remove();
-        }
-    });
-
+    overlay.addEventListener('click', e => { if (e.target === overlay) { selectedAmount = null; overlay.remove(); } });
     overlay.addEventListener('click', async (e) => {
         const payBtn = e.target.closest('#payBtn');
         if (!payBtn) return;
         if (!tonConnectUI || !tonConnectUI.connected || !selectedAmount) return;
-
         const info = overlay.querySelector('#payInfo');
         payBtn.disabled = true;
         payBtn.textContent = 'ОЖИДАНИЕ...';
         if (info) info.textContent = 'Откройте кошелёк и подтвердите';
-
         const comment = `u:${user.id}:s:${selectedAmount.stars}`;
         const payload = buildCommentPayload(comment);
-
         if (!payload) {
             if (info) info.textContent = '❌ Ошибка: не удалось сформировать memo.';
             payBtn.textContent = 'ОПЛАТИТЬ';
@@ -2168,25 +1971,15 @@ function showDepositModal(defaultTab) {
             payBtn.style.opacity = '1';
             return;
         }
-
-        console.log('[TON] Отправляю транзакцию с memo:', comment);
-
         const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
         const transaction = {
             validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [{
-                address: RECIPIENT_ADDRESS,
-                amount: amountNano,
-                payload: payload
-            }]
+            messages: [{ address: RECIPIENT_ADDRESS, amount: amountNano, payload: payload }]
         };
-
         try {
             const result = await tonConnectUI.sendTransaction(transaction);
-            console.log('✅ Транзакция отправлена:', result.boc);
             if (info) info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
             payBtn.textContent = 'ОТПРАВЛЕНО';
-
             setTimeout(() => {
                 selectedAmount = null;
                 overlay.remove();
@@ -2199,7 +1992,6 @@ function showDepositModal(defaultTab) {
                 }, 25000);
             }, 2000);
         } catch (e) {
-            console.error('❌ Ошибка транзакции:', e);
             if (info) info.textContent = '❌ Транзакция отклонена: ' + (e.message || '');
             payBtn.textContent = 'ОПЛАТИТЬ';
             payBtn.disabled = false;
@@ -2223,26 +2015,12 @@ $('btnFast').addEventListener('click', function(){
     save();
     tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
 });
-$('btnPromo').addEventListener('click', () => {
-    Sound.click();
-    requireSubscription(() => showPromoModal());
-});
-$('btnDeposit').addEventListener('click', () => {
-    Sound.click();
-    requireSubscription(() => showDepositModal('ton'));
-});
-$('btnWithdraw').addEventListener('click', () => {
-    Sound.click();
-    requireSubscription(() => showWithdrawModal());
-});
-$('balanceBtn').addEventListener('click', () => {
-    Sound.click();
-    requireSubscription(() => showDepositModal('ton'));
-});
+$('btnPromo').addEventListener('click', () => { Sound.click(); requireSubscription(() => showPromoModal()); });
+$('btnDeposit').addEventListener('click', () => { Sound.click(); requireSubscription(() => showDepositModal('ton')); });
+$('btnWithdraw').addEventListener('click', () => { Sound.click(); requireSubscription(() => showWithdrawModal()); });
+$('balanceBtn').addEventListener('click', () => { Sound.click(); requireSubscription(() => showDepositModal('ton')); });
 
-function applySettingsToUI(){
-    $('btnFast').classList.toggle('active', state.settings.fastSpin);
-}
+function applySettingsToUI(){ $('btnFast').classList.toggle('active', state.settings.fastSpin); }
 
 function switchScreen(id){
     screens.forEach(s => s.classList.remove('active'));
@@ -2267,38 +2045,17 @@ document.querySelectorAll('[data-htab]').forEach(tab => {
 
 const loader = document.getElementById('loader');
 const loaderStatus = document.getElementById('loaderStatus');
-
-function setLoaderStatus(text) {
-    if (loaderStatus) loaderStatus.textContent = text;
-    console.log('[LOADER]', text);
-}
-
+function setLoaderStatus(text) { if (loaderStatus) loaderStatus.textContent = text; }
 function hideLoader() {
     if (!loader) return;
     setLoaderStatus('Готово!');
-    setTimeout(() => {
-        loader.classList.add('hidden');
-        setTimeout(() => loader.remove(), 700);
-    }, 300);
+    setTimeout(() => { loader.classList.add('hidden'); setTimeout(() => loader.remove(), 700); }, 300);
 }
 
 Promise.all([
-    new Promise(resolve => {
-        setLoaderStatus('Подключаем Telegram...');
-        initTelegram(resolve);
-    }),
-    new Promise(resolve => {
-        setLoaderStatus('Загружаем TON Core...');
-        const check = () => {
-            if (window.TonCore && window.TonCore.beginCell) resolve();
-            else setTimeout(check, 100);
-        };
-        check();
-    }),
-    new Promise(resolve => {
-        setLoaderStatus('Загружаем кошелёк...');
-        loadTonConnectSDK().then(resolve).catch(resolve);
-    }),
+    new Promise(resolve => { setLoaderStatus('Подключаем Telegram...'); initTelegram(resolve); }),
+    new Promise(resolve => { setLoaderStatus('Загружаем TON Core...'); const check = () => { if (window.TonCore && window.TonCore.beginCell) resolve(); else setTimeout(check, 100); }; check(); }),
+    new Promise(resolve => { setLoaderStatus('Загружаем кошелёк...'); loadTonConnectSDK().then(resolve).catch(resolve); }),
     new Promise(resolve => setTimeout(resolve, 1200)),
 ]).then(async () => {
     setLoaderStatus('Загружаем данные...');
@@ -2309,7 +2066,6 @@ Promise.all([
     applySettingsToUI();
     renderQuickButtons();
     hideLoader();
-    console.log('[UPGRADER] готов, user:', user);
 }).catch(e => {
     console.error('[START] ошибка:', e);
     setLoaderStatus('Ошибка загрузки');
