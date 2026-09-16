@@ -232,6 +232,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .withdraw-gifts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-height: 260px; overflow-y: auto; padding: 4px; margin-bottom: 10px; }
 .withdraw-gift { background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428); border: 1px solid rgba(255,215,0,.2); border-radius: 8px; padding: 6px 4px; text-align: center; cursor: pointer; transition: .15s; }
 .withdraw-gift.active { border-color: var(--gold); box-shadow: 0 0 12px rgba(255,215,0,.5); background: radial-gradient(circle at 30% 30%, #2a3a5a, #1d2248); }
+.withdraw-gift.locked { opacity: 0.55; cursor: not-allowed; border-color: rgba(255,68,102,.35); }
+.withdraw-gift.locked:active { transform: none; }
 .withdraw-gift img { width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto 4px; }
 .withdraw-gift .wg-name { font-size: 9px; line-height: 1.1; margin-bottom: 2px; }
 .withdraw-gift .wg-price { font-size: 9px; color: var(--gold); font-weight: 600; }
@@ -469,7 +471,6 @@ const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
 const REQUIRED_CHANNEL = 'labupgrader';
 const REQUIRED_CHANNEL_URL = 'https://t.me/labupgrader';
 
-// ⚠️ ЗАМЕНИ на ссылку своего бота
 const BOT_LINK = 'https://t.me/lab_game_bot';
 
 const RELAYER_BLOCKED = ['Кольцо', 'Кубок', 'Мишка', 'Роза', 'Сердце'];
@@ -478,7 +479,6 @@ const WITHDRAW_FEE = 25;
 const urlParams = new URLSearchParams(window.location.search);
 const DEV_USER_ID = parseInt(urlParams.get('user_id') || '0', 10);
 
-// Реферальный код из URL
 const REF_CODE_FROM_URL = urlParams.get('ref') || urlParams.get('start') || null;
 
 const DEPOSIT_PACKAGES = [
@@ -659,6 +659,19 @@ if (!state.settings.presets) state.settings.presets = { x:[2,4,8], percent:[5,25
 if (state.settings.presets.percent.length !== 4) state.settings.presets.percent = [5,25,50,75];
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
+// ================== ХЕЛПЕР: доступность подарка ==================
+function isAvailable(item) {
+    if (!item || !item.available_at) return { ok: true };
+    const now = new Date();
+    const av = new Date(item.available_at.replace(' ', 'T') + 'Z');
+    if (isNaN(av.getTime())) return { ok: true };
+    if (now >= av) return { ok: true };
+    const diff = av - now;
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    return { ok: false, msg: `⏳ Доступен через ${h}ч ${m}м` };
+}
+
 async function api(path, opts = {}) {
     const url = API_BASE + path;
     const cfg = { headers: { 'Content-Type': 'application/json' }, ...opts };
@@ -687,6 +700,7 @@ async function apiRefreshInventory(){
                 name: it.gift_name,
                 price: it.gift_price,
                 image: it.gift_image || GIFTS.find(g => g.name === it.gift_name)?.image || '',
+                available_at: it.available_at || null,
             }));
             return state.inventory;
         }
@@ -1144,6 +1158,8 @@ function renderHistoryList(items){
         withdraw_fee: { icon: '💸', color: 'var(--gold)', label: 'Комиссия вывода' },
         withdraw_request: { icon: '✉️', color: 'var(--gold)', label: 'Заявка на вывод' },
         withdraw_complete: { icon: '✅', color: 'var(--neon)', label: 'Вывод выполнен' },
+        withdraw_cancelled: { icon: '↩️', color: 'var(--gold)', label: 'Вывод отменён' },
+        withdraw_refund: { icon: '💰', color: 'var(--neon)', label: 'Возврат за вывод' },
         upgrade:  { icon: '⚡', color: 'var(--cyan)', label: 'Апгрейд' },
         buy:      { icon: '🛒', color: 'var(--cyan)', label: 'Покупка' },
         sell:     { icon: '💰', color: 'var(--gold)', label: 'Продажа' },
@@ -1208,12 +1224,17 @@ function render(){
             if (b) b.addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
         }, 0);
     } else {
-        invGrid.innerHTML = state.inventory.map(it => `
-            <div class="inv-item ${Number(state.selectedLeft)===Number(it.id)?'selected':''}" data-id="${it.id}">
+        invGrid.innerHTML = state.inventory.map(it => {
+            const av = isAvailable(it);
+            return `
+            <div class="inv-item ${Number(state.selectedLeft)===Number(it.id)?'selected':''}" data-id="${it.id}"
+                 style="${av.ok ? '' : 'opacity:.55;'}">
                 <img src="${it.image}" onerror="this.style.display='none'">
                 <div class="inv-name">${it.name}</div>
                 <div class="inv-price">⭐${it.price}</div>
-            </div>`).join('');
+                ${av.ok ? '' : `<div style="font-size:7px;color:var(--red);margin-top:1px;line-height:1;">${av.msg}</div>`}
+            </div>`;
+        }).join('');
     }
 
     const filtered = filterGifts(GIFTS);
@@ -1383,8 +1404,15 @@ tabs.forEach(tab => {
 invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
-    Sound.click();
     const id = Number(el.dataset.id);
+    const item = state.inventory.find(x => Number(x.id) === id);
+    const av = isAvailable(item);
+    if (!av.ok){
+        Sound.lose();
+        tg.showAlert('⏳ Подарок ещё недоступен.\n' + av.msg);
+        return;
+    }
+    Sound.click();
     state.selectedLeft = id;
     render();
     showSellModal(id);
@@ -1882,6 +1910,12 @@ async function showWithdrawModal(){
     let inventory = await apiRefreshInventory();
     if (!inventory.length) inventory = state.inventory || [];
     inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
+    // Помечаем недоступные
+    inventory = inventory.map(it => {
+        const av = isAvailable(it);
+        return { ...it, _locked: !av.ok, _lockMsg: av.msg };
+    });
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
 
@@ -1901,10 +1935,11 @@ async function showWithdrawModal(){
                 </div>
                 <div class="withdraw-gifts">
                     ${inventory.map(it => `
-                        <div class="withdraw-gift" data-inv-id="${it.id}">
+                        <div class="withdraw-gift ${it._locked ? 'locked' : ''}" data-inv-id="${it.id}" ${it._locked ? 'data-locked="1"' : ''}>
                             <img src="${it.image || ''}" onerror="this.style.display='none'">
                             <div class="wg-name">${it.name}</div>
                             <div class="wg-price">⭐${it.price}</div>
+                            ${it._locked ? `<div style="font-size:8px;color:var(--red);margin-top:2px;line-height:1;">${it._lockMsg}</div>` : ''}
                         </div>`).join('')}
                 </div>`;
         }
@@ -1933,6 +1968,11 @@ async function showWithdrawModal(){
         let selectedId = null;
         overlay.querySelectorAll('.withdraw-gift').forEach(el => {
             el.addEventListener('click', () => {
+                if (el.dataset.locked === '1'){
+                    Sound.lose();
+                    tg.showAlert('⏳ Подарок ещё недоступен для вывода.');
+                    return;
+                }
                 overlay.querySelectorAll('.withdraw-gift').forEach(x => x.classList.remove('active'));
                 el.classList.add('active');
                 selectedId = parseInt(el.dataset.invId, 10);
@@ -1965,7 +2005,12 @@ async function showWithdrawModal(){
                     });
 
                     if (!d.ok){
-                        tg.showAlert('❌ ' + (d.error || 'Ошибка вывода'));
+                        if (d.code === 'NOT_AVAILABLE_YET') {
+                            Sound.lose();
+                            tg.showAlert('⏳ ' + (d.error || 'Подарок ещё недоступен'));
+                        } else {
+                            tg.showAlert('❌ ' + (d.error || 'Ошибка вывода'));
+                        }
                         if (typeof d.balance === 'number') state.balance = d.balance;
                         renderBalance();
                         btn.disabled = false;
@@ -2250,12 +2295,10 @@ Promise.all([
     renderQuickButtons();
     hideLoader();
 
-    // Реферальная система
     await registerReferral();
     await loadReferralInfo();
     setupInviteButton();
 
-    // Проверка подписки
     if (user.id && !DEV_USER_ID) {
         await new Promise(r => setTimeout(r, 500));
         const ok = await checkSubscription(true);
