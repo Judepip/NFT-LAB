@@ -214,9 +214,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .history-meta .h-chance{font-size:10px;font-weight:700;color:var(--gold);}
 .history-meta .h-time{font-size:8px;color:var(--muted);margin-top:2px;}
 .history-empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:11px;}
-.nav-center{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;flex-shrink:0;padding:2px 0;}
-.nav-btn{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 4px;color:var(--muted);font-family:var(--mono);font-size:10px;font-weight:500;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:.15s;touch-action:manipulation;}
-.nav-btn .icon{font-size:16px;}
+.nav-center{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;flex-shrink:0;padding:2px 0;}
+.nav-btn{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 2px;color:var(--muted);font-family:var(--mono);font-size:9px;font-weight:500;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:.15s;touch-action:manipulation;}
+.nav-btn .icon{font-size:15px;}
 .nav-btn.active{border-color:var(--neon);color:var(--neon);background:rgba(0,255,136,.05);box-shadow:0 0 20px rgba(0,255,136,.1);}
 .nav-btn:active{transform:scale(.94);}
 .profile-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;}
@@ -252,6 +252,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     .tab{font-size:8px;padding:4px 2px;}
     .qc-btn{font-size:8px;padding:6px 1px;}
     .preset-row{grid-template-columns:1fr;}
+    .nav-btn{font-size:8px;padding:6px 1px;}
+    .nav-btn .icon{font-size:13px;}
 }
 </style>
 </head>
@@ -364,6 +366,52 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
             </div>
         </div>
 
+        <div class="screen" id="screenReferral">
+            <div class="profile-card" style="text-align:left;">
+                <div style="text-align:center;margin-bottom:16px;">
+                    <div style="font-size:48px;margin-bottom:8px;">👥</div>
+                    <div style="font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--neon),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+                        ПРИГЛАШАЙ ДРУЗЕЙ
+                    </div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+                        +1 ⭐ за каждого приглашённого
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+                    <div class="stat-box">
+                        <div class="value" id="refInvitedCount">0</div>
+                        <div class="label">👥 Приглашено</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="refEarnedStars">0 ⭐</div>
+                        <div class="label">💰 Заработано</div>
+                    </div>
+                </div>
+
+                <div class="settings-section" style="margin-bottom:14px;">
+                    <div class="settings-section-title"><h3>🔗 Ваша ссылка</h3></div>
+                    <div style="background:#0f1525;border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--cyan);word-break:break-all;user-select:text;" id="refLink">
+                        Загрузка...
+                    </div>
+                </div>
+
+                <button class="upgrade-btn" id="refInviteBtn" style="margin-bottom:10px;">
+                    📤 ПРИГЛАСИТЬ ДРУГА
+                </button>
+
+                <div class="settings-section" style="margin-top:16px;">
+                    <div class="settings-section-title">
+                        <h3>📋 Приглашённые</h3>
+                        <span class="default-label" id="refListCount">0</span>
+                    </div>
+                    <div id="refList" style="max-height:240px;overflow-y:auto;">
+                        <div class="history-empty">Пока никого нет</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="screen" id="screenProfile">
             <div class="profile-card">
                 <div class="profile-avatar" id="profileAvatar">👤</div>
@@ -402,6 +450,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 
     <div class="nav-center">
         <div class="nav-btn active" data-screen="screenUpgrade"><span class="icon">⚡</span> АПГРЕЙД</div>
+        <div class="nav-btn" data-screen="screenReferral"><span class="icon">👥</span> ДРУЗЬЯ</div>
         <div class="nav-btn" data-screen="screenProfile"><span class="icon">👤</span> ПРОФИЛЬ</div>
         <div class="nav-btn" data-screen="screenHistory"><span class="icon">📜</span> ИСТОРИЯ</div>
     </div>
@@ -417,15 +466,20 @@ const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
 const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
 const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
 
-// ✅ ИЗМЕНЕНО: канал labupgrader
 const REQUIRED_CHANNEL = 'labupgrader';
 const REQUIRED_CHANNEL_URL = 'https://t.me/labupgrader';
+
+// ⚠️ ЗАМЕНИ на ссылку своего бота
+const BOT_LINK = 'https://t.me/lab_game_bot';
 
 const RELAYER_BLOCKED = ['Кольцо', 'Кубок', 'Мишка', 'Роза', 'Сердце'];
 const WITHDRAW_FEE = 25;
 
 const urlParams = new URLSearchParams(window.location.search);
 const DEV_USER_ID = parseInt(urlParams.get('user_id') || '0', 10);
+
+// Реферальный код из URL
+const REF_CODE_FROM_URL = urlParams.get('ref') || urlParams.get('start') || null;
 
 const DEPOSIT_PACKAGES = [
     { stars: 100,  ton: 1.1  },
@@ -440,6 +494,7 @@ let selectedAmount = null;
 let sdkLoadingPromise = null;
 let tg = null;
 let user = { id:0, first_name:'Аноним', last_name:'', username:null, photo_url:null };
+let referralInfo = { code: null, invited_count: 0, earned_stars: 0, has_referrer: false };
 
 function initTelegram(callback){
     let attempts = 0;
@@ -664,7 +719,6 @@ async function apiEarn(stars, type, meta){
 }
 
 async function apiHistory(type){
-    // ✅ ЗАЩИТА от user_id=0 — не шлём запрос
     if (!user.id) return [];
     try {
         const d = await api('/api/history?user_id=' + user.id + '&type=' + (type||'all') + '&limit=100');
@@ -673,15 +727,110 @@ async function apiHistory(type){
     return [];
 }
 
+/* ===== РЕФЕРАЛЬНАЯ СИСТЕМА ===== */
+async function loadReferralInfo(){
+    if (!user.id) return;
+    try {
+        const d = await api('/api/referral/info?user_id=' + user.id);
+        if (d.ok){
+            referralInfo = d;
+            const link = `${BOT_LINK}?start=ref_${d.code}`;
+            const linkEl = document.getElementById('refLink');
+            if (linkEl) linkEl.textContent = link;
+            const cntEl = document.getElementById('refInvitedCount');
+            const earnEl = document.getElementById('refEarnedStars');
+            if (cntEl) cntEl.textContent = d.invited_count;
+            if (earnEl) earnEl.textContent = d.earned_stars + ' ⭐';
+            await loadReferralList();
+        }
+    } catch(e){ console.warn('referral info error:', e); }
+}
+
+async function loadReferralList(){
+    if (!user.id) return;
+    try {
+        const d = await api('/api/referral/list?user_id=' + user.id);
+        const listEl = document.getElementById('refList');
+        const countEl = document.getElementById('refListCount');
+        if (!listEl || !countEl) return;
+        if (!d.ok || !d.items.length){
+            listEl.innerHTML = '<div class="history-empty">Пока никого нет</div>';
+            countEl.textContent = '0';
+            return;
+        }
+        countEl.textContent = d.count;
+        listEl.innerHTML = d.items.map(it => `
+            <div class="accepted-gift">
+                <span class="ag-name">
+                    ${it.username ? '@' + it.username : it.name}
+                </span>
+                <span class="ag-price">+${it.reward} ⭐</span>
+            </div>
+        `).join('');
+    } catch(e){ console.warn('referral list error:', e); }
+}
+
+async function registerReferral(){
+    if (!user.id || !REF_CODE_FROM_URL) return;
+    if (referralInfo.has_referrer) return;
+
+    let code = REF_CODE_FROM_URL;
+    if (code.startsWith('ref_')) code = code.substring(4);
+
+    try {
+        const d = await api('/api/referral/register', {
+            method: 'POST',
+            body: { user_id: user.id, code }
+        });
+        if (d.ok && !d.already){
+            console.log('[REF] засчитан пригласившему', d.referrer_id, '+', d.reward, '⭐');
+        } else if (d.already){
+            console.log('[REF] уже был приглашён ранее');
+        } else {
+            console.warn('[REF] ошибка:', d.error);
+        }
+    } catch(e){ console.warn('referral register error:', e); }
+}
+
+function setupInviteButton(){
+    const btn = document.getElementById('refInviteBtn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        Sound.click();
+        const code = referralInfo.code || '';
+        if (!code){
+            tg.showAlert('Ошибка: реферальный код не загружен');
+            return;
+        }
+        const link = `${BOT_LINK}?start=ref_${code}`;
+        const shareText = `🎁 Заходи в LAB NFT UPGRADER — прокачивай NFT-подарки!\n${link}`;
+        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('🎁 Заходи в LAB NFT UPGRADER!')}`;
+
+        if (tg && typeof tg.openTelegramLink === 'function'){
+            try {
+                tg.openTelegramLink(shareUrl);
+                return;
+            } catch(e){ console.warn('openTelegramLink error:', e); }
+        }
+        if (navigator.clipboard){
+            navigator.clipboard.writeText(shareText).then(() => {
+                tg.showAlert('✅ Ссылка скопирована!\n\n' + link);
+            }).catch(() => {
+                tg.showAlert('Ваша ссылка:\n' + link);
+            });
+        } else {
+            tg.showAlert('Ваша ссылка:\n' + link);
+        }
+    });
+}
+
 /* ===== ПОДПИСКА ===== */
 let subscriptionVerified = false;
 let onSubscribeSuccess = null;
 
 async function checkSubscription(force = false){
-    // При force=true — всегда перепроверяем
     if (subscriptionVerified && !force) return true;
     if (!user.id){ subscriptionVerified = true; return true; }
-
     try {
         const d = await api('/api/check_subscription?user_id=' + user.id);
         if (d.ok && d.subscribed){
@@ -692,7 +841,6 @@ async function checkSubscription(force = false){
         return false;
     } catch(e){
         console.warn('subscription check error:', e);
-        // При ошибке сети — считаем, что НЕ подписан (безопаснее)
         return false;
     }
 }
@@ -728,8 +876,6 @@ function showSubscribeModal(){
     `;
     document.body.appendChild(overlay);
 
-    // ❌ Крестика закрытия НЕТ — модалку нельзя закрыть
-
     const checkBtn = overlay.querySelector('#subscribeCheckBtn');
     checkBtn.addEventListener('click', async () => {
         Sound.click();
@@ -753,7 +899,6 @@ function showSubscribeModal(){
         }
     });
 
-    // Клик по фону — НЕ закрывает
     overlay.addEventListener('click', e => {
         if (e.target === overlay){
             Sound.lose();
@@ -1004,6 +1149,7 @@ function renderHistoryList(items){
         sell:     { icon: '💰', color: 'var(--gold)', label: 'Продажа' },
         promo:    { icon: '🎟', color: 'var(--cyan)', label: 'Промокод' },
         gift:     { icon: '🎁', color: 'var(--gold)', label: 'Подарок за промокод' },
+        referral_reward: { icon: '👥', color: 'var(--neon)', label: 'За приглашённого' },
     };
     list.innerHTML = items.map(tx => {
         const i = icons[tx.type] || { icon: '•', color: 'var(--muted)', label: tx.type };
@@ -1416,16 +1562,31 @@ function doUpgrade(){
 
     setTimeout(async () => {
         stopSpinSound();
+
         try {
-            await api('/api/inventory/remove', {
+            await api('/api/upgrade/remove', {
                 method: 'POST',
                 body: { user_id: user.id, inventory_id: left.id }
             });
-        } catch(e){ console.warn('remove error:', e); }
+        } catch(e){ console.warn('upgrade/remove error:', e); }
 
-        await apiSpend(left.price, 'upgrade', { from: left.name, to: right.name, success, chance });
+        if (success) {
+            try {
+                await api('/api/upgrade/reward', {
+                    method: 'POST',
+                    body: {
+                        user_id: user.id,
+                        gift_name: right.name,
+                        gift_price: right.price,
+                        gift_image: right.image,
+                    }
+                });
+            } catch(e){ console.warn('upgrade/reward error:', e); }
+        }
 
         await apiRefreshInventory();
+        await apiRefreshBalance();
+
         state.selectedLeft = null;
         state.isUpgrading = false;
         upgradeInfo.textContent = success ? '✅ Успех!' : '❌ Неудача';
@@ -2049,6 +2210,7 @@ function switchScreen(id){
     navBtns.forEach(b => b.classList.toggle('active', b.dataset.screen === id));
     if (id === 'screenProfile') renderProfile();
     if (id === 'screenHistory') loadServerHistory('all');
+    if (id === 'screenReferral') loadReferralInfo();
 }
 navBtns.forEach(b => b.addEventListener('click', function(){
     Sound.click();
@@ -2073,7 +2235,6 @@ function hideLoader() {
     setTimeout(() => { loader.classList.add('hidden'); setTimeout(() => loader.remove(), 700); }, 300);
 }
 
-// ✅ ФИНАЛЬНАЯ ЗАГРУЗКА + АВТОПРОВЕРКА ПОДПИСКИ
 Promise.all([
     new Promise(resolve => { setLoaderStatus('Подключаем Telegram...'); initTelegram(resolve); }),
     new Promise(resolve => { setLoaderStatus('Загружаем TON Core...'); const check = () => { if (window.TonCore && window.TonCore.beginCell) resolve(); else setTimeout(check, 100); }; check(); }),
@@ -2089,10 +2250,13 @@ Promise.all([
     renderQuickButtons();
     hideLoader();
 
-    // 🔑 ПРОВЕРКА ПОДПИСКИ СРАЗУ ПРИ ВХОДЕ
-    // Если есть user_id (значит, открыто из Telegram) и не DEV-режим
+    // Реферальная система
+    await registerReferral();
+    await loadReferralInfo();
+    setupInviteButton();
+
+    // Проверка подписки
     if (user.id && !DEV_USER_ID) {
-        // Небольшая пауза, чтобы Telegram успел проставить initData
         await new Promise(r => setTimeout(r, 500));
         const ok = await checkSubscription(true);
         if (!ok) {
