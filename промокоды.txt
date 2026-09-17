@@ -1,0 +1,10 @@
+
+\\плюс к депозиту
+
+curl -X POST https://lab-nft-jude.mia0.amvera.tech/api/admin/promo/create -H "Content-Type: application/json" -d "{\"user_id\":1956581254,\"type\":\"boost\",\"bonus_percent\":50,\"boost_type\":\"once\",\"code\":\"BOOST50\",\"max_uses\":100}"
+
+\\на подарок
+curl -X POST https://lab-nft-jude.mia0.amvera.tech/api/admin/promo/create -H "Content-Type: application/json" -d "{\"user_id\":1956581254,\"type\":\"gift\",\"gift_name\":\"Plush Pepe\",\"gift_image\":\"https://judepip.github.io/NFT-LAB/images/Plush%20Pepe.gif\",\"gift_price\":553220,\"code\":\"PEPE\",\"max_uses\":10}"
+  \\на звезды
+
+curl -X POST https://lab-nft-jude.mia0.amvera.tech/api/admin/promo/create -H "Content-Type: application/json" -d "{\"user_id\":1956581254,\"type\":\"stars\",\"value\":1000,\"code\":\"STARS1000\",\"max_uses\":50}"

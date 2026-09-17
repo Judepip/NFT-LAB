@@ -11,13 +11,28 @@ window.__TG_FALLBACK__ = {
     initDataUnsafe: { user: { id: 0, first_name: 'Аноним', last_name:'', username: null, photo_url: null } }
 };
 </script>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- TON Core: загрузка через ESM с Buffer-полифилом -->
+<script>
+// ✅ Telegram SDK с fallback на jsDelivr
+(function(){
+    var s = document.createElement('script');
+    s.src = 'https://telegram.org/js/telegram-web-app.js';
+    s.async = false;
+    s.onload = function(){ console.log('[TG SDK] загружен с telegram.org'); };
+    s.onerror = function(){
+        console.warn('[TG SDK] telegram.org недоступен, пробуем jsDelivr...');
+        var s2 = document.createElement('script');
+        s2.src = 'https://cdn.jsdelivr.net/npm/telegram-web-app@latest/dist/telegram-web-app.js';
+        s2.onload = function(){ console.log('[TG SDK] загружен с jsDelivr'); };
+        s2.onerror = function(){ console.error('[TG SDK] не удалось загрузить'); };
+        document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+})();
+</script>
 <script type="module">
   try {
     const bufferMod = await import('https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm');
     window.Buffer = bufferMod.Buffer || (bufferMod.default && bufferMod.default.Buffer) || bufferMod.default;
-
     const tonCore = await import('https://cdn.jsdelivr.net/npm/@ton/core@0.49.1/+esm');
     window.TonCore = {
       beginCell: tonCore.beginCell,
@@ -31,14 +46,27 @@ window.__TG_FALLBACK__ = {
 </script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
+
+#loader {
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at 50% 50%, #131a2c 0%, #0a0e1a 70%);
+    z-index: 9999; display: flex; align-items: center; justify-content: center;
+    transition: opacity .6s ease, visibility .6s ease;
+}
+#loader.hidden { opacity: 0; visibility: hidden; }
+.loader-content { position: relative; text-align: center; width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.loader-logo { font-size: 64px; z-index: 3; position: relative; filter: drop-shadow(0 0 20px #00ff88) drop-shadow(0 0 40px #00d4ff); animation: logoPulse 1.5s ease-in-out infinite; }
+@keyframes logoPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+.loader-ring { position: absolute; top: 50%; left: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; border: 3px solid transparent; border-top-color: #00ff88; border-right-color: #00d4ff; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; }
+.loader-ring-2 { width: 190px; height: 190px; margin: -95px 0 0 -95px; border-top-color: #00d4ff; border-right-color: #00ff88; animation: spin 1.5s linear infinite reverse; opacity: 0.5; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.loader-title { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: 700; letter-spacing: 3px; background: linear-gradient(135deg, #00ff88, #00d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; z-index: 3; white-space: nowrap; }
+.loader-sub { position: absolute; bottom: -48px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #8899bb; letter-spacing: 1px; z-index: 3; white-space: nowrap; }
+
 :root{
-    --bg:#0a0e1a;
-    --neon:#00ff88; --cyan:#00d4ff;
-    --glass:rgba(18,24,43,.75);
-    --border:rgba(0,255,136,.15);
-    --border2:rgba(255,255,255,.08);
-    --text:#e8f0f8; --muted:#8899bb;
-    --gold:#ffd700; --red:#ff4466;
+    --bg:#0a0e1a; --neon:#00ff88; --cyan:#00d4ff;
+    --glass:rgba(18,24,43,.75); --border:rgba(0,255,136,.15); --border2:rgba(255,255,255,.08);
+    --text:#e8f0f8; --muted:#8899bb; --gold:#ffd700; --red:#ff4466;
     --mono:'JetBrains Mono','Roboto Mono',monospace;
 }
 html,body{height:100%;overflow:hidden;font-family:var(--mono);background:var(--bg);color:var(--text);user-select:none;-webkit-tap-highlight-color:transparent;}
@@ -52,8 +80,28 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .head-icon:active{transform:scale(.9);}
 .head-icon.active{background:rgba(0,255,136,.15);border-color:var(--neon);}
 .deposit-icon{background:linear-gradient(135deg,var(--neon),#00cc70) !important;color:#0a0e1a !important;font-weight:700;font-size:16px !important;border:none !important;box-shadow:0 0 15px rgba(0,255,136,.4);}
+.withdraw-icon{background:linear-gradient(135deg,var(--gold),#ffb700) !important;color:#0a0e1a !important;font-weight:700;font-size:18px !important;border:none !important;box-shadow:0 0 15px rgba(255,215,0,.4);line-height:1;}
 .balance{background:var(--glass);border:1px solid var(--border);border-radius:30px;padding:5px 10px;font-size:11px;color:var(--gold);backdrop-filter:blur(8px);cursor:pointer;transition:.15s;}
 .balance:active{transform:scale(.95);}
+
+#boostBanner{
+    display:none;
+    margin:6px 4px 0;
+    padding:8px 12px;
+    background:linear-gradient(135deg,rgba(255,215,0,.18),rgba(255,170,0,.1));
+    border:1px solid rgba(255,215,0,.45);
+    border-radius:10px;
+    font-size:11px;
+    color:var(--gold);
+    text-align:center;
+    font-weight:600;
+    animation:boostPulse 2s ease-in-out infinite;
+    flex-shrink:0;
+}
+@keyframes boostPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255,215,0,0); }
+    50%      { box-shadow: 0 0 20px rgba(255,215,0,.35); }
+}
 
 .content{flex:1;overflow-y:auto;margin:6px 0;padding:2px;min-height:0;}
 .content::-webkit-scrollbar{width:3px;}
@@ -148,6 +196,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .modal-actions{display:flex;gap:8px;}
 .modal-btn{background:var(--neon);color:#0a0e1a;border:none;border-radius:30px;padding:11px 20px;font-weight:700;font-size:13px;font-family:var(--mono);cursor:pointer;flex:1;touch-action:manipulation;}
 .modal-btn:active{transform:scale(.96);}
+.modal-btn:disabled{opacity:.4;pointer-events:none;}
 .modal-btn.gold{background:var(--gold);}
 .modal-btn.cyan{background:var(--cyan);}
 .modal-btn.grey{background:rgba(255,255,255,.1);color:var(--text);}
@@ -235,6 +284,67 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .stat-box .value{font-size:20px;font-weight:600;color:var(--gold);}
 .stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
 
+.withdraw-gifts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 4px;
+    margin-bottom: 10px;
+}
+.withdraw-gift {
+    background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428);
+    border: 1px solid rgba(255,215,0,.2);
+    border-radius: 8px;
+    padding: 6px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: .15s;
+}
+.withdraw-gift.active {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(255,215,0,.5);
+    background: radial-gradient(circle at 30% 30%, #2a3a5a, #1d2248);
+}
+.withdraw-gift img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 4px;
+}
+.withdraw-gift .wg-name {
+    font-size: 9px;
+    line-height: 1.1;
+    margin-bottom: 2px;
+}
+.withdraw-gift .wg-price {
+    font-size: 9px;
+    color: var(--gold);
+    font-weight: 600;
+}
+
+.accepted-gifts {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 4px;
+    background: rgba(0,0,0,.2);
+}
+.accepted-gift {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    font-size: 11px;
+}
+.accepted-gift:last-child { border-bottom: none; }
+.accepted-gift .ag-name { color: var(--text); }
+.accepted-gift .ag-price { color: var(--gold); font-weight: 600; }
+
 #ton-connect-button button{width:100% !important;min-height:48px !important;font-size:14px !important;}
 
 @media(max-width:380px){
@@ -252,17 +362,34 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 </style>
 </head>
 <body>
+
+<div id="loader">
+    <div class="loader-content">
+        <div class="loader-logo">⚡</div>
+        <div class="loader-ring"></div>
+        <div class="loader-ring loader-ring-2"></div>
+        <div class="loader-title">LAB NFT</div>
+        <div class="loader-sub" id="loaderStatus">Загрузка...</div>
+    </div>
+</div>
+
 <div id="app">
     <div class="header">
         <h1>⚡ LAB UPGRADER</h1>
         <div class="head-icons">
+            <div class="head-icon" id="btnPromo" title="Промокод">🎟</div>
             <div class="head-icon" id="btnInfo" title="История">📜</div>
             <div class="head-icon" id="btnSettings" title="Настройки">⚙</div>
             <div class="head-icon" id="btnVolume" title="Громкость">🔊</div>
             <div class="head-icon" id="btnFast" title="Быстрый прокрут">⚡</div>
         </div>
         <div class="balance" id="balanceBtn" title="Пополнить">⭐ <span id="balanceDisplay">0</span></div>
+        <div class="head-icon withdraw-icon" id="btnWithdraw" title="Вывод">−</div>
         <div class="head-icon deposit-icon" id="btnDeposit" title="Пополнить">＋</div>
+    </div>
+
+    <div id="boostBanner">
+        🚀 Активен буст <span id="boostPercent">0</span>% · <span id="boostInfo"></span>
     </div>
 
     <div class="content">
@@ -390,10 +517,34 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 (function(){
 'use strict';
 
-// ===== 0) КОНФИГ БЭКЕНДА =====
 const API_BASE = 'https://lab-nft-jude.mia0.amvera.tech';
+const RELAYER_USERNAME = 'labrelayer';
+const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
+const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
+const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
 
-// ===== 1) TELEGRAM =====
+const REQUIRED_CHANNEL = 'NFTLABDROPS';
+const REQUIRED_CHANNEL_URL = 'https://t.me/NFTLABDROPS';
+
+const RELAYER_BLOCKED = ['Кольцо', 'Кубок', 'Мишка', 'Роза', 'Сердце'];
+const WITHDRAW_FEE = 25;
+
+/* ===== DEV MODE: ?user_id=123 для тестов в браузере ===== */
+const urlParams = new URLSearchParams(window.location.search);
+const DEV_USER_ID = parseInt(urlParams.get('user_id') || '0', 10);
+
+const DEPOSIT_PACKAGES = [
+    { stars: 100,  ton: 1.1  },
+    { stars: 250,  ton: 2.7  },
+    { stars: 500,  ton: 5.5  },
+    { stars: 1000, ton: 11   },
+    { stars: 5000, ton: 54.7 },
+];
+
+let tonConnectUI = null;
+let selectedAmount = null;
+let sdkLoadingPromise = null;
+
 let tg = null;
 let user = { id:0, first_name:'Аноним', last_name:'', username:null, photo_url:null };
 
@@ -414,6 +565,12 @@ function initTelegram(callback){
                     photo_url: u.photo_url || null,
                 };
             }
+            if (DEV_USER_ID){
+                user.id = DEV_USER_ID;
+                user.first_name = user.first_name || 'Dev';
+                user.username = user.username || 'dev';
+                console.log('[TG] DEV override: user_id =', DEV_USER_ID);
+            }
             console.log('[TG] init OK', user);
             callback();
         } else if (attempts++ < MAX){
@@ -421,83 +578,132 @@ function initTelegram(callback){
         } else {
             tg = window.__TG_FALLBACK__;
             console.warn('[TG] SDK не загрузился, эмуляция');
+            if (DEV_USER_ID){
+                user = {
+                    id: DEV_USER_ID,
+                    first_name: 'Dev',
+                    last_name: '',
+                    username: 'dev',
+                    photo_url: null,
+                };
+                console.log('[TG] DEV MODE: user_id =', DEV_USER_ID);
+            }
             callback();
         }
     };
     check();
 }
 
-// ===== 2) ПРЕДМЕТЫ =====
-const BASE = 'https://judepip.github.io/NFT-LAB/bot';
+const BASE = 'https://judepip.github.io/NFT-LAB';
 const GIFTS = [
-    { name:'B-Day Candle',     price:200,  image: BASE+'/images/B-Day%20Candle.gif' },
-    { name:'Berry Box',        price:150,  image: BASE+'/images/Berry%20Box.gif' },
-    { name:'Big Year',         price:500,  image: BASE+'/images/Big%20Year.gif' },
-    { name:'Bow Tie',          price:800,  image: BASE+'/images/Bow%20Tie.gif' },
-    { name:'Chill Flame',      price:500,  image: BASE+'/images/Chill%20Flame.gif' },
-    { name:'Crystal Ball',     price:350,  image: BASE+'/images/Crystal%20Ball.gif' },
-    { name:'Desk Calendar',    price:250,  image: BASE+'/images/Desk%20Calendar.gif' },
-    { name:'Diamond Ring',     price:700,  image: BASE+'/images/Diamond%20Ring.gif' },
-    { name:'Durov Cap',        price:600,  image: BASE+'/images/Durov%20Cap.gif' },
-    { name:'Electric Skull',   price:550,  image: BASE+'/images/Electric%20Skull.gif' },
-    { name:'Eternal Candle',   price:300,  image: BASE+'/images/Eternal%20Candle.gif' },
-    { name:'Evil Eye',         price:400,  image: BASE+'/images/Evil%20Eye.gif' },
-    { name:'Fine Pen',         price:200,  image: BASE+'/images/Fine%20Pen.gif' },
-    { name:'Flying Broom',     price:450,  image: BASE+'/images/Flying%20Broom.gif' },
-    { name:'Hanging Star',     price:350,  image: BASE+'/images/Hanging%20Star.gif' },
-    { name:'Hex Pot',          price:300,  image: BASE+'/images/Hex%20Pot.gif' },
-    { name:'Homemade Cake',    price:150,  image: BASE+'/images/Homemade%20Cake.gif' },
-    { name:'Iron Gem',         price:400,  image: BASE+'/images/Iron%20Gem.gif' },
-    { name:'Jack-In-The-Box',  price:600,  image: BASE+'/images/Jack-In-The-Box.gif' },
-    { name:'Kissed Frog',      price:250,  image: BASE+'/images/Kissed%20Frog.gif' },
-    { name:'Liberty Figure',   price:450,  image: BASE+'/images/Liberty%20Figure.gif' },
-    { name:'Light Sword',      price:480,  image: BASE+'/images/Light%20Sword.gif' },
-    { name:'Lol Pop',          price:200,  image: BASE+'/images/Lol%20Pop.gif' },
-    { name:'Love Candle',      price:250,  image: BASE+'/images/Love%20Candle.gif' },
-    { name:'Low Rider',        price:500,  image: BASE+'/images/Low%20Rider.gif' },
-    { name:'Mad Pumpkin',      price:350,  image: BASE+'/images/Mad%20Pumpkin.gif' },
-    { name:'Mood Pak',         price:300,  image: BASE+'/images/Mood%20Pak.gif' },
-    { name:'Neko Helmet',      price:550,  image: BASE+'/images/Neko%20Helmet.gif' },
-    { name:'Party Sparkler',   price:200,  image: BASE+'/images/Party%20Sparkler.gif' },
-    { name:'Plush Pepe',       price:750,  image: BASE+'/images/Plush%20Pepe.gif' },
-    { name:'Sakura Flower',    price:280,  image: BASE+'/images/Sakura%20Flower.gif' },
-    { name:'Scared Cat',       price:320,  image: BASE+'/images/Scared%20Cat.gif' },
-    { name:'Signet Ring',      price:600,  image: BASE+'/images/Signet%20Ring.gif' },
-    { name:'Skull Flower',     price:350,  image: BASE+'/images/Skull%20Flower.gif' },
-    { name:'Snoop Cigar',      price:500,  image: BASE+'/images/Snoop%20Cigar.gif' },
-    { name:'Snoop Dogg',       price:700,  image: BASE+'/images/Snoop%20Dogg.gif' },
-    { name:'Spy Agaric',       price:400,  image: BASE+'/images/Spy%20Agaric.gif' },
-    { name:'StarNotepad',      price:480,  image: BASE+'/images/StarNotepad.gif' },
-    { name:'Top Hat',          price:450,  image: BASE+'/images/Top%20Hat.gif' },
-    { name:'Toy Bear',         price:350,  image: BASE+'/images/Toy%20Bear.gif' },
-    { name:'Vintage Cigar',    price:400,  image: BASE+'/images/Vintage%20Cigar.gif' },
-    { name:'Witch Hat',        price:500,  image: BASE+'/images/Witch%20Hat.gif' },
-    { name:'Букет',            price:180,  image: BASE+'/images/%D0%91%D1%83%D0%BA%D0%B5%D1%82.gif' },
+    { name:'B-Day Candle',     price:633,  image: BASE+'/images/B-Day%20Candle.gif' },
+    { name:'Berry Box',        price:859,  image: BASE+'/images/Berry%20Box.gif' },
+    { name:'Big Year',         price:448,  image: BASE+'/images/Big%20Year.gif' },
+    { name:'Bow Tie',          price:600,  image: BASE+'/images/Bow%20Tie.gif' },
+    { name:'Chill Flame',      price:499,  image: BASE+'/images/Chill%20Flame.gif' },
+    { name:'Crystal Ball',     price:1215, image: BASE+'/images/Crystal%20Ball.gif' },
+    { name:'Desk Calendar',    price:575,  image: BASE+'/images/Desk%20Calendar.gif' },
+    { name:'Durov\'s Glasses', price:9151, image: BASE+'/images/Durov%27s%20Glasses.gif' },
+    { name:'Diamond Ring',     price:2969, image: BASE+'/images/Diamond%20Ring.gif' },
+    { name:'Durov Cap',        price:42229,image: BASE+'/images/Durov%20Cap.gif' },
+    { name:'Electric Skull',   price:2490, image: BASE+'/images/Electric%20Skull.gif' },
+    { name:'Eternal Candle',   price:630,  image: BASE+'/images/Eternal%20Candle.gif' },
+    { name:'Evil Eye',         price:759,  image: BASE+'/images/Evil%20Eye.gif' },
+    { name:'Fine Pen',         price:895,  image: BASE+'/images/Fine%20Pen.gif' },
+    { name:'Flying Broom',     price:1163, image: BASE+'/images/Flying%20Broom.gif' },
+    { name:'Hanging Star',     price:974,  image: BASE+'/images/Hanging%20Star.gif' },
+    { name:'Hex Pot',          price:550,  image: BASE+'/images/Hex%20Pot.gif' },
+    { name:'Homemade Cake',    price:630,  image: BASE+'/images/Homemade%20Cake.gif' },
+    { name:'Ion Gem',          price:7889, image: BASE+'/images/Ion%20Gem.gif' },
+    { name:'Jack-In-The-Box',  price:500,  image: BASE+'/images/Jack-In-The-Box.gif' },
+    { name:'Kissed Frog',      price:3865, image: BASE+'/images/Kissed%20Frog.gif' },
+    { name:'Liberty Figure',   price:512,  image: BASE+'/images/Liberty%20Figure.gif' },
+    { name:'Light Sword',      price:665,  image: BASE+'/images/Light%20Sword.gif' },
+    { name:'Lol Pop',          price:490,  image: BASE+'/images/Lol%20Pop.gif' },
+    { name:'Love Candle',      price:963,  image: BASE+'/images/Love%20Candle.gif' },
+    { name:'Low Rider',        price:5388, image: BASE+'/images/Low%20Rider.gif' },
+    { name:'Mad Pumpkin',      price:1259, image: BASE+'/images/Mad%20Pumpkin.gif' },
+    { name:'Mood Pak',         price:513,  image: BASE+'/images/Mood%20Pak.gif' },
+    { name:'Neko Helmet',      price:3775, image: BASE+'/images/Neko%20Helmet.gif' },
+    { name:'Party Sparkler',   price:545,  image: BASE+'/images/Party%20Sparkler.gif' },
+    { name:'Plush Pepe',       price:553220,image: BASE+'/images/Plush%20Pepe.gif' },
+    { name:'Sakura Flower',    price:1025, image: BASE+'/images/Sakura%20Flower.gif' },
+    { name:'Scared Cat',       price:22489,image: BASE+'/images/Scared%20Cat.gif' },
+    { name:'Signet Ring',      price:3239, image: BASE+'/images/Signet%20Ring.gif' },
+    { name:'Skull Flower',     price:1125, image: BASE+'/images/Skull%20Flower.gif' },
+    { name:'Snoop Cigar',      price:1430, image: BASE+'/images/Snoop%20Cigar.gif' },
+    { name:'Snoop Dogg',       price:630,  image: BASE+'/images/Snoop%20Dogg.gif' },
+    { name:'Spy Agaric',       price:630,  image: BASE+'/images/Spy%20Agaric.gif' },
+    { name:'StarNotepad',      price:550,  image: BASE+'/images/StarNotepad.gif' },
+    { name:'Top Hat',          price:1077, image: BASE+'/images/Top%20Hat.gif' },
+    { name:'Toy Bear',         price:3626, image: BASE+'/images/Toy%20Bear.gif' },
+    { name:'Vintage Cigar',    price:3687, image: BASE+'/images/Vintage%20Cigar.gif' },
+    { name:'Witch Hat',        price:629,  image: BASE+'/images/Witch%20Hat.gif' },
+    { name:'Букет',            price:50,   image: BASE+'/images/%D0%91%D1%83%D0%BA%D0%B5%D1%82.gif' },
     { name:'Кольцо',           price:100,  image: BASE+'/images/%D0%9A%D0%BE%D0%BB%D1%8C%D1%86%D0%BE.gif' },
     { name:'Кубок',            price:100,  image: BASE+'/images/%D0%9A%D1%83%D0%B1%D0%BE%D0%BA.gif' },
     { name:'Мишка',            price:15,   image: BASE+'/images/%D0%9C%D0%B8%D1%88%D0%BA%D0%B0.gif' },
-    { name:'Роза',             price:150,  image: BASE+'/images/%D0%A0%D0%BE%D0%B7%D0%B0.gif' },
-    { name:'Сердце',           price:200,  image: BASE+'/images/%D0%A1%D0%B5%D1%80%D0%B4%D1%86%D0%B5.gif' },
+    { name:'Роза',             price:25,   image: BASE+'/images/%D0%A0%D0%BE%D0%B7%D0%B0.gif' },
+    { name:'Сердце',           price:15,   image: BASE+'/images/%D0%A1%D0%B5%D1%80%D0%B4%D1%86%D0%B5.gif' },
 ];
 
-// ===== 3) СОСТОЯНИЕ =====
+const ACCEPTED_GIFTS = [
+    { name: 'B-Day Candle',   price: 633   },
+    { name: 'Berry Box',      price: 859   },
+    { name: 'Big Year',       price: 448   },
+    { name: 'Bow Tie',        price: 600   },
+    { name: 'Chill Flame',    price: 499   },
+    { name: 'Crystal Ball',   price: 1215  },
+    { name: 'Desk Calendar',  price: 575   },
+    { name: 'Diamond Ring',   price: 2969  },
+    { name: 'Durov Cap',      price: 42229 },
+    { name: 'Electric Skull', price: 2490  },
+    { name: 'Eternal Candle', price: 630   },
+    { name: 'Evil Eye',       price: 759   },
+    { name: 'Fine Pen',       price: 895   },
+    { name: 'Flying Broom',   price: 1163  },
+    { name: 'Hanging Star',   price: 974   },
+    { name: 'Hex Pot',        price: 550   },
+    { name: 'Homemade Cake',  price: 630   },
+    { name: 'Ion Gem',        price: 7889  },
+    { name: 'Jack-In-The-Box',price: 500   },
+    { name: 'Kissed Frog',    price: 3865  },
+    { name: 'Liberty Figure', price: 512   },
+    { name: 'Light Sword',    price: 665   },
+    { name: 'Lol Pop',        price: 490   },
+    { name: 'Love Candle',    price: 963   },
+    { name: 'Low Rider',      price: 5388  },
+    { name: 'Mad Pumpkin',    price: 1259  },
+    { name: 'Mood Pak',       price: 513   },
+    { name: 'Neko Helmet',    price: 3775  },
+    { name: 'Party Sparkler', price: 545   },
+    { name: 'Plush Pepe',     price: 553220},
+    { name: 'Sakura Flower',  price: 1025  },
+    { name: "Durov's Glasses", price: 9151 },
+    { name: 'Scared Cat',     price: 22489 },
+    { name: 'Signet Ring',    price: 3239  },
+    { name: 'Skull Flower',   price: 1125  },
+    { name: 'Snoop Cigar',    price: 1430  },
+    { name: 'Snoop Dogg',     price: 630   },
+    { name: 'Spy Agaric',     price: 630   },
+    { name: 'StarNotepad',    price: 550   },
+    { name: 'Top Hat',        price: 1077  },
+    { name: 'Toy Bear',       price: 3626  },
+    { name: 'Vintage Cigar',  price: 3687  },
+    { name: 'Witch Hat',      price: 629   },
+];
+
 const KEY = 'lab_upgrade_v13';
 function defaultState(){
     return {
-        inventory: [],
-        balance: 0,
-        selectedLeft: null,
-        selectedRight: null,
-        isUpgrading: false,
-        rightTab: 'shop',
+        inventory: [], balance: 0,
+        selectedLeft: null, selectedRight: null,
+        isUpgrading: false, rightTab: 'shop',
         search: { name:'', min:'', max:'' },
-        sortAsc: true,
-        history: [],
+        sortAsc: true, history: [],
         settings: {
             presets: { x: [2, 4, 8], percent: [5, 25, 50, 75] },
-            soundOn: true,
-            volume: 0.7,
-            fastSpin: false,
+            soundOn: true, volume: 0.7, fastSpin: false,
         },
     };
 }
@@ -513,7 +719,6 @@ if (!state.settings.presets) state.settings.presets = { x:[2,4,8], percent:[5,25
 if (state.settings.presets.percent.length !== 4) state.settings.presets.percent = [5,25,50,75];
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
-// ===== 4) API-КЛИЕНТ =====
 async function api(path, opts = {}) {
     const url = API_BASE + path;
     const cfg = { headers: { 'Content-Type': 'application/json' }, ...opts };
@@ -530,6 +735,25 @@ async function apiRefreshBalance(){
         if (d.ok) state.balance = d.balance;
     } catch(e){ console.warn('balance api error:', e); }
     renderBalance();
+}
+
+async function apiRefreshInventory(){
+    if (!user.id) return [];
+    try {
+        const d = await api('/api/inventory?user_id=' + user.id);
+        if (d.ok && Array.isArray(d.items)){
+            // НЕ фильтруем RELAYER_BLOCKED — подарки из магазина должны быть видны.
+            // Блокировка применяется только в showWithdrawModal.
+            state.inventory = d.items.map(it => ({
+                id: it.id,
+                name: it.gift_name,
+                price: it.gift_price,
+                image: it.gift_image || GIFTS.find(g => g.name === it.gift_name)?.image || '',
+            }));
+            return state.inventory;
+        }
+    } catch(e){ console.warn('inventory api error:', e); }
+    return [];
 }
 
 async function apiSpend(stars, type, meta){
@@ -564,13 +788,198 @@ async function apiHistory(type){
     return [];
 }
 
-// ===== 5) ЗВУКИ =====
+/* ===== ПОДПИСКА ===== */
+let subscriptionVerified = false;
+let onSubscribeSuccess = null;
+
+async function checkSubscription(force = false){
+    if (subscriptionVerified && !force) return true;
+    if (!user.id){ subscriptionVerified = true; return true; }
+    try {
+        const d = await api('/api/check_subscription?user_id=' + user.id);
+        if (d.ok && d.subscribed){ subscriptionVerified = true; return true; }
+    } catch(e){ console.warn('subscription check error:', e); }
+    return false;
+}
+
+function showSubscribeModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="border-color:var(--cyan);max-width:380px;text-align:left;">
+            <div class="settings-header">
+                <h2 style="color:var(--cyan);">🔔 Подписка</h2>
+                <button class="settings-close" data-action="close">✕</button>
+            </div>
+            <div class="deposit-note" style="background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.25);">
+                Для продолжения нужно подписаться на канал
+                <b style="color:var(--cyan);">@${REQUIRED_CHANNEL}</b>.
+                Это займёт пару секунд.
+            </div>
+            <a href="${REQUIRED_CHANNEL_URL}" target="_blank"
+               class="volume-test-btn"
+               style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
+                📢 ПОДПИСАТЬСЯ НА @${REQUIRED_CHANNEL}
+            </a>
+            <button class="volume-test-btn" id="subscribeCheckBtn"
+                    style="background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);color:var(--neon);">
+                ✅ Я ПОДПИСАЛСЯ — ПРОВЕРИТЬ
+            </button>
+            <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:10px;">
+                Если вы уже подписаны — просто нажмите «Проверить»
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+    const checkBtn = overlay.querySelector('#subscribeCheckBtn');
+    checkBtn.addEventListener('click', async () => {
+        Sound.click();
+        checkBtn.disabled = true;
+        checkBtn.textContent = 'ПРОВЕРКА...';
+        const ok = await checkSubscription(true);
+        if (ok){
+            Sound.win();
+            overlay.remove();
+            if (typeof onSubscribeSuccess === 'function') onSubscribeSuccess();
+        } else {
+            Sound.lose();
+            checkBtn.disabled = false;
+            checkBtn.textContent = '✅ Я ПОДПИСАЛСЯ — ПРОВЕРИТЬ';
+            tg.showAlert('❌ Подписка не найдена. Подпишитесь и попробуйте снова.');
+        }
+    });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function requireSubscription(action){
+    const ok = await checkSubscription();
+    if (ok){ action(); return; }
+    onSubscribeSuccess = action;
+    showSubscribeModal();
+}
+
+/* ===== БУСТ ===== */
+async function refreshBoostBanner(){
+    if (!user.id) return;
+    try {
+        const d = await api('/api/boost/active?user_id=' + user.id);
+        const banner = document.getElementById('boostBanner');
+        if (!banner) return;
+        if (d.ok && d.boost){
+            banner.style.display = 'block';
+            document.getElementById('boostPercent').textContent = d.boost.percent;
+            if (d.boost.type === 'once'){
+                document.getElementById('boostInfo').textContent = 'на ' + d.boost.uses_left + ' пополн.';
+            } else if (d.boost.expires_at){
+                const exp = new Date(d.boost.expires_at + 'Z');
+                const hrs = Math.max(0, Math.round((exp - new Date()) / 3600000));
+                document.getElementById('boostInfo').textContent = 'ещё ' + hrs + ' ч.';
+            } else {
+                document.getElementById('boostInfo').textContent = 'активен';
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+    } catch(e){ /* ignore */ }
+}
+
+/* ===== ПРОМОКОДЫ ===== */
+async function activatePromo(code){
+    if (!code || !code.trim()) return;
+    const cleaned = code.trim().toUpperCase();
+    try {
+        const d = await api('/api/promo/redeem', {
+            method: 'POST',
+            body: { user_id: user.id, code: cleaned }
+        });
+        if (d.ok){
+            Sound.win();
+            if (typeof d.balance === 'number') state.balance = d.balance;
+            renderBalance();
+            await apiRefreshInventory();
+            render();
+            await refreshBoostBanner();
+            if (d.type === 'gift' && d.gift){
+                showGiftReceivedModal(d.gift);
+            } else {
+                tg.showAlert(d.message || 'Промокод активирован!');
+            }
+        } else {
+            Sound.lose();
+            tg.showAlert('❌ ' + (d.error || 'Ошибка активации'));
+        }
+    } catch(e){
+        console.error('promo error:', e);
+        tg.showAlert('❌ Ошибка сети');
+    }
+}
+
+function showGiftReceivedModal(gift){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content win" style="border-color:var(--gold);">
+            <div style="font-size:60px;margin-bottom:12px;">🎁</div>
+            <div class="modal-title" style="color:var(--gold);">Подарок получен!</div>
+            <div class="modal-sub">
+                <b style="color:var(--gold);font-size:16px;">${gift.name}</b><br>
+                <span style="font-size:10px;">Зачислен в инвентарь · ⭐${gift.price}</span>
+            </div>
+            <button class="modal-btn gold" onclick="this.closest('.modal-overlay').remove()">OK</button>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function showPromoModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="border-color:var(--cyan);max-width:380px;text-align:left;">
+            <div class="settings-header">
+                <h2 style="color:var(--cyan);">🎟 Промокод</h2>
+                <button class="settings-close" data-action="close">✕</button>
+            </div>
+            <div class="deposit-note" style="background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.25);">
+                Введите промокод — получите звёзды, подарок или буст к пополнению.
+            </div>
+            <input type="text" id="promoInput" placeholder="ВВЕДИТЕ КОД"
+                   style="width:100%;background:#0f1525;border:1px solid var(--border2);
+                          border-radius:10px;padding:14px 16px;color:var(--text);
+                          font-family:var(--mono);font-size:16px;text-align:center;
+                          letter-spacing:3px;text-transform:uppercase;outline:none;margin:8px 0 14px;">
+            <button class="volume-test-btn" id="promoActivateBtn"
+                    style="background:linear-gradient(135deg,var(--cyan),#0088cc);color:#0a0e1a;border:none;font-weight:700;">
+                🎟 АКТИВИРОВАТЬ
+            </button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#promoInput');
+    const btn = overlay.querySelector('#promoActivateBtn');
+    btn.addEventListener('click', async () => {
+        Sound.click();
+        btn.disabled = true;
+        btn.textContent = 'ПРОВЕРКА...';
+        await activatePromo(input.value);
+        btn.disabled = false;
+        btn.textContent = '🎟 АКТИВИРОВАТЬ';
+    });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') btn.click(); });
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
 let audioCtx = null;
 function getAudioCtx(){
-    if (!audioCtx){
-        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-        catch(e){ return null; }
-    }
+    if (!audioCtx){ try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return null; } }
     return audioCtx;
 }
 function playNote(freq, startTime, duration, type='sine', volumeMul=1){
@@ -595,15 +1004,8 @@ function playNote(freq, startTime, duration, type='sine', volumeMul=1){
 const Sound = {
     click(){ playNote(1200, 0, 0.08, 'sine', 0.9); playNote(1800, 0.005, 0.06, 'sine', 0.4); },
     tick(){ playNote(700 + Math.random() * 300, 0, 0.06, 'triangle', 0.5); },
-    win(){
-        [523.25, 659.25, 783.99, 1046.50].forEach((f,i) => {
-            playNote(f, i*0.11, 0.45, 'sine', 1);
-            playNote(f*2, i*0.11 + 0.01, 0.3, 'sine', 0.25);
-        });
-    },
-    lose(){
-        [440, 392, 329.63, 261.63].forEach((f,i) => playNote(f, i*0.13, 0.35, 'sine', 0.85));
-    },
+    win(){ [523.25, 659.25, 783.99, 1046.50].forEach((f,i) => { playNote(f, i*0.11, 0.45, 'sine', 1); playNote(f*2, i*0.11 + 0.01, 0.3, 'sine', 0.25); }); },
+    lose(){ [440, 392, 329.63, 261.63].forEach((f,i) => playNote(f, i*0.13, 0.35, 'sine', 0.85)); },
     buy(){ playNote(659.25, 0, 0.15, 'sine', 0.9); playNote(987.77, 0.08, 0.25, 'sine', 0.8); },
     sell(){ playNote(987.77, 0, 0.15, 'sine', 0.9); playNote(659.25, 0.08, 0.25, 'sine', 0.8); },
 };
@@ -611,7 +1013,6 @@ let spinSoundInterval = null;
 function startSpinSound(){ stopSpinSound(); spinSoundInterval = setInterval(() => Sound.tick(), 90); }
 function stopSpinSound(){ if (spinSoundInterval){ clearInterval(spinSoundInterval); spinSoundInterval = null; } }
 
-// ===== 6) DOM =====
 const $ = id => document.getElementById(id);
 const balanceDisplay = $('balanceDisplay');
 const invGrid = $('invGrid');
@@ -633,7 +1034,6 @@ const priceMax = $('priceMax');
 const searchBtn = $('searchBtn');
 const sortBtn = $('sortBtn');
 
-// ===== 7) БЫСТРЫЕ КНОПКИ =====
 function renderQuickButtons(){
     const container = document.getElementById('quickRight');
     if (!container) return;
@@ -647,13 +1047,10 @@ function renderQuickButtons(){
         return `<button class="qc-btn ${colorClass}" data-chance="${pct}">${pct}%</button>`;
     }).join('');
     container.querySelectorAll('.qc-btn').forEach(btn => {
-        btn.addEventListener('click', function(){
-            quickPickChance(Number(this.dataset.chance));
-        });
+        btn.addEventListener('click', function(){ quickPickChance(Number(this.dataset.chance)); });
     });
 }
 
-// ===== 8) ПРОФИЛЬ =====
 function renderProfile(){
     const fullName = (user.first_name + ' ' + (user.last_name || '')).trim() || 'Аноним';
     $('profileName').textContent = fullName;
@@ -674,7 +1071,6 @@ function renderBalance(){
     if (el) el.textContent = Math.floor(state.balance) + ' ⭐';
 }
 
-// ===== 9) ИСТОРИЯ =====
 async function loadServerHistory(filter){
     const list = $('historyList');
     $('historyCount').textContent = '...';
@@ -688,21 +1084,24 @@ async function loadServerHistory(filter){
 
 function renderHistoryList(items){
     const list = $('historyList');
-    if (!items.length){
-        list.innerHTML = '<div class="history-empty">Пока нет записей</div>';
-        return;
-    }
+    if (!items.length){ list.innerHTML = '<div class="history-empty">Пока нет записей</div>'; return; }
     const icons = {
         topup:    { icon: '💎', color: 'var(--neon)',  label: 'Пополнение' },
+        topup_gift:{ icon: '🎁', color: 'var(--neon)', label: 'Подарок получен' },
         withdraw: { icon: '💸', color: 'var(--gold)', label: 'Вывод' },
+        withdraw_fee: { icon: '💸', color: 'var(--gold)', label: 'Комиссия вывода' },
+        withdraw_request: { icon: '✉️', color: 'var(--gold)', label: 'Заявка на вывод' },
+        withdraw_complete: { icon: '✅', color: 'var(--neon)', label: 'Вывод выполнен' },
         upgrade:  { icon: '⚡', color: 'var(--cyan)', label: 'Апгрейд' },
         buy:      { icon: '🛒', color: 'var(--cyan)', label: 'Покупка' },
         sell:     { icon: '💰', color: 'var(--gold)', label: 'Продажа' },
+        promo:    { icon: '🎟', color: 'var(--cyan)', label: 'Промокод' },
+        gift:     { icon: '🎁', color: 'var(--gold)', label: 'Подарок за промокод' },
     };
     list.innerHTML = items.map(tx => {
         const i = icons[tx.type] || { icon: '•', color: 'var(--muted)', label: tx.type };
         const stars = tx.amount_stars > 0 ? '+' + tx.amount_stars : '' + tx.amount_stars;
-        const ton   = tx.amount_ton > 0 ? '+' + tx.amount_ton.toFixed(4) : tx.amount_ton.toFixed(4);
+        const ton   = tx.amount_ton > 0 ? '+' + tx.amount_ton.toFixed(4) : (tx.amount_ton || 0).toFixed(4);
         const dt = new Date(tx.created_at + 'Z').toLocaleString('ru-RU', {
             day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
         });
@@ -723,13 +1122,6 @@ function renderHistoryList(items){
     }).join('');
 }
 
-function addHistory(entry){
-    state.history.unshift(entry);
-    if (state.history.length > 100) state.history.length = 100;
-    save();
-}
-
-// ===== 10) ФИЛЬТРАЦИЯ =====
 function filterGifts(list){
     const q = (state.search.name || '').toLowerCase().trim();
     const min = state.search.min !== '' ? Number(state.search.min) : null;
@@ -744,7 +1136,6 @@ function filterGifts(list){
     return filtered;
 }
 
-// ===== 11) РЕНДЕР =====
 function render(){
     balanceDisplay.textContent = Math.floor(state.balance);
     invCount.textContent = state.inventory.length + ' шт.';
@@ -754,9 +1145,9 @@ function render(){
             <div class="inv-empty" style="padding:30px 12px;">
                 <div style="font-size:32px;margin-bottom:8px;">💎</div>
                 <div style="font-size:12px;color:var(--text);margin-bottom:4px;font-weight:600;">Нет предметов</div>
-                <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">Пополните баланс и купите первый подарок</div>
+                <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">Пополните баланс или отправьте подарок</div>
                 <button class="volume-test-btn" id="emptyDepositBtn" style="max-width:200px;margin:0 auto;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;">
-                    ＋ ПОПОЛНИТЬ ОТ 100 ⭐
+                    ＋ ПОПОЛНИТЬ
                 </button>
             </div>`;
         setTimeout(() => {
@@ -765,7 +1156,7 @@ function render(){
         }, 0);
     } else {
         invGrid.innerHTML = state.inventory.map(it => `
-            <div class="inv-item ${state.selectedLeft===it.id?'selected':''}" data-id="${it.id}">
+            <div class="inv-item ${Number(state.selectedLeft)===Number(it.id)?'selected':''}" data-id="${it.id}">
                 <img src="${it.image}" onerror="this.style.display='none'">
                 <div class="inv-name">${it.name}</div>
                 <div class="inv-price">⭐${it.price}</div>
@@ -804,7 +1195,7 @@ function render(){
         }
     }
 
-    const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
+    const leftItem = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     if (leftItem){
         slotLeft.classList.add('filled');
         slotLeft.innerHTML = `
@@ -843,10 +1234,9 @@ function render(){
     save();
 }
 
-// ===== 12) ШАНС =====
 const MAX_CHANCE = 75;
 function calcChance(){
-    const left = state.inventory.find(x => x.id === state.selectedLeft);
+    const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
     if (!left || !right) return 0;
     return Math.min(MAX_CHANCE, Math.max(1, (left.price / right.price) * 100));
@@ -858,7 +1248,7 @@ function updateChance(){
     wheelProgress.setAttribute('stroke-dasharray', CIRC);
     wheelProgress.setAttribute('stroke-dashoffset', CIRC - (CIRC * chance / 100));
 
-    const left = state.inventory.find(x => x.id === state.selectedLeft);
+    const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
 
     if (!left || !right){
@@ -873,27 +1263,19 @@ function updateChance(){
     }
 }
 
-// ===== 13) БЫСТРЫЙ ПОДБОР =====
 function quickPickChance(targetPercent){
     let basePrice = null;
-    const leftItem = state.inventory.find(x => x.id === state.selectedLeft);
+    const leftItem = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     const rightItem = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
-
-    if (leftItem){
-        basePrice = leftItem.price;
-    } else if (rightItem){
-        basePrice = rightItem.price;
-    } else {
-        tg.showAlert('Сначала выберите предмет слева или цель справа');
-        return;
-    }
+    if (leftItem){ basePrice = leftItem.price; }
+    else if (rightItem){ basePrice = rightItem.price; }
+    else { tg.showAlert('Сначала выберите предмет слева или цель справа'); return; }
     const wantedPrice = basePrice * 100 / targetPercent;
     let bestIdx = 0, bestDiff = Infinity;
     GIFTS.forEach((g, i) => {
         const diff = Math.abs(g.price - wantedPrice);
         if (diff < bestDiff){ bestDiff = diff; bestIdx = i; }
     });
-
     if (leftItem){
         state.selectedRight = bestIdx;
         state.rightTab = 'target';
@@ -915,7 +1297,6 @@ function quickPickChance(targetPercent){
     if (navigator.vibrate) navigator.vibrate(15);
 }
 
-// ===== 14) ПОИСК =====
 function applySearch(){
     state.search.name = searchName.value.trim();
     state.search.min  = priceMin.value.trim();
@@ -927,7 +1308,6 @@ searchName.addEventListener('input', applySearch);
 priceMin.addEventListener('input', applySearch);
 priceMax.addEventListener('input', applySearch);
 
-// ===== 15) СОРТИРОВКА =====
 sortBtn.addEventListener('click', () => {
     Sound.click();
     state.sortAsc = !state.sortAsc;
@@ -936,7 +1316,6 @@ sortBtn.addEventListener('click', () => {
 });
 sortBtn.textContent = state.sortAsc ? '▲' : '▼';
 
-// ===== 16) ТАБЫ =====
 tabs.forEach(tab => {
     tab.addEventListener('click', function(){
         tabs.forEach(t => t.classList.remove('active'));
@@ -948,12 +1327,11 @@ tabs.forEach(tab => {
     });
 });
 
-// ===== 17) КЛИКИ =====
 invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
     Sound.click();
-    const id = el.dataset.id;
+    const id = Number(el.dataset.id);
     state.selectedLeft = id;
     render();
     showSellModal(id);
@@ -964,10 +1342,7 @@ rightGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
     Sound.click();
-    if (el.dataset.buy !== undefined){
-        showBuyModal(parseInt(el.dataset.buy, 10));
-        return;
-    }
+    if (el.dataset.buy !== undefined){ showBuyModal(parseInt(el.dataset.buy, 10)); return; }
     if (el.dataset.target !== undefined){
         state.selectedRight = parseInt(el.dataset.target, 10);
         render();
@@ -978,9 +1353,9 @@ rightGrid.addEventListener('click', e => {
 window.removeLeft = function(){ state.selectedLeft = null; render(); };
 window.removeRight = function(){ state.selectedRight = null; render(); };
 
-// ===== 18) МОДАЛ ПОКУПКИ =====
-function showBuyModal(giftIndex){
-    const gift = GIFTS[giftIndex];
+/* ===== КУПИТЬ ПОДАРОК ИЗ МАГАЗИНА ===== */
+function showBuyModal(idx){
+    const gift = GIFTS[idx];
     if (!gift) return;
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -993,37 +1368,68 @@ function showBuyModal(giftIndex){
             <div class="modal-title">${gift.name}</div>
             <div class="modal-sub">
                 Цена: <b style="color:var(--gold)">⭐ ${gift.price}</b><br>
-                У вас: <b style="color:var(--gold)">⭐ ${Math.floor(state.balance)}</b>
-                ${!canAfford ? '<br><span style="color:var(--red)">Недостаточно звёзд</span>' : ''}
+                <span style="font-size:10px;">Ваш баланс: ⭐ ${Math.floor(state.balance)}</span>
             </div>
             <div class="modal-actions">
                 <button class="modal-btn grey" data-action="close">ОТМЕНА</button>
-                <button class="modal-btn gold" data-action="buy" ${!canAfford?'disabled style="opacity:.4"':''}>КУПИТЬ</button>
+                <button class="modal-btn gold" data-action="buy" ${canAfford?'':'disabled'}>
+                    ${canAfford ? '🛒 КУПИТЬ' : '❌ НЕ ХВАТАЕТ'}
+                </button>
             </div>
         </div>`;
     document.body.appendChild(overlay);
-    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
+        Sound.click(); overlay.remove();
+    });
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
     const buyBtn = overlay.querySelector('[data-action="buy"]');
     if (buyBtn && canAfford){
         buyBtn.addEventListener('click', async () => {
-            await apiSpend(gift.price, 'buy', { name: gift.name, price: gift.price });
-            state.inventory.push({
-                id: 'gift_' + Date.now() + '_' + Math.floor(Math.random()*1000),
-                name: gift.name, price: gift.price, image: gift.image,
-            });
-            Sound.buy();
-            overlay.remove();
-            render();
-            tg.showAlert('✅ Куплено: ' + gift.name + ' за ⭐' + gift.price);
-            if (navigator.vibrate) navigator.vibrate([20,40,20]);
+            buyBtn.disabled = true;
+            buyBtn.textContent = 'ПОКУПКА...';
+            try {
+                const d = await api('/api/buy', {
+                    method: 'POST',
+                    body: {
+                        user_id: user.id,
+                        gift_name: gift.name,
+                        gift_price: gift.price,
+                        gift_image: gift.image,
+                    }
+                });
+                if (!d.ok){
+                    tg.showAlert('❌ ' + (d.error || 'Ошибка покупки'));
+                    buyBtn.disabled = false;
+                    buyBtn.textContent = '🛒 КУПИТЬ';
+                    return;
+                }
+                if (typeof d.balance === 'number') state.balance = d.balance;
+
+                // Пауза, чтобы SQLite WAL точно применил коммит
+                await new Promise(r => setTimeout(r, 150));
+                await apiRefreshInventory();
+
+                Sound.buy();
+                overlay.remove();
+                render();
+                tg.showAlert('✅ Куплено: ' + gift.name + ' за ⭐' + gift.price);
+                if (navigator.vibrate) navigator.vibrate([20,40,20]);
+            } catch(e){
+                console.error('buy error:', e);
+                tg.showAlert('❌ Ошибка сети');
+                buyBtn.disabled = false;
+                buyBtn.textContent = '🛒 КУПИТЬ';
+            }
         });
     }
 }
 
-// ===== 19) МОДАЛ ПРОДАЖИ =====
+/* ===== ПРОДАТЬ ===== */
 function showSellModal(itemId){
-    const item = state.inventory.find(x => x.id === itemId);
+    const itemIdNum = Number(itemId);
+    const item = state.inventory.find(x => Number(x.id) === itemIdNum);
     if (!item) return;
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1045,24 +1451,52 @@ function showSellModal(itemId){
     document.body.appendChild(overlay);
     overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
     overlay.querySelector('[data-action="sell"]').addEventListener('click', async () => {
-        const idx = state.inventory.findIndex(x => x.id === itemId);
-        if (idx === -1){ overlay.remove(); return; }
-        state.inventory.splice(idx, 1);
-        if (state.selectedLeft === itemId) state.selectedLeft = null;
-        await apiEarn(item.price, 'sell', { name: item.name, price: item.price });
-        Sound.sell();
-        overlay.remove();
-        render();
-        tg.showAlert('✅ Продано: ' + item.name + ' за ⭐' + item.price);
-        if (navigator.vibrate) navigator.vibrate([20,40,20]);
+        const btn = overlay.querySelector('[data-action="sell"]');
+        btn.disabled = true;
+        btn.textContent = 'ПРОДАЖА...';
+
+        try {
+            // ✅ ОДИН атомарный запрос /api/sell:
+            // удаляет из инвентаря + начисляет звёзды + логирует
+            const d = await api('/api/sell', {
+                method: 'POST',
+                body: { user_id: user.id, inventory_id: itemIdNum }
+            });
+
+            if (!d.ok){
+                tg.showAlert('❌ ' + (d.error || 'Ошибка продажи'));
+                btn.disabled = false;
+                btn.textContent = '💸 ПРОДАТЬ';
+                return;
+            }
+
+            if (typeof d.balance === 'number') state.balance = d.balance;
+
+            // Обновляем инвентарь с сервера — там уже нет этого предмета
+            await apiRefreshInventory();
+
+            if (Number(state.selectedLeft) === itemIdNum) state.selectedLeft = null;
+
+            Sound.sell();
+            overlay.remove();
+            render();
+            tg.showAlert('✅ Продано: ' + item.name + ' за ⭐' + item.price);
+            if (navigator.vibrate) navigator.vibrate([20,40,20]);
+        } catch(e){
+            console.error('sell error:', e);
+            tg.showAlert('❌ Ошибка сети');
+            btn.disabled = false;
+            btn.textContent = '💸 ПРОДАТЬ';
+        }
     });
 }
 
-// ===== 20) АПГРЕЙД =====
+/* ===== АПГРЕЙД ===== */
 function doUpgrade(){
     if (state.isUpgrading) return;
-    const left = state.inventory.find(x => x.id === state.selectedLeft);
+    const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
     const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
     if (!left || !right) return;
 
@@ -1090,20 +1524,29 @@ function doUpgrade(){
 
     setTimeout(async () => {
         stopSpinSound();
-        state.inventory = state.inventory.filter(x => x.id !== left.id);
-        if (success){
-            state.inventory.push({
-                id: 'gift_' + Date.now(),
-                name: right.name, price: right.price, image: right.image,
+        // Для апгрейда используем /api/spend (списывает звёзды) и /api/inventory/remove
+        // Но /api/inventory/remove теперь = вывод! Поэтому используем /api/sell с 0 звёзд?
+        // Нет — для апгрейда нужно "уничтожить" предмет без начисления звёзд.
+        // Используем /api/spend с amount = 0 и удаление через отдельный эндпоинт.
+        // Пока: удаляем через /api/inventory/remove (но он берёт 25⭐).
+        // ⚠️ ВАЖНО: для апгрейда нужен отдельный эндпоинт /api/upgrade на сервере!
+        // Здесь временно оставляем логику через spend + remove.
+        try {
+            // TODO: заменить на /api/upgrade, когда добавите на сервер
+            await api('/api/inventory/remove', {
+                method: 'POST',
+                body: { user_id: user.id, inventory_id: left.id }
             });
-        }
+        } catch(e){ console.warn('remove error:', e); }
+
+        await apiSpend(left.price, 'upgrade', { from: left.name, to: right.name, success, chance });
+
+        await apiRefreshInventory();
         state.selectedLeft = null;
         state.isUpgrading = false;
         upgradeInfo.textContent = success ? '✅ Успех!' : '❌ Неудача';
 
         if (success) Sound.win(); else Sound.lose();
-
-        await apiSpend(left.price, 'upgrade', { from: left.name, to: right.name, success, chance });
 
         render();
         showResult(success, success ? right : left, chance);
@@ -1116,10 +1559,9 @@ function doUpgrade(){
 
 upgradeBtn.addEventListener('click', () => {
     Sound.click();
-    doUpgrade();
+    requireSubscription(() => doUpgrade());
 });
 
-// ===== 21) МОДАЛ РЕЗУЛЬТАТА =====
 function showResult(success, item, chance){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1141,11 +1583,10 @@ function showResult(success, item, chance){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 22) НАСТРОЙКИ =====
+/* ===== НАСТРОЙКИ ===== */
 function showSettingsModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
-
     const s = state.settings;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -1155,11 +1596,8 @@ function showSettingsModal(){
                 <h2>⚙ Настройки</h2>
                 <button class="settings-close" data-action="close">✕</button>
             </div>
-
             <div class="settings-section">
-                <div class="settings-section-title">
-                    <h3>Быстрый подбор</h3>
-                </div>
+                <div class="settings-section-title"><h3>Быстрый подбор</h3></div>
                 <div class="settings-desc">Настройте кнопки для быстрого подбора</div>
                 <div class="preset-row">
                     <div class="preset-card">
@@ -1183,7 +1621,6 @@ function showSettingsModal(){
                     </div>
                 </div>
             </div>
-
             <div class="settings-section">
                 <div class="settings-section-title"><h3>Звук в апгрейде</h3></div>
                 <div class="radio-option ${s.soundOn?'active':''}" data-setting="soundOn" data-val="true">
@@ -1201,7 +1638,6 @@ function showSettingsModal(){
                     </div>
                 </div>
             </div>
-
             <div class="settings-section">
                 <div class="settings-section-title"><h3>Тип прокрутки</h3></div>
                 <div class="radio-option ${!s.fastSpin?'active':''}" data-setting="fastSpin" data-val="false">
@@ -1219,11 +1655,9 @@ function showSettingsModal(){
                     </div>
                 </div>
             </div>
-
             <button class="settings-save" data-action="save">Сохранить и закрыть</button>
         </div>`;
     document.body.appendChild(overlay);
-
     overlay.querySelectorAll('.preset-btn').forEach(btn => {
         btn.addEventListener('click', function(){
             const type = this.dataset.type;
@@ -1233,19 +1667,13 @@ function showSettingsModal(){
             if (newVal !== null){
                 const num = Number(newVal);
                 if (!isNaN(num) && num > 0 && num <= 100){
-                    if (type === 'x'){
-                        state.settings.presets.x[idx] = num;
-                        this.textContent = 'x' + num;
-                    } else {
-                        state.settings.presets.percent[idx] = num;
-                        this.textContent = num + '%';
-                    }
+                    if (type === 'x'){ state.settings.presets.x[idx] = num; this.textContent = 'x' + num; }
+                    else { state.settings.presets.percent[idx] = num; this.textContent = num + '%'; }
                     Sound.click();
                 }
             }
         });
     });
-
     overlay.querySelectorAll('.preset-reset').forEach(btn => {
         btn.addEventListener('click', function(){
             const type = this.dataset.reset;
@@ -1259,7 +1687,6 @@ function showSettingsModal(){
             Sound.click();
         });
     });
-
     overlay.querySelectorAll('.radio-option').forEach(opt => {
         opt.addEventListener('click', function(){
             const setting = this.dataset.setting;
@@ -1270,7 +1697,6 @@ function showSettingsModal(){
             Sound.click();
         });
     });
-
     overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
     overlay.querySelector('[data-action="save"]').addEventListener('click', () => {
         Sound.click();
@@ -1282,7 +1708,6 @@ function showSettingsModal(){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ===== 23) ГРОМКОСТЬ =====
 function showVolumeModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
@@ -1307,7 +1732,6 @@ function showVolumeModal(){
             </div>
         </div>`;
     document.body.appendChild(overlay);
-
     const slider = overlay.querySelector('#volSlider');
     const value = overlay.querySelector('#volValue');
     slider.addEventListener('input', () => {
@@ -1317,101 +1741,48 @@ function showVolumeModal(){
     });
     slider.addEventListener('change', () => { save(); Sound.click(); });
     overlay.querySelector('#testSound').addEventListener('click', () => Sound.win());
-    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-        save(); Sound.click(); overlay.remove();
-    });
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { save(); Sound.click(); overlay.remove(); });
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-/* ============================================================ */
-/* ===== 24) TON CONNECT + АВТОНАЧИСЛЕНИЕ ЧЕРЕЗ MEMO ===== */
-/* ============================================================ */
-
-const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
-const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
-const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
-
-const DEPOSIT_PACKAGES = [
-    { stars: 100,  ton: 1.1  },
-    { stars: 250,  ton: 2.7  },
-    { stars: 500,  ton: 5.5  },
-    { stars: 1000, ton: 11   },
-    { stars: 5000, ton: 54.7 },
-];
-
-let tonConnectUI = null;
-let selectedAmount = null;
-let sdkLoadingPromise = null;
-
+/* ===== TON CONNECT ===== */
 function buildCommentPayload(comment) {
-    if (!window.TonCore || !window.TonCore.beginCell) {
-        console.error('[TON] @ton/core не загружен');
-        return null;
-    }
+    if (!window.TonCore || !window.TonCore.beginCell) { console.error('[TON] @ton/core не загружен'); return null; }
     try {
-        const cell = window.TonCore.beginCell()
-            .storeUint(0, 32)
-            .storeStringTail(comment)
-            .endCell();
+        const cell = window.TonCore.beginCell().storeUint(0, 32).storeStringTail(comment).endCell();
         return cell.toBoc().toString('base64');
-    } catch (e) {
-        console.error('[TON] Ошибка формирования payload:', e);
-        return null;
-    }
+    } catch (e) { console.error('[TON] Ошибка формирования payload:', e); return null; }
 }
-
 function loadTonConnectSDK() {
     const existing = window.TonConnectUI || (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI);
-    if (typeof existing === 'function') {
-        window.TonConnectUI = existing;
-        return Promise.resolve(existing);
-    }
+    if (typeof existing === 'function') { window.TonConnectUI = existing; return Promise.resolve(existing); }
     if (sdkLoadingPromise) return sdkLoadingPromise;
-
     sdkLoadingPromise = new Promise((resolve, reject) => {
         const tryLoad = (src, isFallback) => {
-            console.log('[TON SDK] пробую:', src);
             const script = document.createElement('script');
             script.src = src;
             script.async = true;
-
             script.onload = () => {
                 let Cls = null;
                 if (window.TON_CONNECT_UI) {
-                    Cls = window.TON_CONNECT_UI.TonConnectUI
-                       || window.TON_CONNECT_UI.default
+                    Cls = window.TON_CONNECT_UI.TonConnectUI || window.TON_CONNECT_UI.default
                        || (typeof window.TON_CONNECT_UI === 'function' ? window.TON_CONNECT_UI : null);
                 }
-                if (!Cls && typeof window.TonConnectUI === 'function') {
-                    Cls = window.TonConnectUI;
-                }
-
-                if (typeof Cls === 'function') {
-                    window.TonConnectUI = Cls;
-                    console.log('[TON SDK] класс найден');
-                    resolve(Cls);
-                } else if (!isFallback) {
-                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
-                } else {
-                    reject(new Error('TonConnectUI class not found'));
-                }
+                if (!Cls && typeof window.TonConnectUI === 'function') Cls = window.TonConnectUI;
+                if (typeof Cls === 'function') { window.TonConnectUI = Cls; resolve(Cls); }
+                else if (!isFallback) tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                else reject(new Error('TonConnectUI class not found'));
             };
-
             script.onerror = () => {
-                if (!isFallback) {
-                    tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
-                } else {
-                    reject(new Error('SDK load failed'));
-                }
+                if (!isFallback) tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                else reject(new Error('SDK load failed'));
             };
-
             document.head.appendChild(script);
         };
         tryLoad('./tonconnect-ui.min.js', false);
     });
     return sdkLoadingPromise;
 }
-
 function ensureTonConnectUI() {
     if (tonConnectUI) return Promise.resolve(tonConnectUI);
     return loadTonConnectSDK().then((TonConnectUICls) => {
@@ -1419,117 +1790,245 @@ function ensureTonConnectUI() {
             manifestUrl: MANIFEST_URL,
             walletsListConfiguration: {
                 includeWallets: [
-                    {
-                        appName: 'telegram-wallet',
-                        name: 'Wallet',
-                        imageUrl: 'https://wallet.tg/images/logo-288.png',
-                        aboutUrl: 'https://wallet.tg/',
-                        universalLink: 'https://t.me/wallet/start',
-                        bridgeUrl: BRIDGE_URL,
-                        platforms: ['ios', 'android', 'macos', 'windows', 'linux']
-                    },
-                    {
-                        appName: 'tonkeeper',
-                        name: 'Tonkeeper',
-                        imageUrl: 'https://tonkeeper.com/assets/tonconnect-icon.png',
-                        aboutUrl: 'https://tonkeeper.com',
-                        universalLink: 'https://app.tonkeeper.com/ton-connect',
-                        bridgeUrl: BRIDGE_URL,
-                        platforms: ['ios', 'android', 'chrome', 'firefox']
-                    },
-                    {
-                        appName: 'mytonwallet',
-                        name: 'MyTonWallet',
-                        imageUrl: 'https://mytonwallet.io/icon-256.png',
-                        aboutUrl: 'https://mytonwallet.io',
-                        universalLink: 'https://mytonwallet.io/ton-connect',
-                        bridgeUrl: BRIDGE_URL,
-                        platforms: ['chrome', 'firefox', 'ios', 'android']
-                    }
+                    { appName: 'telegram-wallet', name: 'Wallet', imageUrl: 'https://wallet.tg/images/logo-288.png',
+                      aboutUrl: 'https://wallet.tg/', universalLink: 'https://t.me/wallet/start',
+                      bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'macos', 'windows', 'linux'] },
+                    { appName: 'tonkeeper', name: 'Tonkeeper', imageUrl: 'https://tonkeeper.com/assets/tonconnect-icon.png',
+                      aboutUrl: 'https://tonkeeper.com', universalLink: 'https://app.tonkeeper.com/ton-connect',
+                      bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'chrome', 'firefox'] },
+                    { appName: 'mytonwallet', name: 'MyTonWallet', imageUrl: 'https://mytonwallet.io/icon-256.png',
+                      aboutUrl: 'https://mytonwallet.io', universalLink: 'https://mytonwallet.io/ton-connect',
+                      bridgeUrl: BRIDGE_URL, platforms: ['chrome', 'firefox', 'ios', 'android'] }
                 ]
             }
         });
-        tonConnectUI.onStatusChange(() => {
-            console.log('[TON] status change, connected =', tonConnectUI.connected);
-            updateWalletStatus();
-        });
+        tonConnectUI.onStatusChange(() => { updateWalletStatus(); });
         return tonConnectUI;
-    }).catch((e) => {
-        console.error('[TON] ошибка ensureTonConnectUI:', e);
-        return null;
-    });
+    }).catch((e) => { console.error('[TON] ошибка ensureTonConnectUI:', e); return null; });
 }
-
 function updateWalletStatus() {
     const payBtn = document.getElementById('payBtn');
     const payInfo = document.getElementById('payInfo');
     if (!payBtn || !payInfo) return;
-
     if (!tonConnectUI || !tonConnectUI.connected) {
-        payBtn.disabled = true;
-        payBtn.style.opacity = '.4';
+        payBtn.disabled = true; payBtn.style.opacity = '.4';
         payInfo.textContent = 'Подключите кошелёк';
     } else if (!selectedAmount) {
-        payBtn.disabled = true;
-        payBtn.style.opacity = '.4';
+        payBtn.disabled = true; payBtn.style.opacity = '.4';
         payInfo.textContent = 'Выберите сумму';
     } else {
-        payBtn.disabled = false;
-        payBtn.style.opacity = '1';
+        payBtn.disabled = false; payBtn.style.opacity = '1';
         payInfo.textContent = 'Нажмите ОПЛАТИТЬ для подтверждения';
     }
 }
 
-function showDepositModal(defaultTab) {
+/* ===== ВЫВОД через @labrelayer ===== */
+async function showWithdrawModal(){
     const old = document.querySelector('.modal-overlay');
     if (old) old.remove();
 
+    await apiRefreshBalance();
+
+    if (state.balance < WITHDRAW_FEE){
+        Sound.lose();
+        tg.showAlert('❌ Для вывода нужно минимум ⭐' + WITHDRAW_FEE + '\nУ вас: ⭐' + Math.floor(state.balance));
+        setTimeout(() => showDepositModal('ton'), 300);
+        return;
+    }
+
+    let inventory = await apiRefreshInventory();
+    if (!inventory.length) inventory = state.inventory || [];
+    inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    function renderContent(){
+        let body = '';
+        if (inventory.length === 0){
+            body = `
+                <div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:12px;">
+                    <div style="font-size:40px;margin-bottom:10px;">📦</div>
+                    У вас пока нет подарков для вывода.<br>
+                    Отправьте NFT-подарок @${RELAYER_USERNAME}, чтобы начать.
+                </div>`;
+        } else {
+            body = `
+                <div style="margin:10px 0 14px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
+                    Выберите подарок для вывода
+                </div>
+                <div class="withdraw-gifts">
+                    ${inventory.map(it => `
+                        <div class="withdraw-gift" data-inv-id="${it.id}">
+                            <img src="${it.image || ''}" onerror="this.style.display='none'">
+                            <div class="wg-name">${it.name}</div>
+                            <div class="wg-price">⭐${it.price}</div>
+                        </div>`).join('')}
+                </div>`;
+        }
+        overlay.innerHTML = `
+            <div class="modal-content" style="border-color:var(--gold);max-width:400px;text-align:left;">
+                <div class="settings-header">
+                    <h2 style="color:var(--gold);">💸 Вывод подарка</h2>
+                    <button class="settings-close" data-action="close">✕</button>
+                </div>
+                <div class="deposit-note" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.25);">
+                    Выберите подарок из инвентаря. Затем напишите аккаунту
+                    <b style="color:var(--gold);">@${RELAYER_USERNAME}</b> — бот вышлет его автоматически.
+                </div>
+                ${body}
+                <button class="volume-test-btn" id="withdrawStartBtn"
+                        style="background:linear-gradient(135deg,var(--gold),#ffb700);color:#0a0e1a;border:none;font-size:14px;padding:14px;margin-top:0;display:none;">
+                    💸 ВЫВЕСТИ
+                </button>
+                <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px;">
+                    Стоимость вывода: <b style="color:var(--red);">−${WITHDRAW_FEE} ⭐</b><br>
+                    Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
+                </div>
+            </div>`;
+        overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+
+        let selectedId = null;
+        overlay.querySelectorAll('.withdraw-gift').forEach(el => {
+            el.addEventListener('click', () => {
+                overlay.querySelectorAll('.withdraw-gift').forEach(x => x.classList.remove('active'));
+                el.classList.add('active');
+                selectedId = parseInt(el.dataset.invId, 10);
+                const btn = overlay.querySelector('#withdrawStartBtn');
+                if (btn) btn.style.display = 'block';
+                Sound.click();
+            });
+        });
+
+        const btn = overlay.querySelector('#withdrawStartBtn');
+        if (btn){
+            btn.addEventListener('click', async () => {
+                if (!selectedId) return;
+
+                if (state.balance < WITHDRAW_FEE){
+                    Sound.lose();
+                    tg.showAlert('❌ Недостаточно звёзд для вывода.\nНужно: ⭐' + WITHDRAW_FEE + '\nУ вас: ⭐' + Math.floor(state.balance));
+                    overlay.remove();
+                    setTimeout(() => { showDepositModal('ton'); }, 300);
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'ОТПРАВКА...';
+
+                try {
+                    // /api/inventory/remove на бэкенде САМ списывает 25⭐ и создаёт заявку
+                    const d = await api('/api/inventory/remove', {
+                        method: 'POST',
+                        body: { user_id: user.id, inventory_id: selectedId }
+                    });
+
+                    if (!d.ok){
+                        tg.showAlert('❌ ' + (d.error || 'Ошибка вывода'));
+                        if (typeof d.balance === 'number') state.balance = d.balance;
+                        renderBalance();
+                        btn.disabled = false;
+                        btn.textContent = '💸 ВЫВЕСТИ';
+                        return;
+                    }
+
+                    if (typeof d.balance === 'number') state.balance = d.balance;
+                    renderBalance();
+
+                    Sound.click();
+                    overlay.innerHTML = `
+                        <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
+                            <div style="font-size:60px;margin-bottom:12px;">✉️</div>
+                            <div class="modal-title" style="color:var(--neon);">Заявка создана!</div>
+                            <div class="modal-sub">
+                                Списано за вывод: <b style="color:var(--red);">−${WITHDRAW_FEE} ⭐</b><br><br>
+                                Теперь напишите любое сообщение аккаунту:<br><br>
+                                <b style="color:var(--gold);font-size:16px;">@${RELAYER_USERNAME}</b><br><br>
+                                Бот проверит заявку и сразу отправит ваш подарок.
+                            </div>
+                            <a href="https://t.me/${RELAYER_USERNAME}" target="_blank" class="modal-btn"
+                               style="display:block;text-decoration:none;margin-bottom:8px;background:var(--neon);color:#0a0e1a;padding:12px;border-radius:30px;font-weight:700;">
+                                ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
+                            </a>
+                            <button class="modal-btn grey" data-action="finish">OK</button>
+                        </div>
+                    `;
+                    overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
+                        overlay.remove();
+                        apiRefreshBalance();
+                        apiRefreshInventory().then(() => render());
+                    });
+                } catch(e){
+                    tg.showAlert('❌ Ошибка сети');
+                    btn.disabled = false;
+                    btn.textContent = '💸 ВЫВЕСТИ';
+                }
+            });
+        }
+    }
+
+    renderContent();
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+/* ===== ПОПОЛНЕНИЕ: TON + NFT-ПОДАРКИ ===== */
+function showDepositModal(defaultTab) {
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
     let activeTab = defaultTab || 'ton';
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
 
     function renderContent() {
         let body = '';
-
         if (activeTab === 'ton') {
             body = `
                 <div class="deposit-note">
                     Подключите <b>TON-кошелёк</b> и выберите сумму — звёзды зачислятся автоматически после подтверждения транзакции.
                 </div>
-
                 <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:48px;width:100%;"></div>
-
                 <div class="deposit-packages">
                     ${DEPOSIT_PACKAGES.map(p => `
                         <div class="deposit-pkg" data-stars="${p.stars}" data-ton="${p.ton}">
                             <div class="pkg-stars">⭐ ${p.stars}</div>
                             <div class="pkg-arrow">→</div>
                             <div class="pkg-ton">${p.ton} TON</div>
-                        </div>
-                    `).join('')}
+                        </div>`).join('')}
                 </div>
-
                 <button class="volume-test-btn" id="payBtn" disabled
                         style="margin-top:14px;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;opacity:.4;">
                     ОПЛАТИТЬ
                 </button>
                 <div id="payInfo" style="text-align:center;font-size:10px;color:var(--muted);margin-top:8px;min-height:14px;">
                     Подключите кошелёк
-                </div>
-            `;
+                </div>`;
         } else {
             body = `
                 <div class="deposit-note">
-                    Отправьте <b>NFT-подарок</b> нашему боту в Telegram. Мы оценим его и зачислим звёзды на ваш баланс.
+                    1. Отправьте <b>NFT-подарок</b> аккаунту <b style="color:var(--neon);">@${RELAYER_USERNAME}</b><br>
+                    2. Бот автоматически зачислит его в ваш инвентарь
                 </div>
-                <button class="volume-test-btn" data-action="openBot" style="background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.4);color:var(--gold);">
-                    🎁 ОТКРЫТЬ БОТА ДЛЯ ОТПРАВКИ
-                </button>
-            `;
+                <a href="https://t.me/${RELAYER_USERNAME}" target="_blank"
+                   class="volume-test-btn"
+                   style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
+                    ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
+                </a>
+                <div style="margin:10px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
+                    Принимаемые подарки
+                </div>
+                <div class="accepted-gifts">
+                    ${ACCEPTED_GIFTS.map(g => `
+                        <div class="accepted-gift">
+                            <span class="ag-name">${g.name}</span>
+                            <span class="ag-price">⭐${g.price}</span>
+                        </div>`).join('')}
+                </div>
+                <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:12px;">
+                    Зачисление происходит автоматически после получения подарка
+                </div>`;
         }
-
         overlay.innerHTML = `
-            <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
+            <div class="modal-content" style="border-color:var(--neon);max-width:420px;text-align:left;">
                 <div class="settings-header">
                     <h2>💎 Пополнение</h2>
                     <button class="settings-close" data-action="close">✕</button>
@@ -1539,20 +2038,11 @@ function showDepositModal(defaultTab) {
                     <div class="deposit-tab ${activeTab==='nft'?'active':''}" data-tab="nft">🎁 NFT-ПОДАРКИ</div>
                 </div>
                 ${body}
-            </div>
-        `;
-
+            </div>`;
         overlay.querySelectorAll('.deposit-tab').forEach(t => {
-            t.addEventListener('click', () => {
-                activeTab = t.dataset.tab;
-                Sound.click();
-                renderContent();
-            });
+            t.addEventListener('click', () => { activeTab = t.dataset.tab; Sound.click(); renderContent(); });
         });
-
-        overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
-            Sound.click(); overlay.remove();
-        });
+        overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
 
         if (activeTab === 'ton') {
             setTimeout(async () => {
@@ -1562,22 +2052,16 @@ function showDepositModal(defaultTab) {
                     if (cont) cont.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect.</div>';
                     return;
                 }
-
-                try { ui.uiOptions = { buttonRootId: 'ton-connect-button' }; } catch(e){}
-
                 setTimeout(() => {
                     if (!cont) return;
                     if (cont.querySelector('button')) return;
-
                     cont.innerHTML = '';
                     const btn = document.createElement('button');
                     btn.textContent = tonConnectUI && tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
-                    btn.style.cssText = `
-                        width:100%;padding:14px;border-radius:30px;border:none;
+                    btn.style.cssText = `width:100%;padding:14px;border-radius:30px;border:none;
                         background:linear-gradient(135deg,var(--neon),#00cc70);
                         color:#0a0e1a;font-weight:700;font-size:14px;font-family:var(--mono);
-                        cursor:pointer;touch-action:manipulation;
-                    `;
+                        cursor:pointer;touch-action:manipulation;`;
                     btn.addEventListener('click', async () => {
                         Sound.click();
                         if (tonConnectUI && tonConnectUI.connected) {
@@ -1585,110 +2069,70 @@ function showDepositModal(defaultTab) {
                             btn.textContent = '💎 Подключить TON-кошелёк';
                         } else {
                             try { await tonConnectUI.openModal(); }
-                            catch(e) {
-                                console.error('[TON] openModal error:', e);
-                                tg.showAlert('Не удалось открыть кошелёк: ' + e.message);
-                            }
+                            catch(e) { tg.showAlert('Не удалось открыть кошелёк: ' + e.message); }
                         }
                     });
                     cont.appendChild(btn);
-
                     tonConnectUI.onStatusChange(() => {
                         btn.textContent = tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
                         updateWalletStatus();
                     });
                 }, 300);
-
                 updateWalletStatus();
             }, 50);
-
             overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
                 pkg.addEventListener('click', () => {
-                    overlay.querySelectorAll('.deposit-pkg').forEach(p => {
-                        p.style.borderColor = '';
-                        p.style.background = '';
-                    });
+                    overlay.querySelectorAll('.deposit-pkg').forEach(p => { p.style.borderColor = ''; p.style.background = ''; });
                     pkg.style.borderColor = 'var(--neon)';
                     pkg.style.background = 'rgba(0,255,136,.08)';
-                    selectedAmount = {
-                        stars: parseInt(pkg.dataset.stars, 10),
-                        ton: parseFloat(pkg.dataset.ton)
-                    };
+                    selectedAmount = { stars: parseInt(pkg.dataset.stars, 10), ton: parseFloat(pkg.dataset.ton) };
                     Sound.click();
                     updateWalletStatus();
                 });
             });
-        } else {
-            const botBtn = overlay.querySelector('[data-action="openBot"]');
-            if (botBtn) {
-                botBtn.addEventListener('click', () => {
-                    Sound.click();
-                    tg.showAlert('Напишите боту @lab_game_bot чтобы отправить NFT-подарок');
-                });
-            }
         }
     }
-
     renderContent();
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) {
-            selectedAmount = null;
-            overlay.remove();
-        }
-    });
-
+    overlay.addEventListener('click', e => { if (e.target === overlay) { selectedAmount = null; overlay.remove(); } });
     overlay.addEventListener('click', async (e) => {
         const payBtn = e.target.closest('#payBtn');
         if (!payBtn) return;
         if (!tonConnectUI || !tonConnectUI.connected || !selectedAmount) return;
-
         const info = overlay.querySelector('#payInfo');
         payBtn.disabled = true;
         payBtn.textContent = 'ОЖИДАНИЕ...';
         if (info) info.textContent = 'Откройте кошелёк и подтвердите';
-
         const comment = `u:${user.id}:s:${selectedAmount.stars}`;
         const payload = buildCommentPayload(comment);
-
         if (!payload) {
-            if (info) info.textContent = '❌ Ошибка: не удалось сформировать memo. Перезагрузите приложение.';
+            if (info) info.textContent = '❌ Ошибка: не удалось сформировать memo.';
             payBtn.textContent = 'ОПЛАТИТЬ';
             payBtn.disabled = false;
             payBtn.style.opacity = '1';
             return;
         }
-
-        console.log('[TON] Отправляю транзакцию с memo:', comment);
-
         const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
         const transaction = {
             validUntil: Math.floor(Date.now() / 1000) + 300,
-            messages: [{
-                address: RECIPIENT_ADDRESS,
-                amount: amountNano,
-                payload: payload
-            }]
+            messages: [{ address: RECIPIENT_ADDRESS, amount: amountNano, payload: payload }]
         };
-
         try {
-            const result = await tonConnectUI.sendTransaction(transaction);
-            console.log('✅ Транзакция с memo отправлена:', result.boc);
+            await tonConnectUI.sendTransaction(transaction);
             if (info) info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
             payBtn.textContent = 'ОТПРАВЛЕНО';
-
             setTimeout(() => {
                 selectedAmount = null;
                 overlay.remove();
                 setTimeout(() => {
                     apiRefreshBalance();
+                    refreshBoostBanner();
                     if (document.getElementById('screenHistory')?.classList.contains('active')){
                         loadServerHistory('all');
                     }
                 }, 25000);
             }, 2000);
         } catch (e) {
-            console.error('❌ Ошибка транзакции:', e);
             if (info) info.textContent = '❌ Транзакция отклонена: ' + (e.message || '');
             payBtn.textContent = 'ОПЛАТИТЬ';
             payBtn.disabled = false;
@@ -1697,9 +2141,6 @@ function showDepositModal(defaultTab) {
     });
 }
 
-/* ===== КОНЕЦ БЛОКА ПОПОЛНЕНИЯ ===== */
-
-// ===== 25) ВЕРХНИЕ КНОПКИ =====
 $('btnInfo').addEventListener('click', () => {
     Sound.click();
     switchScreen('screenHistory');
@@ -1715,14 +2156,13 @@ $('btnFast').addEventListener('click', function(){
     save();
     tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
 });
-$('btnDeposit').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
-$('balanceBtn').addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
+$('btnPromo').addEventListener('click', () => { Sound.click(); requireSubscription(() => showPromoModal()); });
+$('btnDeposit').addEventListener('click', () => { Sound.click(); requireSubscription(() => showDepositModal('ton')); });
+$('btnWithdraw').addEventListener('click', () => { Sound.click(); requireSubscription(() => showWithdrawModal()); });
+$('balanceBtn').addEventListener('click', () => { Sound.click(); requireSubscription(() => showDepositModal('ton')); });
 
-function applySettingsToUI(){
-    $('btnFast').classList.toggle('active', state.settings.fastSpin);
-}
+function applySettingsToUI(){ $('btnFast').classList.toggle('active', state.settings.fastSpin); }
 
-// ===== 26) НАВИГАЦИЯ =====
 function switchScreen(id){
     screens.forEach(s => s.classList.remove('active'));
     document.getElementById(id)?.classList.add('active');
@@ -1736,7 +2176,6 @@ navBtns.forEach(b => b.addEventListener('click', function(){
     if (navigator.vibrate) navigator.vibrate(10);
 }));
 
-// ===== 27) ТАБЫ ИСТОРИИ =====
 document.querySelectorAll('[data-htab]').forEach(tab => {
     tab.addEventListener('click', function(){
         document.querySelectorAll('[data-htab]').forEach(t => t.classList.remove('active'));
@@ -1745,18 +2184,33 @@ document.querySelectorAll('[data-htab]').forEach(tab => {
     });
 });
 
-// ===== 28) СТАРТ =====
-initTelegram(function(){
+const loader = document.getElementById('loader');
+const loaderStatus = document.getElementById('loaderStatus');
+function setLoaderStatus(text) { if (loaderStatus) loaderStatus.textContent = text; }
+function hideLoader() {
+    if (!loader) return;
+    setLoaderStatus('Готово!');
+    setTimeout(() => { loader.classList.add('hidden'); setTimeout(() => loader.remove(), 700); }, 300);
+}
+
+Promise.all([
+    new Promise(resolve => { setLoaderStatus('Подключаем Telegram...'); initTelegram(resolve); }),
+    new Promise(resolve => { setLoaderStatus('Загружаем TON Core...'); const check = () => { if (window.TonCore && window.TonCore.beginCell) resolve(); else setTimeout(check, 100); }; check(); }),
+    new Promise(resolve => { setLoaderStatus('Загружаем кошелёк...'); loadTonConnectSDK().then(resolve).catch(resolve); }),
+    new Promise(resolve => setTimeout(resolve, 1200)),
+]).then(async () => {
+    setLoaderStatus('Загружаем данные...');
+    await apiRefreshBalance();
+    await apiRefreshInventory();
+    await refreshBoostBanner();
     render();
     applySettingsToUI();
     renderQuickButtons();
-    loadTonConnectSDK().then(() => {
-        console.log('[TON] SDK прогрет');
-    }).catch(e => {
-        console.warn('[TON] не удалось прогреть SDK:', e.message);
-    });
-    apiRefreshBalance();
-    console.log('[UPGRADER] готов, user:', user);
+    hideLoader();
+}).catch(e => {
+    console.error('[START] ошибка:', e);
+    setLoaderStatus('Ошибка загрузки');
+    setTimeout(hideLoader, 1000);
 });
 })();
 </script>

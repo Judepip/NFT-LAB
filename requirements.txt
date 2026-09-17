@@ -1,3 +1,6 @@
 flask
 requests
 tonsdk
+kurigram==2.2.26
+tgcrypto
+python-dotenv

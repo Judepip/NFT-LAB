@@ -2,11 +2,10 @@ meta:
   environment: python
   toolchain:
     name: pip
-    version: "3.10"
+    version: "3.11"
 
 build:
   requirementsPath: requirements.txt
-  useCache: true
 
 run:
   command: python main.py
