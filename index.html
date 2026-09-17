@@ -579,6 +579,2344 @@ const GIFTS = [
     { name:'Toy Bear',         price:3626, image: BASE+'/images/Toy%20Bear.gif' },
     { name:'Vintage Cigar',    price:3687, image: BASE+'/images/Vintage%20Cigar.gif' },
     { name:'Witch Hat',        price:629,  image: BASE+'/images/Witch%20Hat.gif' },
+    // --- НОВЫЕ ПОДАРКИ ---
+    { name:'Input Key',        price:681,  image: BASE+'/images/Input%20Key.gif' },
+    { name:'Happy Brownie',    price:540,  image: BASE+'/images/Happy%20Brownie.gif' },
+    { name:'Instant Ramen',    price:532,  image: BASE+'/images/Instant%20Ramen.gif' },
+    { name:'Jolly Chimp',      price:695,  image: BASE+'/images/Jolly%20Chimp.gif' },
+    { name:'Khabib\'s Papakha',price:2449, image: BASE+'/images/Khabib%27s%20Papakha.gif' },
+    { name:'Swag Bag',         price:610,  image: BASE+'/images/Swag%20Bag.gif' },
+    { name:'UFC Strike',       price:1564, image: BASE+'/images/UFC%20Strike.gif' },
+    // --- Русские подарки ---
+    { name:'Букет',            price:50,   image: BASE+'/images/%D0%91%D1%83%D0%BA%D0%B5%D1%82.gif' },
+    { name:'Кольцо',           price:100,  image: BASE+'/images/%D0%9A%D0%BE%D0%BB%D1%8C%D1%86%D0%BE.gif' },
+    { name:'Кубок',            price:100,  image: BASE+'/images/%D0%9A%D1%83%D0%B1%D0%BE%D0%BA.gif' },
+    { name:'Мишка',            price:15,   image: BASE+'/images/%D0%9C%D0%B8%D1%88%D0%BA%D0%B0.gif' },
+    { name:'Роза',             price:25,   image: BASE+'/images/%D0%A0%D0%BE%D0%B7%D0%B0.gif' },
+    { name:'Сердце',           price:15,   image: BASE+'/images/%D0%A1%D0%B5%D1%80%D0%B4%D1%86%D0%B5.gif' },
+];
+
+const ACCEPTED_GIFTS = [
+    { name: 'B-Day Candle',   price: 633   },
+    { name: 'Berry Box',      price: 859   },
+    { name: 'Big Year',       price: 448   },
+    { name: 'Bow Tie',        price: 600   },
+    { name: 'Chill Flame',    price: 499   },
+    { name: 'Crystal Ball',   price: 1215  },
+    { name: 'Desk Calendar',  price: 575   },
+    { name: 'Diamond Ring',   price: 2969  },
+    { name: 'Durov Cap',      price: 42229 },
+    { name: 'Electric Skull', price: 2490  },
+    { name: 'Eternal Candle', price: 630   },
+    { name: 'Evil Eye',       price: 759   },
+    { name: 'Fine Pen',       price: 895   },
+    { name: 'Flying Broom',   price: 1163  },
+    { name: 'Hanging Star',   price: 974   },
+    { name: 'Hex Pot',        price: 550   },
+    { name: 'Homemade Cake',  price: 630   },
+    { name: 'Ion Gem',        price: 7889  },
+    { name: 'Jack-In-The-Box',price: 500   },
+    { name: 'Kissed Frog',    price: 3865  },
+    { name: 'Liberty Figure', price: 512   },
+    { name: 'Light Sword',    price: 665   },
+    { name: 'Lol Pop',        price: 490   },
+    { name: 'Love Candle',    price: 963   },
+    { name: 'Low Rider',      price: 5388  },
+    { name: 'Mad Pumpkin',    price: 1259  },
+    { name: 'Mood Pak',       price: 513   },
+    { name: 'Neko Helmet',    price: 3775  },
+    { name: 'Party Sparkler', price: 545   },
+    { name: 'Plush Pepe',     price: 553220},
+    { name: 'Sakura Flower',  price: 1025  },
+    { name: "Durov's Glasses", price: 9151 },
+    { name: 'Scared Cat',     price: 22489 },
+    { name: 'Signet Ring',    price: 3239  },
+    { name: 'Skull Flower',   price: 1125  },
+    { name: 'Snoop Cigar',    price: 1430  },
+    { name: 'Snoop Dogg',     price: 630   },
+    { name: 'Spy Agaric',     price: 630   },
+    { name: 'StarNotepad',    price: 550   },
+    { name: 'Top Hat',        price: 1077  },
+    { name: 'Toy Bear',       price: 3626  },
+    { name: 'Vintage Cigar',  price: 3687  },
+    { name: 'Witch Hat',      price: 629   },
+    // --- НОВЫЕ ---
+    { name: 'Input Key',        price: 681   },
+    { name: 'Happy Brownie',    price: 540   },
+    { name: 'Instant Ramen',    price: 532   },
+    { name: 'Jolly Chimp',      price: 695   },
+    { name: "Khabib's Papakha", price: 2449  },
+    { name: 'Swag Bag',         price: 610   },
+    { name: 'UFC Strike',       price: 1564  },
+];
+
+const KEY = 'lab_upgrade_v13';
+function defaultState(){
+    return {
+        inventory: [], balance: 0,
+        selectedLeft: null, selectedRight: null,
+        isUpgrading: false, rightTab: 'shop',
+        search: { name:'', min:'', max:'' },
+        sortAsc: true, history: [],
+        settings: {
+            presets: { x: [2, 4, 8], percent: [5, 25, 50, 75] },
+            soundOn: true, volume: 0.7, fastSpin: false,
+        },
+    };
+}
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || defaultState(); }
+catch(e){ state = defaultState(); }
+if (!state.rightTab) state.rightTab = 'shop';
+if (!state.search) state.search = { name:'', min:'', max:'' };
+if (typeof state.sortAsc !== 'boolean') state.sortAsc = true;
+if (!state.history) state.history = [];
+if (!state.settings) state.settings = { presets:{x:[2,4,8],percent:[5,25,50,75]}, soundOn:true, volume:0.7, fastSpin:false };
+if (!state.settings.presets) state.settings.presets = { x:[2,4,8], percent:[5,25,50,75] };
+if (state.settings.presets.percent.length !== 4) state.settings.presets.percent = [5,25,50,75];
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+// ================== ХЕЛПЕР: доступность подарка ==================
+function isAvailable(item) {
+    if (!item || !item.available_at) return { ok: true };
+    const now = new Date();
+    const av = new Date(item.available_at.replace(' ', 'T') + 'Z');
+    if (isNaN(av.getTime())) return { ok: true };
+    if (now >= av) return { ok: true };
+    const diff = av - now;
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    return { ok: false, msg: `⏳ Доступен через ${h}ч ${m}м` };
+}
+
+async function api(path, opts = {}) {
+    const url = API_BASE + path;
+    const cfg = { headers: { 'Content-Type': 'application/json' }, ...opts };
+    if (cfg.body && typeof cfg.body !== 'string') cfg.body = JSON.stringify(cfg.body);
+    const r = await fetch(url, cfg);
+    const data = await r.json().catch(() => ({}));
+    return data;
+}
+
+async function apiRefreshBalance(){
+    if (!user.id) return;
+    try {
+        const d = await api('/api/balance?user_id=' + user.id);
+        if (d.ok) state.balance = d.balance;
+    } catch(e){ console.warn('balance api error:', e); }
+    renderBalance();
+}
+
+async function apiRefreshInventory(){
+    if (!user.id) return [];
+    try {
+        const d = await api('/api/inventory?user_id=' + user.id);
+        if (d.ok && Array.isArray(d.items)){
+            state.inventory = d.items.map(it => ({
+                id: it.id,
+                name: it.gift_name,
+                price: it.gift_price,
+                image: it.gift_image || GIFTS.find(g => g.name === it.gift_name)?.image || '',
+                available_at: it.available_at || null,
+            }));
+            return state.inventory;
+        }
+    } catch(e){ console.warn('inventory api error:', e); }
+    return [];
+}
+
+async function apiSpend(stars, type, meta){
+    try {
+        const d = await api('/api/spend', {
+            method: 'POST',
+            body: { user_id: user.id, stars, type, meta }
+        });
+        if (d.ok) state.balance = d.balance;
+    } catch(e){ console.warn('spend api error:', e); }
+    renderBalance();
+    save();
+}
+
+async function apiEarn(stars, type, meta){
+    try {
+        const d = await api('/api/earn', {
+            method: 'POST',
+            body: { user_id: user.id, stars, type, meta }
+        });
+        if (d.ok) state.balance = d.balance;
+    } catch(e){ console.warn('earn api error:', e); }
+    renderBalance();
+    save();
+}
+
+async function apiHistory(type){
+    if (!user.id) return [];
+    try {
+        const d = await api('/api/history?user_id=' + user.id + '&type=' + (type||'all') + '&limit=100');
+        if (d.ok) return d.items;
+    } catch(e){ console.warn('history api error:', e); }
+    return [];
+}
+
+/* ===== РЕФЕРАЛЬНАЯ СИСТЕМА ===== */
+async function loadReferralInfo(){
+    if (!user.id) return;
+    try {
+        const d = await api('/api/referral/info?user_id=' + user.id);
+        if (d.ok){
+            referralInfo = d;
+            const link = `${BOT_LINK}?start=ref_${d.code}`;
+            const linkEl = document.getElementById('refLink');
+            if (linkEl) linkEl.textContent = link;
+            const cntEl = document.getElementById('refInvitedCount');
+            const earnEl = document.getElementById('refEarnedStars');
+            if (cntEl) cntEl.textContent = d.invited_count;
+            if (earnEl) earnEl.textContent = d.earned_stars + ' ⭐';
+            await loadReferralList();
+        }
+    } catch(e){ console.warn('referral info error:', e); }
+}
+
+async function loadReferralList(){
+    if (!user.id) return;
+    try {
+        const d = await api('/api/referral/list?user_id=' + user.id);
+        const listEl = document.getElementById('refList');
+        const countEl = document.getElementById('refListCount');
+        if (!listEl || !countEl) return;
+        if (!d.ok || !d.items.length){
+            listEl.innerHTML = '<div class="history-empty">Пока никого нет</div>';
+            countEl.textContent = '0';
+            return;
+        }
+        countEl.textContent = d.count;
+        listEl.innerHTML = d.items.map(it => `
+            <div class="accepted-gift">
+                <span class="ag-name">
+                    ${it.username ? '@' + it.username : it.name}
+                </span>
+                <span class="ag-price">+${it.reward} ⭐</span>
+            </div>
+        `).join('');
+    } catch(e){ console.warn('referral list error:', e); }
+}
+
+async function registerReferral(){
+    if (!user.id || !REF_CODE_FROM_URL) return;
+    if (referralInfo.has_referrer) return;
+
+    let code = REF_CODE_FROM_URL;
+    if (code.startsWith('ref_')) code = code.substring(4);
+
+    try {
+        const d = await api('/api/referral/register', {
+            method: 'POST',
+            body: { user_id: user.id, code }
+        });
+        if (d.ok && !d.already){
+            console.log('[REF] засчитан пригласившему', d.referrer_id, '+', d.reward, '⭐');
+        } else if (d.already){
+            console.log('[REF] уже был приглашён ранее');
+        } else {
+            console.warn('[REF] ошибка:', d.error);
+        }
+    } catch(e){ console.warn('referral register error:', e); }
+}
+
+function setupInviteButton(){
+    const btn = document.getElementById('refInviteBtn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        Sound.click();
+        const code = referralInfo.code || '';
+        if (!code){
+            tg.showAlert('Ошибка: реферальный код не загружен');
+            return;
+        }
+        const link = `${BOT_LINK}?start=ref_${code}`;
+        const shareText = `🎁 Заходи в LAB NFT UPGRADER — прокачивай NFT-подарки!\n${link}`;
+        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('🎁 Заходи в LAB NFT UPGRADER!')}`;
+
+        if (tg && typeof tg.openTelegramLink === 'function'){
+            try {
+                tg.openTelegramLink(shareUrl);
+                return;
+            } catch(e){ console.warn('openTelegramLink error:', e); }
+        }
+        if (navigator.clipboard){
+            navigator.clipboard.writeText(shareText).then(() => {
+                tg.showAlert('✅ Ссылка скопирована!\n\n' + link);
+            }).catch(() => {
+                tg.showAlert('Ваша ссылка:\n' + link);
+            });
+        } else {
+            tg.showAlert('Ваша ссылка:\n' + link);
+        }
+    });
+}
+
+/* ===== ПОДПИСКА ===== */
+let subscriptionVerified = false;
+let onSubscribeSuccess = null;
+
+async function checkSubscription(force = false){
+    if (subscriptionVerified && !force) return true;
+    if (!user.id){ subscriptionVerified = true; return true; }
+    try {
+        const d = await api('/api/check_subscription?user_id=' + user.id);
+        if (d.ok && d.subscribed){
+            subscriptionVerified = true;
+            return true;
+        }
+        subscriptionVerified = false;
+        return false;
+    } catch(e){
+        console.warn('subscription check error:', e);
+        return false;
+    }
+}
+
+function showSubscribeModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="border-color:var(--cyan);max-width:380px;text-align:left;">
+            <div class="settings-header">
+                <h2 style="color:var(--cyan);">🔔 Подписка обязательна</h2>
+            </div>
+            <div class="deposit-note" style="background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.25);">
+                Для использования бота нужно подписаться на канал
+                <b style="color:var(--cyan);">@${REQUIRED_CHANNEL}</b>.
+                Это займёт пару секунд.
+            </div>
+            <a href="${REQUIRED_CHANNEL_URL}" target="_blank"
+               class="volume-test-btn"
+               style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
+                📢 ПОДПИСАТЬСЯ НА @${REQUIRED_CHANNEL}
+            </a>
+            <button class="volume-test-btn" id="subscribeCheckBtn"
+                    style="background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);color:var(--neon);">
+                ✅ Я ПОДПИСАЛСЯ — ПРОВЕРИТЬ
+            </button>
+            <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:10px;">
+                Без подписки бот недоступен
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const checkBtn = overlay.querySelector('#subscribeCheckBtn');
+    checkBtn.addEventListener('click', async () => {
+        Sound.click();
+        checkBtn.disabled = true;
+        checkBtn.textContent = 'ПРОВЕРКА...';
+        const ok = await checkSubscription(true);
+        if (ok){
+            Sound.win();
+            overlay.remove();
+            tg.showAlert('✅ Спасибо за подписку!');
+            if (typeof onSubscribeSuccess === 'function'){
+                const cb = onSubscribeSuccess;
+                onSubscribeSuccess = null;
+                cb();
+            }
+        } else {
+            Sound.lose();
+            checkBtn.disabled = false;
+            checkBtn.textContent = '✅ Я ПОДПИСАЛСЯ — ПРОВЕРИТЬ';
+            tg.showAlert('❌ Подписка не найдена. Подпишитесь на @' + REQUIRED_CHANNEL + ' и попробуйте снова.');
+        }
+    });
+
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay){
+            Sound.lose();
+        }
+    });
+}
+
+async function requireSubscription(action){
+    const ok = await checkSubscription();
+    if (ok){ action(); return; }
+    onSubscribeSuccess = action;
+    showSubscribeModal();
+}
+
+/* ===== БУСТ ===== */
+async function refreshBoostBanner(){
+    if (!user.id) return;
+    try {
+        const d = await api('/api/boost/active?user_id=' + user.id);
+        const banner = document.getElementById('boostBanner');
+        if (!banner) return;
+        if (d.ok && d.boost){
+            banner.style.display = 'block';
+            document.getElementById('boostPercent').textContent = d.boost.percent;
+            if (d.boost.type === 'once'){
+                document.getElementById('boostInfo').textContent = 'на ' + d.boost.uses_left + ' пополн.';
+            } else if (d.boost.expires_at){
+                const exp = new Date(d.boost.expires_at + 'Z');
+                const hrs = Math.max(0, Math.round((exp - new Date()) / 3600000));
+                document.getElementById('boostInfo').textContent = 'ещё ' + hrs + ' ч.';
+            } else {
+                document.getElementById('boostInfo').textContent = 'активен';
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+    } catch(e){ /* ignore */ }
+}
+
+/* ===== ПРОМОКОДЫ ===== */
+async function activatePromo(code){
+    if (!code || !code.trim()) return;
+    const cleaned = code.trim().toUpperCase();
+    try {
+        const d = await api('/api/promo/redeem', {
+            method: 'POST',
+            body: { user_id: user.id, code: cleaned }
+        });
+        if (d.ok){
+            Sound.win();
+            if (typeof d.balance === 'number') state.balance = d.balance;
+            renderBalance();
+            await apiRefreshInventory();
+            render();
+            await refreshBoostBanner();
+            if (d.type === 'gift' && d.gift){
+                showGiftReceivedModal(d.gift);
+            } else {
+                tg.showAlert(d.message || 'Промокод активирован!');
+            }
+        } else {
+            Sound.lose();
+            tg.showAlert('❌ ' + (d.error || 'Ошибка активации'));
+        }
+    } catch(e){
+        console.error('promo error:', e);
+        tg.showAlert('❌ Ошибка сети');
+    }
+}
+
+function showGiftReceivedModal(gift){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content win" style="border-color:var(--gold);">
+            <div style="font-size:60px;margin-bottom:12px;">🎁</div>
+            <div class="modal-title" style="color:var(--gold);">Подарок получен!</div>
+            <div class="modal-sub">
+                <b style="color:var(--gold);font-size:16px;">${gift.name}</b><br>
+                <span style="font-size:10px;">Зачислен в инвентарь · ⭐${gift.price}</span>
+            </div>
+            <button class="modal-btn gold" onclick="this.closest('.modal-overlay').remove()">OK</button>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function showPromoModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="border-color:var(--cyan);max-width:380px;text-align:left;">
+            <div class="settings-header">
+                <h2 style="color:var(--cyan);">🎟 Промокод</h2>
+                <button class="settings-close" data-action="close">✕</button>
+            </div>
+            <div class="deposit-note" style="background:rgba(0,212,255,.08);border-color:rgba(0,212,255,.25);">
+                Введите промокод — получите звёзды, подарок или буст к пополнению.
+            </div>
+            <input type="text" id="promoInput" placeholder="ВВЕДИТЕ КОД"
+                   style="width:100%;background:#0f1525;border:1px solid var(--border2);
+                          border-radius:10px;padding:14px 16px;color:var(--text);
+                          font-family:var(--mono);font-size:16px;text-align:center;
+                          letter-spacing:3px;text-transform:uppercase;outline:none;margin:8px 0 14px;">
+            <button class="volume-test-btn" id="promoActivateBtn"
+                    style="background:linear-gradient(135deg,var(--cyan),#0088cc);color:#0a0e1a;border:none;font-weight:700;">
+                🎟 АКТИВИРОВАТЬ
+            </button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#promoInput');
+    const btn = overlay.querySelector('#promoActivateBtn');
+    btn.addEventListener('click', async () => {
+        Sound.click();
+        btn.disabled = true;
+        btn.textContent = 'ПРОВЕРКА...';
+        await activatePromo(input.value);
+        btn.disabled = false;
+        btn.textContent = '🎟 АКТИВИРОВАТЬ';
+    });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') btn.click(); });
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+let audioCtx = null;
+function getAudioCtx(){
+    if (!audioCtx){ try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return null; } }
+    return audioCtx;
+}
+function playNote(freq, startTime, duration, type='sine', volumeMul=1){
+    if (!state.settings.soundOn) return;
+    if (state.settings.volume <= 0) return;
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const t0 = ctx.currentTime + startTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    const vol = state.settings.volume * volumeMul * 0.18;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(vol, t0 + duration * 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+}
+const Sound = {
+    click(){ playNote(1200, 0, 0.08, 'sine', 0.9); playNote(1800, 0.005, 0.06, 'sine', 0.4); },
+    tick(){ playNote(700 + Math.random() * 300, 0, 0.06, 'triangle', 0.5); },
+    win(){ [523.25, 659.25, 783.99, 1046.50].forEach((f,i) => { playNote(f, i*0.11, 0.45, 'sine', 1); playNote(f*2, i*0.11 + 0.01, 0.3, 'sine', 0.25); }); },
+    lose(){ [440, 392, 329.63, 261.63].forEach((f,i) => playNote(f, i*0.13, 0.35, 'sine', 0.85)); },
+    buy(){ playNote(659.25, 0, 0.15, 'sine', 0.9); playNote(987.77, 0.08, 0.25, 'sine', 0.8); },
+    sell(){ playNote(987.77, 0, 0.15, 'sine', 0.9); playNote(659.25, 0.08, 0.25, 'sine', 0.8); },
+};
+let spinSoundInterval = null;
+function startSpinSound(){ stopSpinSound(); spinSoundInterval = setInterval(() => Sound.tick(), 90); }
+function stopSpinSound(){ if (spinSoundInterval){ clearInterval(spinSoundInterval); spinSoundInterval = null; } }
+
+const $ = id => document.getElementById(id);
+const balanceDisplay = $('balanceDisplay');
+const invGrid = $('invGrid');
+const rightGrid = $('rightGrid');
+const invCount = $('invCount');
+const slotLeft = $('slotLeft');
+const slotRight = $('slotRight');
+const chanceText = $('chanceText');
+const wheelProgress = $('wheelProgress');
+const wheelSpinner = $('wheelSpinner');
+const upgradeBtn = $('upgradeBtn');
+const upgradeInfo = $('upgradeInfo');
+const screens = document.querySelectorAll('.screen');
+const navBtns = document.querySelectorAll('.nav-btn');
+const tabs = document.querySelectorAll('.tab[data-tab]');
+const searchName = $('searchName');
+const priceMin = $('priceMin');
+const priceMax = $('priceMax');
+const searchBtn = $('searchBtn');
+const sortBtn = $('sortBtn');
+
+function renderQuickButtons(){
+    const container = document.getElementById('quickRight');
+    if (!container) return;
+    const percentPresets = state.settings.presets.percent;
+    container.innerHTML = percentPresets.map(pct => {
+        let colorClass = 'p50';
+        if (pct <= 15) colorClass = 'p5';
+        else if (pct <= 40) colorClass = 'p25';
+        else if (pct <= 65) colorClass = 'p50';
+        else colorClass = 'p75';
+        return `<button class="qc-btn ${colorClass}" data-chance="${pct}">${pct}%</button>`;
+    }).join('');
+    container.querySelectorAll('.qc-btn').forEach(btn => {
+        btn.addEventListener('click', function(){ quickPickChance(Number(this.dataset.chance)); });
+    });
+}
+
+function renderProfile(){
+    const fullName = (user.first_name + ' ' + (user.last_name || '')).trim() || 'Аноним';
+    $('profileName').textContent = fullName;
+    const uEl = $('profileUsername');
+    if (user.username){ uEl.textContent = '@' + user.username; uEl.style.display='block'; }
+    else { uEl.textContent = ''; uEl.style.display='none'; }
+    $('profileId').textContent = 'ID: ' + (user.id || '—');
+    const avEl = $('profileAvatar');
+    if (user.photo_url){ avEl.innerHTML = '<img src="'+user.photo_url+'" onerror="this.parentNode.innerHTML=\'👤\'">'; }
+    else { avEl.innerHTML = '👤'; }
+    $('statNFT').textContent = state.inventory.length;
+    $('statBalance').textContent = Math.floor(state.balance) + ' ⭐';
+}
+
+function renderBalance(){
+    balanceDisplay.textContent = Math.floor(state.balance);
+    const el = $('statBalance');
+    if (el) el.textContent = Math.floor(state.balance) + ' ⭐';
+}
+
+async function loadServerHistory(filter){
+    const list = $('historyList');
+    $('historyCount').textContent = '...';
+    list.innerHTML = '<div class="history-empty">Загрузка...</div>';
+    const items = await apiHistory(filter === 'all' ? null : (filter === 'game' ? null : filter));
+    let rows = items;
+    if (filter === 'game') rows = items.filter(x => ['upgrade','buy','sell'].includes(x.type));
+    $('historyCount').textContent = rows.length;
+    renderHistoryList(rows);
+}
+
+function renderHistoryList(items){
+    const list = $('historyList');
+    if (!items.length){ list.innerHTML = '<div class="history-empty">Пока нет записей</div>'; return; }
+    const icons = {
+        topup:    { icon: '💎', color: 'var(--neon)',  label: 'Пополнение' },
+        topup_gift:{ icon: '🎁', color: 'var(--neon)', label: 'Подарок получен' },
+        withdraw: { icon: '💸', color: 'var(--gold)', label: 'Вывод' },
+        withdraw_fee: { icon: '💸', color: 'var(--gold)', label: 'Комиссия вывода' },
+        withdraw_request: { icon: '✉️', color: 'var(--gold)', label: 'Заявка на вывод' },
+        withdraw_complete: { icon: '✅', color: 'var(--neon)', label: 'Вывод выполнен' },
+        withdraw_cancelled: { icon: '↩️', color: 'var(--gold)', label: 'Вывод отменён' },
+        withdraw_refund: { icon: '💰', color: 'var(--neon)', label: 'Возврат за вывод' },
+        upgrade:  { icon: '⚡', color: 'var(--cyan)', label: 'Апгрейд' },
+        buy:      { icon: '🛒', color: 'var(--cyan)', label: 'Покупка' },
+        sell:     { icon: '💰', color: 'var(--gold)', label: 'Продажа' },
+        promo:    { icon: '🎟', color: 'var(--cyan)', label: 'Промокод' },
+        gift:     { icon: '🎁', color: 'var(--gold)', label: 'Подарок за промокод' },
+        referral_reward: { icon: '👥', color: 'var(--neon)', label: 'За приглашённого' },
+    };
+    list.innerHTML = items.map(tx => {
+        const i = icons[tx.type] || { icon: '•', color: 'var(--muted)', label: tx.type };
+        const stars = tx.amount_stars > 0 ? '+' + tx.amount_stars : '' + tx.amount_stars;
+        const ton   = tx.amount_ton > 0 ? '+' + tx.amount_ton.toFixed(4) : (tx.amount_ton || 0).toFixed(4);
+        const dt = new Date(tx.created_at + 'Z').toLocaleString('ru-RU', {
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+        });
+        return `
+            <div class="history-item" style="border-left-color:${i.color}">
+                <div style="font-size:24px;">${i.icon}</div>
+                <div class="history-info">
+                    <div class="h-title">${i.label}</div>
+                    <div class="h-sub">${dt}</div>
+                </div>
+                <div class="history-meta">
+                    <div class="h-chance" style="color:${tx.amount_stars>=0?'var(--neon)':'var(--red)'}">
+                        ${stars} ⭐
+                    </div>
+                    <div class="h-time">${ton} TON</div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function filterGifts(list){
+    const q = (state.search.name || '').toLowerCase().trim();
+    const min = state.search.min !== '' ? Number(state.search.min) : null;
+    const max = state.search.max !== '' ? Number(state.search.max) : null;
+    let filtered = list.filter(g => {
+        if (q && !g.name.toLowerCase().includes(q)) return false;
+        if (min !== null && g.price < min) return false;
+        if (max !== null && g.price > max) return false;
+        return true;
+    });
+    filtered.sort((a,b) => state.sortAsc ? a.price - b.price : b.price - a.price);
+    return filtered;
+}
+
+function render(){
+    balanceDisplay.textContent = Math.floor(state.balance);
+    invCount.textContent = state.inventory.length + ' шт.';
+
+    if (state.inventory.length === 0){
+        invGrid.innerHTML = `
+            <div class="inv-empty" style="padding:30px 12px;">
+                <div style="font-size:32px;margin-bottom:8px;">💎</div>
+                <div style="font-size:12px;color:var(--text);margin-bottom:4px;font-weight:600;">Нет предметов</div>
+                <div style="font-size:10px;color:var(--muted);margin-bottom:14px;">Пополните баланс или отправьте подарок</div>
+                <button class="volume-test-btn" id="emptyDepositBtn" style="max-width:200px;margin:0 auto;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;">
+                    ＋ ПОПОЛНИТЬ
+                </button>
+            </div>`;
+        setTimeout(() => {
+            const b = document.getElementById('emptyDepositBtn');
+            if (b) b.addEventListener('click', () => { Sound.click(); showDepositModal('ton'); });
+        }, 0);
+    } else {
+        invGrid.innerHTML = state.inventory.map(it => {
+            const av = isAvailable(it);
+            return `
+            <div class="inv-item ${Number(state.selectedLeft)===Number(it.id)?'selected':''}" data-id="${it.id}"
+                 style="${av.ok ? '' : 'opacity:.55;'}">
+                <img src="${it.image}" onerror="this.style.display='none'">
+                <div class="inv-name">${it.name}</div>
+                <div class="inv-price">⭐${it.price}</div>
+                ${av.ok ? '' : `<div style="font-size:7px;color:var(--red);margin-top:1px;line-height:1;">${av.msg}</div>`}
+            </div>`;
+        }).join('');
+    }
+
+    const filtered = filterGifts(GIFTS);
+    if (state.rightTab === 'shop'){
+        if (filtered.length === 0){
+            rightGrid.innerHTML = '<div class="inv-empty">Ничего не найдено</div>';
+        } else {
+            rightGrid.innerHTML = filtered.map(g => {
+                const idx = GIFTS.indexOf(g);
+                return `
+                <div class="inv-item" data-buy="${idx}">
+                    <div class="buy-badge">КУПИТЬ</div>
+                    <img src="${g.image}" onerror="this.style.display='none'">
+                    <div class="inv-name">${g.name}</div>
+                    <div class="inv-price">⭐${g.price}</div>
+                </div>`;
+            }).join('');
+        }
+    } else {
+        if (filtered.length === 0){
+            rightGrid.innerHTML = '<div class="inv-empty">Ничего не найдено</div>';
+        } else {
+            rightGrid.innerHTML = filtered.map(g => {
+                const idx = GIFTS.indexOf(g);
+                return `
+                <div class="inv-item ${state.selectedRight===idx?'selected':''}" data-target="${idx}">
+                    <img src="${g.image}" onerror="this.style.display='none'">
+                    <div class="inv-name">${g.name}</div>
+                    <div class="inv-price">⭐${g.price}</div>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    const leftItem = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
+    if (leftItem){
+        slotLeft.classList.add('filled');
+        slotLeft.innerHTML = `
+            <button class="slot-remove" onclick="removeLeft()">✕</button>
+            <div class="slot-item">
+                <img src="${leftItem.image}">
+                <div class="slot-name">${leftItem.name}</div>
+                <div class="slot-price">⭐${leftItem.price}</div>
+            </div>`;
+    } else {
+        slotLeft.classList.remove('filled');
+        slotLeft.innerHTML = `<div class="slot-label">ВЫБЕРИТЕ ПРЕДМЕТ</div><div class="slot-empty">➕</div>`;
+    }
+
+    const rightItem = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
+    if (rightItem){
+        slotRight.classList.add('filled');
+        slotRight.innerHTML = `
+            <button class="slot-remove" onclick="removeRight()">✕</button>
+            <div class="slot-item">
+                <img src="${rightItem.image}">
+                <div class="slot-name">${rightItem.name}</div>
+                <div class="slot-price">⭐${rightItem.price}</div>
+            </div>`;
+    } else {
+        slotRight.classList.remove('filled');
+        slotRight.innerHTML = `<div class="slot-label">ВЫБЕРИТЕ ЦЕЛЬ</div><div class="slot-empty">🎯</div>`;
+    }
+
+    if (document.activeElement !== searchName) searchName.value = state.search.name || '';
+    if (document.activeElement !== priceMin)   priceMin.value   = state.search.min  || '';
+    if (document.activeElement !== priceMax)   priceMax.value   = state.search.max  || '';
+
+    updateChance();
+    renderProfile();
+    save();
+}
+
+const MAX_CHANCE = 75;
+function calcChance(){
+    const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
+    const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
+    if (!left || !right) return 0;
+    return Math.min(MAX_CHANCE, Math.max(1, (left.price / right.price) * 100));
+}
+function updateChance(){
+    const chance = calcChance();
+    chanceText.textContent = chance.toFixed(1) + '%';
+    const CIRC = 439.82;
+    wheelProgress.setAttribute('stroke-dasharray', CIRC);
+    wheelProgress.setAttribute('stroke-dashoffset', CIRC - (CIRC * chance / 100));
+
+    const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
+    const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
+
+    if (!left || !right){
+        upgradeBtn.disabled = true;
+        upgradeInfo.textContent = 'Выберите предмет и цель';
+    } else if (left.price >= right.price){
+        upgradeBtn.disabled = true;
+        upgradeInfo.textContent = '⚠️ Цель должна быть дороже';
+    } else {
+        upgradeBtn.disabled = false;
+        upgradeInfo.textContent = `Шанс: ${chance.toFixed(1)}% · макс ${MAX_CHANCE}%`;
+    }
+}
+
+function quickPickChance(targetPercent){
+    let basePrice = null;
+    const leftItem = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
+    const rightItem = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
+    if (leftItem){ basePrice = leftItem.price; }
+    else if (rightItem){ basePrice = rightItem.price; }
+    else { tg.showAlert('Сначала выберите предмет слева или цель справа'); return; }
+    const wantedPrice = basePrice * 100 / targetPercent;
+    let bestIdx = 0, bestDiff = Infinity;
+    GIFTS.forEach((g, i) => {
+        const diff = Math.abs(g.price - wantedPrice);
+        if (diff < bestDiff){ bestDiff = diff; bestIdx = i; }
+    });
+    if (leftItem){
+        state.selectedRight = bestIdx;
+        state.rightTab = 'target';
+        document.querySelectorAll('.tab[data-tab]').forEach(t => {
+            t.classList.toggle('active', t.dataset.tab === 'target');
+        });
+    } else {
+        const wantedLeftPrice = rightItem.price * targetPercent / 100;
+        let bestInv = null, bestInvDiff = Infinity;
+        state.inventory.forEach(it => {
+            const d = Math.abs(it.price - wantedLeftPrice);
+            if (d < bestInvDiff){ bestInvDiff = d; bestInv = it; }
+        });
+        if (bestInv){ state.selectedLeft = bestInv.id; }
+        else { tg.showAlert('Нет подходящего предмета'); return; }
+    }
+    Sound.click();
+    render();
+    if (navigator.vibrate) navigator.vibrate(15);
+}
+
+function applySearch(){
+    state.search.name = searchName.value.trim();
+    state.search.min  = priceMin.value.trim();
+    state.search.max  = priceMax.value.trim();
+    render();
+}
+searchBtn.addEventListener('click', () => { Sound.click(); applySearch(); });
+searchName.addEventListener('input', applySearch);
+priceMin.addEventListener('input', applySearch);
+priceMax.addEventListener('input', applySearch);
+
+sortBtn.addEventListener('click', () => {
+    Sound.click();
+    state.sortAsc = !state.sortAsc;
+    sortBtn.textContent = state.sortAsc ? '▲' : '▼';
+    render();
+});
+sortBtn.textContent = state.sortAsc ? '▲' : '▼';
+
+tabs.forEach(tab => {
+    tab.addEventListener('click', function(){
+        tabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        state.rightTab = this.dataset.tab;
+        Sound.click();
+        render();
+        if (navigator.vibrate) navigator.vibrate(8);
+    });
+});
+
+invGrid.addEventListener('click', e => {
+    const el = e.target.closest('.inv-item');
+    if (!el) return;
+    const id = Number(el.dataset.id);
+    const item = state.inventory.find(x => Number(x.id) === id);
+    const av = isAvailable(item);
+    if (!av.ok){
+        Sound.lose();
+        tg.showAlert('⏳ Подарок ещё недоступен.\n' + av.msg);
+        return;
+    }
+    Sound.click();
+    state.selectedLeft = id;
+    render();
+    showSellModal(id);
+    if (navigator.vibrate) navigator.vibrate(10);
+});
+
+rightGrid.addEventListener('click', e => {
+    const el = e.target.closest('.inv-item');
+    if (!el) return;
+    Sound.click();
+    if (el.dataset.buy !== undefined){ showBuyModal(parseInt(el.dataset.buy, 10)); return; }
+    if (el.dataset.target !== undefined){
+        state.selectedRight = parseInt(el.dataset.target, 10);
+        render();
+        if (navigator.vibrate) navigator.vibrate(10);
+    }
+});
+
+window.removeLeft = function(){ state.selectedLeft = null; render(); };
+window.removeRight = function(){ state.selectedRight = null; render(); };
+
+function showBuyModal(idx){
+    const gift = GIFTS[idx];
+    if (!gift) return;
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const canAfford = state.balance >= gift.price;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content buy">
+            <img src="${gift.image}" onerror="this.style.display='none'">
+            <div class="modal-title">${gift.name}</div>
+            <div class="modal-sub">
+                Цена: <b style="color:var(--gold)">⭐ ${gift.price}</b><br>
+                <span style="font-size:10px;">Ваш баланс: ⭐ ${Math.floor(state.balance)}</span>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn grey" data-action="close">ОТМЕНА</button>
+                <button class="modal-btn gold" data-action="buy" ${canAfford?'':'disabled'}>
+                    ${canAfford ? '🛒 КУПИТЬ' : '❌ НЕ ХВАТАЕТ'}
+                </button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => {
+        Sound.click(); overlay.remove();
+    });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    const buyBtn = overlay.querySelector('[data-action="buy"]');
+    if (buyBtn && canAfford){
+        buyBtn.addEventListener('click', async () => {
+            buyBtn.disabled = true;
+            buyBtn.textContent = 'ПОКУПКА...';
+            try {
+                const d = await api('/api/buy', {
+                    method: 'POST',
+                    body: {
+                        user_id: user.id,
+                        gift_name: gift.name,
+                        gift_price: gift.price,
+                        gift_image: gift.image,
+                    }
+                });
+                if (!d.ok){
+                    tg.showAlert('❌ ' + (d.error || 'Ошибка покупки'));
+                    buyBtn.disabled = false;
+                    buyBtn.textContent = '🛒 КУПИТЬ';
+                    return;
+                }
+                if (typeof d.balance === 'number') state.balance = d.balance;
+                await new Promise(r => setTimeout(r, 150));
+                await apiRefreshInventory();
+                Sound.buy();
+                overlay.remove();
+                render();
+                tg.showAlert('✅ Куплено: ' + gift.name + ' за ⭐' + gift.price);
+                if (navigator.vibrate) navigator.vibrate([20,40,20]);
+            } catch(e){
+                console.error('buy error:', e);
+                tg.showAlert('❌ Ошибка сети');
+                buyBtn.disabled = false;
+                buyBtn.textContent = '🛒 КУПИТЬ';
+            }
+        });
+    }
+}
+
+function showSellModal(itemId){
+    const itemIdNum = Number(itemId);
+    const item = state.inventory.find(x => Number(x.id) === itemIdNum);
+    if (!item) return;
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content sell">
+            <img src="${item.image}" onerror="this.style.display='none'">
+            <div class="modal-title">${item.name}</div>
+            <div class="modal-sub">
+                Продать за: <b style="color:var(--gold)">⭐ ${item.price}</b><br>
+                <span style="font-size:10px;">Звёзды придут на баланс</span>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn grey" data-action="close">ОТМЕНА</button>
+                <button class="modal-btn cyan" data-action="sell">💸 ПРОДАТЬ</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    overlay.querySelector('[data-action="sell"]').addEventListener('click', async () => {
+        const btn = overlay.querySelector('[data-action="sell"]');
+        btn.disabled = true;
+        btn.textContent = 'ПРОДАЖА...';
+        try {
+            const d = await api('/api/sell', {
+                method: 'POST',
+                body: { user_id: user.id, inventory_id: itemIdNum }
+            });
+            if (!d.ok){
+                tg.showAlert('❌ ' + (d.error || 'Ошибка продажи'));
+                btn.disabled = false;
+                btn.textContent = '💸 ПРОДАТЬ';
+                return;
+            }
+            if (typeof d.balance === 'number') state.balance = d.balance;
+            await apiRefreshInventory();
+            if (Number(state.selectedLeft) === itemIdNum) state.selectedLeft = null;
+            Sound.sell();
+            overlay.remove();
+            render();
+            tg.showAlert('✅ Продано: ' + item.name + ' за ⭐' + item.price);
+            if (navigator.vibrate) navigator.vibrate([20,40,20]);
+        } catch(e){
+            console.error('sell error:', e);
+            tg.showAlert('❌ Ошибка сети');
+            btn.disabled = false;
+            btn.textContent = '💸 ПРОДАТЬ';
+        }
+    });
+}
+
+function doUpgrade(){
+    if (state.isUpgrading) return;
+    const left = state.inventory.find(x => Number(x.id) === Number(state.selectedLeft));
+    const right = state.selectedRight !== null ? GIFTS[state.selectedRight] : null;
+    if (!left || !right) return;
+
+    const chance = calcChance();
+    state.isUpgrading = true;
+    upgradeBtn.disabled = true;
+    upgradeInfo.textContent = state.settings.fastSpin ? '⚡ Быстрая прокачка...' : '🌀 Прокачка...';
+    if (navigator.vibrate) navigator.vibrate([30,60,30]);
+
+    const finalAngleDeg = Math.random() * 360;
+    const chanceDeg = chance * 3.6;
+    const success = finalAngleDeg < chanceDeg;
+
+    const turns = 4 + Math.floor(Math.random() * 3);
+    const finalRotation = turns * 360 + finalAngleDeg;
+    const duration = state.settings.fastSpin ? 1 : 4;
+
+    wheelSpinner.style.transition = 'none';
+    wheelSpinner.style.transform = 'rotate(0deg)';
+    void wheelSpinner.offsetWidth;
+    wheelSpinner.style.transition = `transform ${duration}s cubic-bezier(.17,.67,.3,1)`;
+    wheelSpinner.style.transform = `rotate(${finalRotation}deg)`;
+
+    startSpinSound();
+
+    setTimeout(async () => {
+        stopSpinSound();
+
+        try {
+            await api('/api/upgrade/remove', {
+                method: 'POST',
+                body: { user_id: user.id, inventory_id: left.id }
+            });
+        } catch(e){ console.warn('upgrade/remove error:', e); }
+
+        if (success) {
+            try {
+                await api('/api/upgrade/reward', {
+                    method: 'POST',
+                    body: {
+                        user_id: user.id,
+                        gift_name: right.name,
+                        gift_price: right.price,
+                        gift_image: right.image,
+                    }
+                });
+            } catch(e){ console.warn('upgrade/reward error:', e); }
+        }
+
+        await apiRefreshInventory();
+        await apiRefreshBalance();
+
+        state.selectedLeft = null;
+        state.isUpgrading = false;
+        upgradeInfo.textContent = success ? '✅ Успех!' : '❌ Неудача';
+
+        if (success) Sound.win(); else Sound.lose();
+
+        render();
+        showResult(success, success ? right : left, chance);
+
+        if (document.getElementById('screenHistory')?.classList.contains('active')){
+            loadServerHistory('all');
+        }
+    }, duration*1000 + 100);
+}
+
+upgradeBtn.addEventListener('click', () => {
+    Sound.click();
+    requireSubscription(() => doUpgrade());
+});
+
+function showResult(success, item, chance){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content ${success?'win':'lose'}">
+            <img src="${item.image}" onerror="this.style.display='none'">
+            <div class="modal-title" style="color:${success?'var(--neon)':'var(--red)'}">
+                ${success ? '🎉 УСПЕХ!' : '💀 НЕУДАЧА'}
+            </div>
+            <div class="modal-sub">
+                ${success ? 'Вы получили:<br><b>'+item.name+'</b>' : 'Предмет сгорел:<br><b>'+item.name+'</b>'}
+                <br><span style="font-size:10px;">Шанс был: ${chance.toFixed(1)}%</span>
+            </div>
+            <button class="modal-btn" onclick="this.closest('.modal-overlay').remove()">OK</button>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function showSettingsModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const s = state.settings;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content settings">
+            <div class="settings-header">
+                <h2>⚙ Настройки</h2>
+                <button class="settings-close" data-action="close">✕</button>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title"><h3>Быстрый подбор</h3></div>
+                <div class="settings-desc">Настройте кнопки для быстрого подбора</div>
+                <div class="preset-row">
+                    <div class="preset-card">
+                        <h4>По коэффициенту</h4>
+                        <div class="preset-buttons">
+                            <button class="preset-btn" data-type="x" data-idx="0">x${s.presets.x[0]}</button>
+                            <button class="preset-btn" data-type="x" data-idx="1">x${s.presets.x[1]}</button>
+                            <button class="preset-btn" data-type="x" data-idx="2">x${s.presets.x[2]}</button>
+                            <button class="preset-reset" data-reset="x">↻</button>
+                        </div>
+                    </div>
+                    <div class="preset-card">
+                        <h4>По проценту</h4>
+                        <div class="preset-buttons">
+                            <button class="preset-btn" data-type="p" data-idx="0">${s.presets.percent[0]}%</button>
+                            <button class="preset-btn" data-type="p" data-idx="1">${s.presets.percent[1]}%</button>
+                            <button class="preset-btn" data-type="p" data-idx="2">${s.presets.percent[2]}%</button>
+                            <button class="preset-btn" data-type="p" data-idx="3">${s.presets.percent[3]}%</button>
+                            <button class="preset-reset" data-reset="p">↻</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title"><h3>Звук в апгрейде</h3></div>
+                <div class="radio-option ${s.soundOn?'active':''}" data-setting="soundOn" data-val="true">
+                    <div class="radio-circle"></div>
+                    <div class="radio-info">
+                        <div class="radio-title">Включен</div>
+                        <div class="radio-desc">Звуковые эффекты включены</div>
+                    </div>
+                </div>
+                <div class="radio-option ${!s.soundOn?'active':''}" data-setting="soundOn" data-val="false">
+                    <div class="radio-circle"></div>
+                    <div class="radio-info">
+                        <div class="radio-title">Выключен</div>
+                        <div class="radio-desc">Звук в беззвучном режиме</div>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title"><h3>Тип прокрутки</h3></div>
+                <div class="radio-option ${!s.fastSpin?'active':''}" data-setting="fastSpin" data-val="false">
+                    <div class="radio-circle"></div>
+                    <div class="radio-info">
+                        <div class="radio-title">Обычная</div>
+                        <div class="radio-desc">Стрелка крутится медленно</div>
+                    </div>
+                </div>
+                <div class="radio-option ${s.fastSpin?'active':''}" data-setting="fastSpin" data-val="true">
+                    <div class="radio-circle"></div>
+                    <div class="radio-info">
+                        <div class="radio-title">Ускоренная</div>
+                        <div class="radio-desc">Стрелка крутится быстрее</div>
+                    </div>
+                </div>
+            </div>
+            <button class="settings-save" data-action="save">Сохранить и закрыть</button>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const type = this.dataset.type;
+            const idx = parseInt(this.dataset.idx, 10);
+            const current = type === 'x' ? state.settings.presets.x[idx] : state.settings.presets.percent[idx];
+            const newVal = prompt('Введите новое значение:', current);
+            if (newVal !== null){
+                const num = Number(newVal);
+                if (!isNaN(num) && num > 0 && num <= 100){
+                    if (type === 'x'){ state.settings.presets.x[idx] = num; this.textContent = 'x' + num; }
+                    else { state.settings.presets.percent[idx] = num; this.textContent = num + '%'; }
+                    Sound.click();
+                }
+            }
+        });
+    });
+    overlay.querySelectorAll('.preset-reset').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const type = this.dataset.reset;
+            if (type === 'x'){
+                state.settings.presets.x = [2,4,8];
+                overlay.querySelectorAll('[data-type="x"]').forEach((b,i) => b.textContent = 'x' + [2,4,8][i]);
+            } else {
+                state.settings.presets.percent = [5,25,50,75];
+                overlay.querySelectorAll('[data-type="p"]').forEach((b,i) => b.textContent = [5,25,50,75][i] + '%');
+            }
+            Sound.click();
+        });
+    });
+    overlay.querySelectorAll('.radio-option').forEach(opt => {
+        opt.addEventListener('click', function(){
+            const setting = this.dataset.setting;
+            const val = this.dataset.val === 'true';
+            state.settings[setting] = val;
+            overlay.querySelectorAll(`.radio-option[data-setting="${setting}"]`).forEach(o => o.classList.remove('active'));
+            this.classList.add('active');
+            Sound.click();
+        });
+    });
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+    overlay.querySelector('[data-action="save"]').addEventListener('click', () => {
+        Sound.click();
+        save();
+        applySettingsToUI();
+        renderQuickButtons();
+        overlay.remove();
+    });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function showVolumeModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="border-color:var(--gold);">
+            <div class="modal-title" style="color:var(--gold);">🔊 Громкость</div>
+            <div class="modal-sub">Настройте уровень звуковых эффектов</div>
+            <div class="volume-slider-wrap">
+                <input type="range" class="volume-slider" id="volSlider"
+                       min="0" max="100" value="${Math.round(state.settings.volume*100)}">
+            </div>
+            <div class="volume-value" id="volValue">${Math.round(state.settings.volume*100)}%</div>
+            <div class="volume-row">
+                <span>🔇 Тихо</span>
+                <span>Громко 🔊</span>
+            </div>
+            <button class="volume-test-btn" id="testSound">▶ ПРОСЛУШАТЬ</button>
+            <div class="modal-actions" style="margin-top:14px;">
+                <button class="modal-btn grey" data-action="close">ЗАКРЫТЬ</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    const slider = overlay.querySelector('#volSlider');
+    const value = overlay.querySelector('#volValue');
+    slider.addEventListener('input', () => {
+        const v = parseInt(slider.value, 10);
+        value.textContent = v + '%';
+        state.settings.volume = v / 100;
+    });
+    slider.addEventListener('change', () => { save(); Sound.click(); });
+    overlay.querySelector('#testSound').addEventListener('click', () => Sound.win());
+    overlay.querySelector('[data-action="close"]').addEventListener('click', () => { save(); Sound.click(); overlay.remove(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+/* ===== TON CONNECT ===== */
+function buildCommentPayload(comment) {
+    if (!window.TonCore || !window.TonCore.beginCell) { console.error('[TON] @ton/core не загружен'); return null; }
+    try {
+        const cell = window.TonCore.beginCell().storeUint(0, 32).storeStringTail(comment).endCell();
+        return cell.toBoc().toString('base64');
+    } catch (e) { console.error('[TON] Ошибка формирования payload:', e); return null; }
+}
+function loadTonConnectSDK() {
+    const existing = window.TonConnectUI || (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI);
+    if (typeof existing === 'function') { window.TonConnectUI = existing; return Promise.resolve(existing); }
+    if (sdkLoadingPromise) return sdkLoadingPromise;
+    sdkLoadingPromise = new Promise((resolve, reject) => {
+        const tryLoad = (src, isFallback) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+            script.onload = () => {
+                let Cls = null;
+                if (window.TON_CONNECT_UI) {
+                    Cls = window.TON_CONNECT_UI.TonConnectUI || window.TON_CONNECT_UI.default
+                       || (typeof window.TON_CONNECT_UI === 'function' ? window.TON_CONNECT_UI : null);
+                }
+                if (!Cls && typeof window.TonConnectUI === 'function') Cls = window.TonConnectUI;
+                if (typeof Cls === 'function') { window.TonConnectUI = Cls; resolve(Cls); }
+                else if (!isFallback) tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                else reject(new Error('TonConnectUI class not found'));
+            };
+            script.onerror = () => {
+                if (!isFallback) tryLoad('https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js', true);
+                else reject(new Error('SDK load failed'));
+            };
+            document.head.appendChild(script);
+        };
+        tryLoad('./tonconnect-ui.min.js', false);
+    });
+    return sdkLoadingPromise;
+}
+function ensureTonConnectUI() {
+    if (tonConnectUI) return Promise.resolve(tonConnectUI);
+    return loadTonConnectSDK().then((TonConnectUICls) => {
+        tonConnectUI = new TonConnectUICls({
+            manifestUrl: MANIFEST_URL,
+            walletsListConfiguration: {
+                includeWallets: [
+                    { appName: 'telegram-wallet', name: 'Wallet', imageUrl: 'https://wallet.tg/images/logo-288.png',
+                      aboutUrl: 'https://wallet.tg/', universalLink: 'https://t.me/wallet/start',
+                      bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'macos', 'windows', 'linux'] },
+                    { appName: 'tonkeeper', name: 'Tonkeeper', imageUrl: 'https://tonkeeper.com/assets/tonconnect-icon.png',
+                      aboutUrl: 'https://tonkeeper.com', universalLink: 'https://app.tonkeeper.com/ton-connect',
+                      bridgeUrl: BRIDGE_URL, platforms: ['ios', 'android', 'chrome', 'firefox'] },
+                    { appName: 'mytonwallet', name: 'MyTonWallet', imageUrl: 'https://mytonwallet.io/icon-256.png',
+                      aboutUrl: 'https://mytonwallet.io', universalLink: 'https://mytonwallet.io/ton-connect',
+                      bridgeUrl: BRIDGE_URL, platforms: ['chrome', 'firefox', 'ios', 'android'] }
+                ]
+            }
+        });
+        tonConnectUI.onStatusChange(() => { updateWalletStatus(); });
+        return tonConnectUI;
+    }).catch((e) => { console.error('[TON] ошибка ensureTonConnectUI:', e); return null; });
+}
+function updateWalletStatus() {
+    const payBtn = document.getElementById('payBtn');
+    const payInfo = document.getElementById('payInfo');
+    if (!payBtn || !payInfo) return;
+    if (!tonConnectUI || !tonConnectUI.connected) {
+        payBtn.disabled = true; payBtn.style.opacity = '.4';
+        payInfo.textContent = 'Подключите кошелёк';
+    } else if (!selectedAmount) {
+        payBtn.disabled = true; payBtn.style.opacity = '.4';
+        payInfo.textContent = 'Выберите сумму';
+    } else {
+        payBtn.disabled = false; payBtn.style.opacity = '1';
+        payInfo.textContent = 'Нажмите ОПЛАТИТЬ для подтверждения';
+    }
+}
+
+async function showWithdrawModal(){
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+
+    await apiRefreshBalance();
+
+    if (state.balance < WITHDRAW_FEE){
+        Sound.lose();
+        tg.showAlert('❌ Для вывода нужно минимум ⭐' + WITHDRAW_FEE + '\nУ вас: ⭐' + Math.floor(state.balance));
+        setTimeout(() => showDepositModal('ton'), 300);
+        return;
+    }
+
+    let inventory = await apiRefreshInventory();
+    if (!inventory.length) inventory = state.inventory || [];
+    inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
+    // Помечаем недоступные
+    inventory = inventory.map(it => {
+        const av = isAvailable(it);
+        return { ...it, _locked: !av.ok, _lockMsg: av.msg };
+    });
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    function renderContent(){
+        let body = '';
+        if (inventory.length === 0){
+            body = `
+                <div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:12px;">
+                    <div style="font-size:40px;margin-bottom:10px;">📦</div>
+                    У вас пока нет подарков для вывода.<br>
+                    Отправьте NFT-подарок @${RELAYER_USERNAME}, чтобы начать.
+                </div>`;
+        } else {
+            body = `
+                <div style="margin:10px 0 14px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
+                    Выберите подарок для вывода
+                </div>
+                <div class="withdraw-gifts">
+                    ${inventory.map(it => `
+                        <div class="withdraw-gift ${it._locked ? 'locked' : ''}" data-inv-id="${it.id}" ${it._locked ? 'data-locked="1"' : ''}>
+                            <img src="${it.image || ''}" onerror="this.style.display='none'">
+                            <div class="wg-name">${it.name}</div>
+                            <div class="wg-price">⭐${it.price}</div>
+                            ${it._locked ? `<div style="font-size:8px;color:var(--red);margin-top:2px;line-height:1;">${it._lockMsg}</div>` : ''}
+                        </div>`).join('')}
+                </div>`;
+        }
+        overlay.innerHTML = `
+            <div class="modal-content" style="border-color:var(--gold);max-width:400px;text-align:left;">
+                <div class="settings-header">
+                    <h2 style="color:var(--gold);">💸 Вывод подарка</h2>
+                    <button class="settings-close" data-action="close">✕</button>
+                </div>
+                <div class="deposit-note" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.25);">
+                    Выберите подарок из инвентаря. Затем напишите аккаунту
+                    <b style="color:var(--gold);">@${RELAYER_USERNAME}</b> — бот вышлет его автоматически.
+                </div>
+                ${body}
+                <button class="volume-test-btn" id="withdrawStartBtn"
+                        style="background:linear-gradient(135deg,var(--gold),#ffb700);color:#0a0e1a;border:none;font-size:14px;padding:14px;margin-top:0;display:none;">
+                    💸 ВЫВЕСТИ
+                </button>
+                <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:10px;">
+                    Стоимость вывода: <b style="color:var(--red);">−${WITHDRAW_FEE} ⭐</b><br>
+                    Ваш баланс: <b style="color:var(--gold);">${Math.floor(state.balance)} ⭐</b>
+                </div>
+            </div>`;
+        overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+
+        let selectedId = null;
+        overlay.querySelectorAll('.withdraw-gift').forEach(el => {
+            el.addEventListener('click', () => {
+                if (el.dataset.locked === '1'){
+                    Sound.lose();
+                    tg.showAlert('⏳ Подарок ещё недоступен для вывода.');
+                    return;
+                }
+                overlay.querySelectorAll('.withdraw-gift').forEach(x => x.classList.remove('active'));
+                el.classList.add('active');
+                selectedId = parseInt(el.dataset.invId, 10);
+                const btn = overlay.querySelector('#withdrawStartBtn');
+                if (btn) btn.style.display = 'block';
+                Sound.click();
+            });
+        });
+
+        const btn = overlay.querySelector('#withdrawStartBtn');
+        if (btn){
+            btn.addEventListener('click', async () => {
+                if (!selectedId) return;
+
+                if (state.balance < WITHDRAW_FEE){
+                    Sound.lose();
+                    tg.showAlert('❌ Недостаточно звёзд для вывода.\nНужно: ⭐' + WITHDRAW_FEE + '\nУ вас: ⭐' + Math.floor(state.balance));
+                    overlay.remove();
+                    setTimeout(() => { showDepositModal('ton'); }, 300);
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'ОТПРАВКА...';
+
+                try {
+                    const d = await api('/api/inventory/remove', {
+                        method: 'POST',
+                        body: { user_id: user.id, inventory_id: selectedId }
+                    });
+
+                    if (!d.ok){
+                        if (d.code === 'NOT_AVAILABLE_YET') {
+                            Sound.lose();
+                            tg.showAlert('⏳ ' + (d.error || 'Подарок ещё недоступен'));
+                        } else {
+                            tg.showAlert('❌ ' + (d.error || 'Ошибка вывода'));
+                        }
+                        if (typeof d.balance === 'number') state.balance = d.balance;
+                        renderBalance();
+                        btn.disabled = false;
+                        btn.textContent = '💸 ВЫВЕСТИ';
+                        return;
+                    }
+
+                    if (typeof d.balance === 'number') state.balance = d.balance;
+                    renderBalance();
+
+                    Sound.click();
+                    overlay.innerHTML = `
+                        <div class="modal-content" style="border-color:var(--neon);max-width:400px;">
+                            <div style="font-size:60px;margin-bottom:12px;">✉️</div>
+                            <div class="modal-title" style="color:var(--neon);">Заявка создана!</div>
+                            <div class="modal-sub">
+                                Списано за вывод: <b style="color:var(--red);">−${WITHDRAW_FEE} ⭐</b><br><br>
+                                Теперь напишите любое сообщение аккаунту:<br><br>
+                                <b style="color:var(--gold);font-size:16px;">@${RELAYER_USERNAME}</b><br><br>
+                                Бот проверит заявку и сразу отправит ваш подарок.
+                            </div>
+                            <a href="https://t.me/${RELAYER_USERNAME}" target="_blank" class="modal-btn"
+                               style="display:block;text-decoration:none;margin-bottom:8px;background:var(--neon);color:#0a0e1a;padding:12px;border-radius:30px;font-weight:700;">
+                                ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
+                            </a>
+                            <button class="modal-btn grey" data-action="finish">OK</button>
+                        </div>
+                    `;
+                    overlay.querySelector('[data-action="finish"]').addEventListener('click', () => {
+                        overlay.remove();
+                        apiRefreshBalance();
+                        apiRefreshInventory().then(() => render());
+                    });
+                } catch(e){
+                    tg.showAlert('❌ Ошибка сети');
+                    btn.disabled = false;
+                    btn.textContent = '💸 ВЫВЕСТИ';
+                }
+            });
+        }
+    }
+
+    renderContent();
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function showDepositModal(defaultTab) {
+    const old = document.querySelector('.modal-overlay');
+    if (old) old.remove();
+    let activeTab = defaultTab || 'ton';
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    function renderContent() {
+        let body = '';
+        if (activeTab === 'ton') {
+            body = `
+                <div class="deposit-note">
+                    Подключите <b>TON-кошелёк</b> и выберите сумму — звёзды зачислятся автоматически после подтверждения транзакции.
+                </div>
+                <div id="ton-connect-button" style="margin:8px 0 4px;display:flex;justify-content:center;min-height:48px;width:100%;"></div>
+                <div class="deposit-packages">
+                    ${DEPOSIT_PACKAGES.map(p => `
+                        <div class="deposit-pkg" data-stars="${p.stars}" data-ton="${p.ton}">
+                            <div class="pkg-stars">⭐ ${p.stars}</div>
+                            <div class="pkg-arrow">→</div>
+                            <div class="pkg-ton">${p.ton} TON</div>
+                        </div>`).join('')}
+                </div>
+                <button class="volume-test-btn" id="payBtn" disabled
+                        style="margin-top:14px;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;opacity:.4;">
+                    ОПЛАТИТЬ
+                </button>
+                <div id="payInfo" style="text-align:center;font-size:10px;color:var(--muted);margin-top:8px;min-height:14px;">
+                    Подключите кошелёк
+                </div>`;
+        } else {
+            body = `
+                <div class="deposit-note">
+                    1. Отправьте <b>NFT-подарок</b> аккаунту <b style="color:var(--neon);">@${RELAYER_USERNAME}</b><br>
+                    2. Бот автоматически зачислит его в ваш инвентарь
+                </div>
+                <a href="https://t.me/${RELAYER_USERNAME}" target="_blank"
+                   class="volume-test-btn"
+                   style="display:block;text-decoration:none;text-align:center;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;font-weight:700;margin-bottom:14px;">
+                    ✈️ ОТКРЫТЬ @${RELAYER_USERNAME}
+                </a>
+                <div style="margin:10px 0 8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">
+                    Принимаемые подарки
+                </div>
+                <div class="accepted-gifts">
+                    ${ACCEPTED_GIFTS.map(g => `
+                        <div class="accepted-gift">
+                            <span class="ag-name">${g.name}</span>
+                            <span class="ag-price">⭐${g.price}</span>
+                        </div>`).join('')}
+                </div>
+                <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:12px;">
+                    Зачисление происходит автоматически после получения подарка
+                </div>`;
+        }
+        overlay.innerHTML = `
+            <div class="modal-content" style="border-color:var(--neon);max-width:420px;text-align:left;">
+                <div class="settings-header">
+                    <h2>💎 Пополнение</h2>
+                    <button class="settings-close" data-action="close">✕</button>
+                </div>
+                <div class="deposit-tabs">
+                    <div class="deposit-tab ${activeTab==='ton'?'active':''}" data-tab="ton">💎 TONCOIN</div>
+                    <div class="deposit-tab ${activeTab==='nft'?'active':''}" data-tab="nft">🎁 NFT-ПОДАРКИ</div>
+                </div>
+                ${body}
+            </div>`;
+        overlay.querySelectorAll('.deposit-tab').forEach(t => {
+            t.addEventListener('click', () => { activeTab = t.dataset.tab; Sound.click(); renderContent(); });
+        });
+        overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
+
+        if (activeTab === 'ton') {
+            setTimeout(async () => {
+                const ui = await ensureTonConnectUI();
+                const cont = document.getElementById('ton-connect-button');
+                if (!ui) {
+                    if (cont) cont.innerHTML = '<div style="color:var(--red);font-size:11px;text-align:center;width:100%;padding:12px;">❌ Не удалось загрузить TON Connect.</div>';
+                    return;
+                }
+                setTimeout(() => {
+                    if (!cont) return;
+                    if (cont.querySelector('button')) return;
+                    cont.innerHTML = '';
+                    const btn = document.createElement('button');
+                    btn.textContent = tonConnectUI && tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
+                    btn.style.cssText = `width:100%;padding:14px;border-radius:30px;border:none;
+                        background:linear-gradient(135deg,var(--neon),#00cc70);
+                        color:#0a0e1a;font-weight:700;font-size:14px;font-family:var(--mono);
+                        cursor:pointer;touch-action:manipulation;`;
+                    btn.addEventListener('click', async () => {
+                        Sound.click();
+                        if (tonConnectUI && tonConnectUI.connected) {
+                            await tonConnectUI.disconnect();
+                            btn.textContent = '💎 Подключить TON-кошелёк';
+                        } else {
+                            try { await tonConnectUI.openModal(); }
+                            catch(e) { tg.showAlert('Не удалось открыть кошелёк: ' + e.message); }
+                        }
+                    });
+                    cont.appendChild(btn);
+                    tonConnectUI.onStatusChange(() => {
+                        btn.textContent = tonConnectUI.connected ? '✅ Кошелёк подключён' : '💎 Подключить TON-кошелёк';
+                        updateWalletStatus();
+                    });
+                }, 300);
+                updateWalletStatus();
+            }, 50);
+            overlay.querySelectorAll('.deposit-pkg').forEach(pkg => {
+                pkg.addEventListener('click', () => {
+                    overlay.querySelectorAll('.deposit-pkg').forEach(p => { p.style.borderColor = ''; p.style.background = ''; });
+                    pkg.style.borderColor = 'var(--neon)';
+                    pkg.style.background = 'rgba(0,255,136,.08)';
+                    selectedAmount = { stars: parseInt(pkg.dataset.stars, 10), ton: parseFloat(pkg.dataset.ton) };
+                    Sound.click();
+                    updateWalletStatus();
+                });
+            });
+        }
+    }
+    renderContent();
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) { selectedAmount = null; overlay.remove(); } });
+    overlay.addEventListener('click', async (e) => {
+        const payBtn = e.target.closest('#payBtn');
+        if (!payBtn) return;
+        if (!tonConnectUI || !tonConnectUI.connected || !selectedAmount) return;
+        const info = overlay.querySelector('#payInfo');
+        payBtn.disabled = true;
+        payBtn.textContent = 'ОЖИДАНИЕ...';
+        if (info) info.textContent = 'Откройте кошелёк и подтвердите';
+        const comment = `u:${user.id}:s:${selectedAmount.stars}`;
+        const payload = buildCommentPayload(comment);
+        if (!payload) {
+            if (info) info.textContent = '❌ Ошибка: не удалось сформировать memo.';
+            payBtn.textContent = 'ОПЛАТИТЬ';
+            payBtn.disabled = false;
+            payBtn.style.opacity = '1';
+            return;
+        }
+        const amountNano = Math.floor(selectedAmount.ton * 1e9).toString();
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [{ address: RECIPIENT_ADDRESS, amount: amountNano, payload: payload }]
+        };
+        try {
+            await tonConnectUI.sendTransaction(transaction);
+            if (info) info.textContent = '⏳ Отправлено! Звёзды зачислятся в течение 1-2 мин.';
+            payBtn.textContent = 'ОТПРАВЛЕНО';
+            setTimeout(() => {
+                selectedAmount = null;
+                overlay.remove();
+                setTimeout(() => {
+                    apiRefreshBalance();
+                    refreshBoostBanner();
+                    if (document.getElementById('screenHistory')?.classList.contains('active')){
+                        loadServerHistory('all');
+                    }
+                }, 25000);
+            }, 2000);
+        } catch (e) {
+            if (info) info.textContent = '❌ Транзакция отклонена: ' + (e.message || '');
+            payBtn.textContent = 'ОПЛАТИТЬ';
+            payBtn.disabled = false;
+            payBtn.style.opacity = '1';
+        }
+    });
+}
+
+$('btnInfo').addEventListener('click', () => {
+    Sound.click();
+    switchScreen('screenHistory');
+    navBtns.forEach(b => b.classList.toggle('active', b.dataset.screen === 'screenHistory'));
+    loadServerHistory('all');
+});
+$('btnSettings').addEventListener('click', () => { Sound.click(); showSettingsModal(); });
+$('btnVolume').addEventListener('click', () => { Sound.click(); showVolumeModal(); });
+$('btnFast').addEventListener('click', function(){
+    Sound.click();
+    state.settings.fastSpin = !state.settings.fastSpin;
+    this.classList.toggle('active', state.settings.fastSpin);
+    save();
+    tg.showAlert(state.settings.fastSpin ? '⚡ Быстрый прокрут включён' : 'Обычный прокрут');
+});
+$('btnPromo').addEventListener('click', () => { Sound.click(); requireSubscription(() => showPromoModal()); });
+$('btnDeposit').addEventListener('click', () => { Sound.click(); requireSubscription(() => showDepositModal('ton')); });
+$('btnWithdraw').addEventListener('click', () => { Sound.click(); requireSubscription(() => showWithdrawModal()); });
+$('balanceBtn').addEventListener('click', () => { Sound.click(); requireSubscription(() => showDepositModal('ton')); });
+
+function applySettingsToUI(){ $('btnFast').classList.toggle('active', state.settings.fastSpin); }
+
+function switchScreen(id){
+    screens.forEach(s => s.classList.remove('active'));
+    document.getElementById(id)?.classList.add('active');
+    navBtns.forEach(b => b.classList.toggle('active', b.dataset.screen === id));
+    if (id === 'screenProfile') renderProfile();
+    if (id === 'screenHistory') loadServerHistory('all');
+    if (id === 'screenReferral') loadReferralInfo();
+}
+navBtns.forEach(b => b.addEventListener('click', function(){
+    Sound.click();
+    switchScreen(this.dataset.screen);
+    if (navigator.vibrate) navigator.vibrate(10);
+}));
+
+document.querySelectorAll('[data-htab]').forEach(tab => {
+    tab.addEventListener('click', function(){
+        document.querySelectorAll('[data-htab]').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        loadServerHistory(this.dataset.htab);
+    });
+});
+
+const loader = document.getElementById('loader');
+const loaderStatus = document.getElementById('loaderStatus');
+function setLoaderStatus(text) { if (loaderStatus) loaderStatus.textContent = text; }
+function hideLoader() {
+    if (!loader) return;
+    setLoaderStatus('Готово!');
+    setTimeout(() => { loader.classList.add('hidden'); setTimeout(() => loader.remove(), 700); }, 300);
+}
+
+Promise.all([
+    new Promise(resolve => { setLoaderStatus('Подключаем Telegram...'); initTelegram(resolve); }),
+    new Promise(resolve => { setLoaderStatus('Загружаем TON Core...'); const check = () => { if (window.TonCore && window.TonCore.beginCell) resolve(); else setTimeout(check, 100); }; check(); }),
+    new Promise(resolve => { setLoaderStatus('Загружаем кошелёк...'); loadTonConnectSDK().then(resolve).catch(resolve); }),
+    new Promise(resolve => setTimeout(resolve, 1200)),
+]).then(async () => {
+    setLoaderStatus('Загружаем данные...');
+    await apiRefreshBalance();
+    await apiRefreshInventory();
+    await refreshBoostBanner();
+    render();
+    applySettingsToUI();
+    renderQuickButtons();
+    hideLoader();
+
+    await registerReferral();
+    await loadReferralInfo();
+    setupInviteButton();
+
+    if (user.id && !DEV_USER_ID) {
+        await new Promise(r => setTimeout(r, 500));
+        const ok = await checkSubscription(true);
+        if (!ok) {
+            console.log('[SUB] Не подписан — показываем модалку');
+            showSubscribeModal();
+        } else {
+            console.log('[SUB] Подписан ✅');
+        }
+    } else if (DEV_USER_ID) {
+        console.log('[SUB] DEV MODE — проверка подписки пропущена');
+    }
+}).catch(e => {
+    console.error('[START] ошибка:', e);
+    setLoaderStatus('Ошибка загрузки');
+    setTimeout(hideLoader, 1000);
+});
+})();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NFT LAB · Upgrade</title>
+<script>
+window.__TG_FALLBACK__ = {
+    ready:()=>{}, expand:()=>{}, showAlert:(m)=>alert(m),
+    sendData:(d)=>console.log('sendData:', d),
+    initDataUnsafe: { user: { id: 0, first_name: 'Аноним', last_name:'', username: null, photo_url: null } }
+};
+</script>
+<script>
+(function(){
+    var s = document.createElement('script');
+    s.src = 'https://telegram.org/js/telegram-web-app.js';
+    s.async = false;
+    s.onload = function(){ console.log('[TG SDK] загружен с telegram.org'); };
+    s.onerror = function(){
+        console.warn('[TG SDK] telegram.org недоступен, пробуем jsDelivr...');
+        var s2 = document.createElement('script');
+        s2.src = 'https://cdn.jsdelivr.net/npm/telegram-web-app@latest/dist/telegram-web-app.js';
+        s2.onload = function(){ console.log('[TG SDK] загружен с jsDelivr'); };
+        s2.onerror = function(){ console.error('[TG SDK] не удалось загрузить'); };
+        document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+})();
+</script>
+<script type="module">
+  try {
+    const bufferMod = await import('https://cdn.jsdelivr.net/npm/buffer@6.0.3/+esm');
+    window.Buffer = bufferMod.Buffer || (bufferMod.default && bufferMod.default.Buffer) || bufferMod.default;
+    const tonCore = await import('https://cdn.jsdelivr.net/npm/@ton/core@0.49.1/+esm');
+    window.TonCore = {
+      beginCell: tonCore.beginCell,
+      Cell: tonCore.Cell,
+      Address: tonCore.Address,
+    };
+    console.log('[TON Core] загружен:', typeof window.TonCore.beginCell);
+  } catch (e) {
+    console.error('[TON Core] ошибка загрузки:', e);
+  }
+</script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+#loader { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, #131a2c 0%, #0a0e1a 70%); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity .6s ease, visibility .6s ease; }
+#loader.hidden { opacity: 0; visibility: hidden; }
+.loader-content { position: relative; text-align: center; width: 240px; height: 240px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.loader-logo { font-size: 64px; z-index: 3; position: relative; filter: drop-shadow(0 0 20px #00ff88) drop-shadow(0 0 40px #00d4ff); animation: logoPulse 1.5s ease-in-out infinite; }
+@keyframes logoPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+.loader-ring { position: absolute; top: 50%; left: 50%; width: 150px; height: 150px; margin: -75px 0 0 -75px; border: 3px solid transparent; border-top-color: #00ff88; border-right-color: #00d4ff; border-radius: 50%; animation: spin 1s linear infinite; z-index: 1; }
+.loader-ring-2 { width: 190px; height: 190px; margin: -95px 0 0 -95px; border-top-color: #00d4ff; border-right-color: #00ff88; animation: spin 1.5s linear infinite reverse; opacity: 0.5; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.loader-title { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: 700; letter-spacing: 3px; background: linear-gradient(135deg, #00ff88, #00d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; z-index: 3; white-space: nowrap; }
+.loader-sub { position: absolute; bottom: -48px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #8899bb; letter-spacing: 1px; z-index: 3; white-space: nowrap; }
+:root{ --bg:#0a0e1a; --neon:#00ff88; --cyan:#00d4ff; --glass:rgba(18,24,43,.75); --border:rgba(0,255,136,.15); --border2:rgba(255,255,255,.08); --text:#e8f0f8; --muted:#8899bb; --gold:#ffd700; --red:#ff4466; --mono:'JetBrains Mono','Roboto Mono',monospace; }
+html,body{height:100%;overflow:hidden;font-family:var(--mono);background:var(--bg);color:var(--text);user-select:none;-webkit-tap-highlight-color:transparent;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 20% 30%, rgba(0,255,136,.04), transparent 60%),radial-gradient(circle at 80% 70%, rgba(0,212,255,.04), transparent 60%);pointer-events:none;z-index:0;}
+#app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;padding:6px 8px;}
+.header{display:flex;justify-content:space-between;align-items:center;padding:6px 4px 8px;border-bottom:1px solid var(--border);flex-shrink:0;gap:6px;}
+.header h1{font-size:14px;background:linear-gradient(135deg,var(--neon),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.5px;flex:1;}
+.head-icons{display:flex;gap:4px;align-items:center;}
+.head-icon{width:26px;height:26px;background:var(--glass);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:.15s;touch-action:manipulation;color:var(--text);}
+.head-icon:active{transform:scale(.9);}
+.head-icon.active{background:rgba(0,255,136,.15);border-color:var(--neon);}
+.deposit-icon{background:linear-gradient(135deg,var(--neon),#00cc70) !important;color:#0a0e1a !important;font-weight:700;font-size:16px !important;border:none !important;box-shadow:0 0 15px rgba(0,255,136,.4);}
+.withdraw-icon{background:linear-gradient(135deg,var(--gold),#ffb700) !important;color:#0a0e1a !important;font-weight:700;font-size:18px !important;border:none !important;box-shadow:0 0 15px rgba(255,215,0,.4);line-height:1;}
+.balance{background:var(--glass);border:1px solid var(--border);border-radius:30px;padding:5px 10px;font-size:11px;color:var(--gold);backdrop-filter:blur(8px);cursor:pointer;transition:.15s;}
+.balance:active{transform:scale(.95);}
+#boostBanner{ display:none; margin:6px 4px 0; padding:8px 12px; background:linear-gradient(135deg,rgba(255,215,0,.18),rgba(255,170,0,.1)); border:1px solid rgba(255,215,0,.45); border-radius:10px; font-size:11px; color:var(--gold); text-align:center; font-weight:600; animation:boostPulse 2s ease-in-out infinite; flex-shrink:0; }
+@keyframes boostPulse { 0%, 100% { box-shadow: 0 0 0 rgba(255,215,0,0); } 50% { box-shadow: 0 0 20px rgba(255,215,0,.35); } }
+.content{flex:1;overflow-y:auto;margin:6px 0;padding:2px;min-height:0;}
+.content::-webkit-scrollbar{width:3px;}
+.content::-webkit-scrollbar-thumb{background:var(--neon);border-radius:10px;}
+.screen{display:none;animation:fade .25s ease-out;}
+.screen.active{display:block;}
+@keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.upgrade-top{display:grid;grid-template-columns:1fr 170px 1fr;gap:6px;align-items:stretch;margin-bottom:8px;}
+.slot-col{display:flex;flex-direction:column;gap:6px;}
+.slot-col:first-child .slot-panel{flex:1;}
+.slot-panel{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:8px 4px;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;backdrop-filter:blur(8px);transition:.2s;}
+.slot-panel.filled{border-color:var(--neon);box-shadow:0 0 16px rgba(0,255,136,.15);}
+.slot-panel .slot-label{font-size:7px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px;text-align:center;line-height:1.2;}
+.slot-panel .slot-empty{font-size:22px;opacity:.3;}
+.slot-panel .slot-item{text-align:center;}
+.slot-panel .slot-item img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,255,136,.3));}
+.slot-panel .slot-item .slot-name{font-size:8px;font-weight:600;margin-top:2px;line-height:1.1;}
+.slot-panel .slot-item .slot-price{font-size:8px;color:var(--gold);margin-top:1px;}
+.slot-panel .slot-remove{position:absolute;top:3px;right:5px;background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;font-family:var(--mono);}
+.quick-chances{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:2px;}
+.qc-btn{background:rgba(0,0,0,.4);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:9px;font-weight:700;padding:7px 2px;cursor:pointer;transition:.15s;text-align:center;letter-spacing:.3px;touch-action:manipulation;}
+.qc-btn:active{transform:scale(.94);}
+.qc-btn.p5  {border-color:rgba(255,68,102,.4); color:#ff8899;}
+.qc-btn.p25 {border-color:rgba(255,170,60,.4); color:#ffbb66;}
+.qc-btn.p50 {border-color:rgba(255,215,0,.4); color:var(--gold);}
+.qc-btn.p75 {border-color:rgba(0,255,136,.4); color:var(--neon);}
+.wheel-wrap{position:relative;width:170px;height:170px;margin:0 auto;display:flex;align-items:center;justify-content:center;align-self:center;}
+.wheel-svg{transform:rotate(-90deg);}
+.wheel-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:14;}
+.wheel-progress{fill:none;stroke:url(#wheelGrad);stroke-width:14;stroke-linecap:butt;transition:stroke-dashoffset .5s ease;}
+.wheel-spinner{position:absolute;top:50%;left:50%;width:170px;height:170px;margin:-85px 0 0 -85px;pointer-events:none;transform:rotate(0deg);transition:transform 4s cubic-bezier(.17,.67,.3,1);z-index:5;will-change:transform;}
+.wheel-spinner.fast{transition:transform 1s cubic-bezier(.17,.67,.3,1);}
+.wheel-spinner .marker{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:20px solid #ffffff;filter:drop-shadow(0 0 8px #00ff88) drop-shadow(0 0 16px #00ff88) drop-shadow(0 0 24px rgba(0,255,136,.6));}
+.wheel-spinner .marker-glow{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 15px #00ff88, 0 0 30px #00ff88;}
+.wheel-center-text{position:absolute;font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--neon),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;z-index:3;letter-spacing:-.5px;}
+.wheel-center-sub{position:absolute;top:calc(50% + 20px);font-size:8px;color:var(--muted);letter-spacing:1.5px;z-index:3;font-weight:500;}
+.upgrade-btn{width:100%;background:linear-gradient(135deg,var(--neon),#00cc70);color:#0a0e1a;border:none;border-radius:30px;padding:12px;font-weight:700;font-size:14px;font-family:var(--mono);box-shadow:0 0 30px rgba(0,255,136,.35);cursor:pointer;transition:.15s;letter-spacing:1px;touch-action:manipulation;}
+.upgrade-btn:active{transform:scale(.97);}
+.upgrade-btn:disabled{opacity:.35;pointer-events:none;}
+.upgrade-info{text-align:center;font-size:10px;color:var(--muted);margin:6px 0;min-height:14px;}
+.bottombar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.inv-section{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:8px;backdrop-filter:blur(8px);min-height:280px;display:flex;flex-direction:column;}
+.inv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:10px;font-weight:600;}
+.inv-header .count{color:var(--muted);font-size:9px;}
+.tabs{display:flex;gap:4px;margin-bottom:6px;background:rgba(0,0,0,.25);padding:3px;border-radius:8px;}
+.tab{flex:1;text-align:center;padding:5px 4px;font-size:9px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:6px;transition:.15s;letter-spacing:.3px;border:1px solid transparent;touch-action:manipulation;}
+.tab.active{background:rgba(0,255,136,.1);color:var(--neon);border-color:rgba(0,255,136,.3);}
+.tab:active{transform:scale(.96);}
+.search-bar{display:grid;grid-template-columns: 1fr auto auto;gap:4px;margin-bottom:6px;}
+.search-inputs{display:grid;grid-template-columns: 1.2fr 1px 1fr 1px 1fr;gap:0;background:rgba(0,0,0,.25);border:1px solid var(--border2);border-radius:6px;overflow:hidden;}
+.search-inputs input{background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:10px;padding:6px 6px;outline:none;width:100%;min-width:0;}
+.search-inputs input::placeholder{color:var(--muted);font-size:9px;}
+.search-inputs .divider{background:var(--border2);}
+.search-inputs .field{display:flex;align-items:center;position:relative;}
+.search-inputs .field .lbl{position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:8px;color:var(--gold);font-weight:700;pointer-events:none;}
+.search-inputs .field.with-lbl input{padding-left:20px;}
+.search-btn, .sort-btn{background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:0 9px;cursor:pointer;transition:.15s;touch-action:manipulation;}
+.search-btn:active, .sort-btn:active{transform:scale(.95);background:rgba(0,255,136,.15);}
+.sort-btn{font-size:11px;padding:0 7px;}
+.inv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;overflow-y:auto;flex:1;padding-right:2px;align-content:start;}
+.inv-grid::-webkit-scrollbar{width:2px;}
+.inv-grid::-webkit-scrollbar-thumb{background:var(--neon);border-radius:10px;}
+.inv-item{aspect-ratio:1/1;background:radial-gradient(circle at 30% 30%,#1a2a4a,#0d1428);border:1px solid rgba(0,255,136,.2);border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px;cursor:pointer;transition:.15s;position:relative;overflow:hidden;}
+.inv-item.selected{border-color:var(--neon);box-shadow:0 0 12px rgba(0,255,136,.5);background:radial-gradient(circle at 30% 30%,#1e3a5a,#0f1e3a);}
+.inv-item:active{transform:scale(.94);}
+.inv-item img{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 0 5px rgba(0,255,136,.3));}
+.inv-item .inv-name{font-size:6px;text-align:center;color:var(--text);margin-top:1px;line-height:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%;}
+.inv-item .inv-price{font-size:6px;color:var(--gold);font-weight:600;margin-top:1px;}
+.inv-empty{color:var(--muted);text-align:center;padding:20px 8px;font-size:10px;grid-column:1/-1;}
+.inv-item .buy-badge{position:absolute;top:2px;right:2px;background:var(--gold);color:#0a0e1a;font-size:6px;font-weight:700;padding:1px 3px;border-radius:4px;z-index:2;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(14px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;animation:fade .3s;overflow-y:auto;}
+.modal-content{background:radial-gradient(circle at 30% 30%,#1a2a4a,#0d1428);border:2px solid var(--neon);border-radius:20px;padding:22px 18px;max-width:340px;width:100%;text-align:center;position:relative;}
+.modal-content.win{border-color:var(--neon);box-shadow:0 0 60px rgba(0,255,136,.3);}
+.modal-content.lose{border-color:var(--red);box-shadow:0 0 60px rgba(255,68,102,.3);}
+.modal-content.buy{border-color:var(--gold);box-shadow:0 0 60px rgba(255,215,0,.3);}
+.modal-content.sell{border-color:var(--cyan);box-shadow:0 0 60px rgba(0,212,255,.3);}
+.modal-content.settings{border-color:var(--border);border-radius:20px;background:#131a2c;max-width:420px;text-align:left;padding:20px;}
+.modal-content img{width:100px;height:100px;object-fit:contain;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(0,255,136,.4));}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.modal-actions{display:flex;gap:8px;}
+.modal-btn{background:var(--neon);color:#0a0e1a;border:none;border-radius:30px;padding:11px 20px;font-weight:700;font-size:13px;font-family:var(--mono);cursor:pointer;flex:1;touch-action:manipulation;}
+.modal-btn:active{transform:scale(.96);}
+.modal-btn:disabled{opacity:.4;pointer-events:none;}
+.modal-btn.gold{background:var(--gold);}
+.modal-btn.cyan{background:var(--cyan);}
+.modal-btn.grey{background:rgba(255,255,255,.1);color:var(--text);}
+.settings-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.settings-header h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.settings-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;font-family:var(--mono);}
+.settings-section{margin-bottom:18px;}
+.settings-section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.settings-section-title h3{font-size:13px;font-weight:700;}
+.settings-section-title .default-label{color:var(--gold);font-size:10px;font-weight:600;}
+.settings-desc{color:var(--muted);font-size:10px;line-height:1.5;margin-bottom:8px;}
+.preset-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.preset-card{background:#0f1525;border:1px solid var(--border2);border-radius:10px;padding:10px 8px;}
+.preset-card h4{font-size:10px;color:var(--muted);font-weight:500;margin-bottom:8px;line-height:1.3;}
+.preset-buttons{display:flex;gap:5px;align-items:center;}
+.preset-btn{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;padding:6px 3px;color:var(--text);font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;transition:.15s;touch-action:manipulation;min-width:0;}
+.preset-btn:active{transform:scale(.94);}
+.preset-reset{background:none;border:none;color:var(--gold);font-size:14px;cursor:pointer;padding:2px 4px;font-family:var(--mono);}
+.radio-option{display:flex;gap:10px;align-items:flex-start;padding:10px 0;cursor:pointer;touch-action:manipulation;}
+.radio-option .radio-circle{width:16px;height:16px;border-radius:50%;border:2px solid var(--muted);flex-shrink:0;margin-top:2px;position:relative;transition:.15s;}
+.radio-option.active .radio-circle{border-color:var(--gold);}
+.radio-option.active .radio-circle::after{content:'';position:absolute;inset:2px;background:var(--gold);border-radius:50%;}
+.radio-option .radio-info{flex:1;}
+.radio-option .radio-title{font-size:12px;font-weight:700;margin-bottom:2px;}
+.radio-option.active .radio-title{color:var(--text);}
+.radio-option:not(.active) .radio-title{color:var(--muted);}
+.radio-option .radio-desc{font-size:10px;color:var(--muted);line-height:1.4;}
+.settings-save{width:100%;background:var(--gold);color:#0a0e1a;border:none;border-radius:24px;padding:12px;font-weight:700;font-size:13px;font-family:var(--mono);cursor:pointer;margin-top:6px;touch-action:manipulation;}
+.settings-save:active{transform:scale(.97);}
+.volume-slider-wrap{padding:8px 0;}
+.volume-slider{width:100%;-webkit-appearance:none;height:6px;background:rgba(255,255,255,.1);border-radius:3px;outline:none;}
+.volume-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--gold);cursor:pointer;box-shadow:0 0 12px rgba(255,215,0,.5);}
+.volume-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--gold);cursor:pointer;border:none;box-shadow:0 0 12px rgba(255,215,0,.5);}
+.volume-value{text-align:center;font-size:16px;font-weight:700;color:var(--gold);margin:8px 0;}
+.volume-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);}
+.volume-test-btn{background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);color:var(--neon);border-radius:20px;padding:8px 16px;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;margin-top:12px;width:100%;touch-action:manipulation;}
+.volume-test-btn:active{transform:scale(.96);}
+.deposit-tabs{display:flex;gap:4px;margin-bottom:14px;background:rgba(0,0,0,.3);padding:3px;border-radius:10px;}
+.deposit-tab{flex:1;text-align:center;padding:9px 4px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:8px;transition:.15s;border:1px solid transparent;touch-action:manipulation;}
+.deposit-tab.active{background:rgba(0,255,136,.12);color:var(--neon);border-color:rgba(0,255,136,.3);}
+.deposit-tab:active{transform:scale(.96);}
+.deposit-packages{display:flex;flex-direction:column;gap:8px;}
+.deposit-pkg{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:#0f1525;border:1px solid var(--border2);border-radius:10px;padding:12px 14px;cursor:pointer;transition:.15s;touch-action:manipulation;}
+.deposit-pkg:hover{border-color:rgba(0,255,136,.4);}
+.deposit-pkg:active{transform:scale(.98);}
+.deposit-pkg .pkg-stars{font-size:14px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:4px;}
+.deposit-pkg .pkg-ton{font-size:12px;color:var(--cyan);font-weight:600;text-align:right;}
+.deposit-pkg .pkg-arrow{font-size:16px;color:var(--muted);}
+.deposit-note{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);border-radius:10px;padding:12px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px;}
+.deposit-note b{color:var(--cyan);}
+.history-item{display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;background:rgba(0,0,0,.3);border-radius:10px;padding:8px;margin-bottom:6px;border-left:3px solid var(--muted);}
+.history-item.win{border-left-color:var(--neon);}
+.history-item.lose{border-left-color:var(--red);}
+.history-item img{width:36px;height:36px;object-fit:contain;}
+.history-info .h-title{font-size:11px;font-weight:600;line-height:1.2;}
+.history-info .h-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+.history-meta{text-align:right;}
+.history-meta .h-chance{font-size:10px;font-weight:700;color:var(--gold);}
+.history-meta .h-time{font-size:8px;color:var(--muted);margin-top:2px;}
+.history-empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:11px;}
+.nav-center{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;flex-shrink:0;padding:2px 0;}
+.nav-btn{background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:8px 2px;color:var(--muted);font-family:var(--mono);font-size:9px;font-weight:500;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:.15s;touch-action:manipulation;}
+.nav-btn .icon{font-size:15px;}
+.nav-btn.active{border-color:var(--neon);color:var(--neon);background:rgba(0,255,136,.05);box-shadow:0 0 20px rgba(0,255,136,.1);}
+.nav-btn:active{transform:scale(.94);}
+.profile-card{background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--neon),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px;overflow:hidden;position:relative;}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;}
+.profile-name{font-size:18px;font-weight:600;margin-bottom:2px;}
+.profile-username{color:var(--cyan);font-size:12px;margin-bottom:4px;}
+.profile-id{color:var(--muted);font-size:11px;}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
+.stat-box{background:rgba(0,0,0,.3);border-radius:10px;padding:12px;text-align:center;}
+.stat-box .value{font-size:20px;font-weight:600;color:var(--gold);}
+.stat-box .label{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+.withdraw-gifts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-height: 260px; overflow-y: auto; padding: 4px; margin-bottom: 10px; }
+.withdraw-gift { background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428); border: 1px solid rgba(255,215,0,.2); border-radius: 8px; padding: 6px 4px; text-align: center; cursor: pointer; transition: .15s; }
+.withdraw-gift.active { border-color: var(--gold); box-shadow: 0 0 12px rgba(255,215,0,.5); background: radial-gradient(circle at 30% 30%, #2a3a5a, #1d2248); }
+.withdraw-gift.locked { opacity: 0.55; cursor: not-allowed; border-color: rgba(255,68,102,.35); }
+.withdraw-gift.locked:active { transform: none; }
+.withdraw-gift img { width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto 4px; }
+.withdraw-gift .wg-name { font-size: 9px; line-height: 1.1; margin-bottom: 2px; }
+.withdraw-gift .wg-price { font-size: 9px; color: var(--gold); font-weight: 600; }
+.accepted-gifts { max-height: 300px; overflow-y: auto; border: 1px solid var(--border2); border-radius: 10px; padding: 4px; background: rgba(0,0,0,.2); }
+.accepted-gift { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 11px; }
+.accepted-gift:last-child { border-bottom: none; }
+.accepted-gift .ag-name { color: var(--text); }
+.accepted-gift .ag-price { color: var(--gold); font-weight: 600; }
+#ton-connect-button button{width:100% !important;min-height:48px !important;font-size:14px !important;}
+@media(max-width:380px){
+    .upgrade-top{grid-template-columns:1fr 140px 1fr;gap:4px;}
+    .wheel-wrap{width:140px;height:140px;}
+    .wheel-spinner{width:140px;height:140px;margin:-70px 0 0 -70px;}
+    .wheel-center-text{font-size:20px;}
+    .slot-panel{min-height:105px;}
+    .slot-panel .slot-item img{width:38px;height:38px;}
+    .inv-item img{width:28px;height:28px;}
+    .tab{font-size:8px;padding:4px 2px;}
+    .qc-btn{font-size:8px;padding:6px 1px;}
+    .preset-row{grid-template-columns:1fr;}
+    .nav-btn{font-size:8px;padding:6px 1px;}
+    .nav-btn .icon{font-size:13px;}
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+    <div class="loader-content">
+        <div class="loader-logo">⚡</div>
+        <div class="loader-ring"></div>
+        <div class="loader-ring loader-ring-2"></div>
+        <div class="loader-title">LAB NFT</div>
+        <div class="loader-sub" id="loaderStatus">Загрузка...</div>
+    </div>
+</div>
+
+<div id="app">
+    <div class="header">
+        <h1>⚡ LAB UPGRADER</h1>
+        <div class="head-icons">
+            <div class="head-icon" id="btnPromo" title="Промокод">🎟</div>
+            <div class="head-icon" id="btnInfo" title="История">📜</div>
+            <div class="head-icon" id="btnSettings" title="Настройки">⚙</div>
+            <div class="head-icon" id="btnVolume" title="Громкость">🔊</div>
+            <div class="head-icon" id="btnFast" title="Быстрый прокрут">⚡</div>
+        </div>
+        <div class="balance" id="balanceBtn" title="Пополнить">⭐ <span id="balanceDisplay">0</span></div>
+        <div class="head-icon withdraw-icon" id="btnWithdraw" title="Вывод">−</div>
+        <div class="head-icon deposit-icon" id="btnDeposit" title="Пополнить">＋</div>
+    </div>
+
+    <div id="boostBanner">
+        🚀 Активен буст <span id="boostPercent">0</span>% · <span id="boostInfo"></span>
+    </div>
+
+    <div class="content">
+        <div class="screen active" id="screenUpgrade">
+            <div class="upgrade-top">
+                <div class="slot-col">
+                    <div class="slot-panel" id="slotLeft">
+                        <div class="slot-label">ВЫБЕРИТЕ ПРЕДМЕТ</div>
+                        <div class="slot-empty">➕</div>
+                    </div>
+                </div>
+                <div class="wheel-wrap">
+                    <svg class="wheel-svg" width="170" height="170" viewBox="0 0 170 170">
+                        <defs>
+                            <linearGradient id="wheelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#00ff88"/>
+                                <stop offset="50%" stop-color="#7fff44"/>
+                                <stop offset="100%" stop-color="#ffd700"/>
+                            </linearGradient>
+                        </defs>
+                        <circle class="wheel-bg" cx="85" cy="85" r="70"/>
+                        <circle class="wheel-progress" id="wheelProgress" cx="85" cy="85" r="70"
+                                stroke-dasharray="439.82" stroke-dashoffset="439.82"/>
+                    </svg>
+                    <div class="wheel-spinner" id="wheelSpinner">
+                        <div class="marker"></div>
+                        <div class="marker-glow"></div>
+                    </div>
+                    <div class="wheel-center-text" id="chanceText">0%</div>
+                    <div class="wheel-center-sub">ШАНС</div>
+                </div>
+                <div class="slot-col">
+                    <div class="slot-panel" id="slotRight">
+                        <div class="slot-label">ВЫБЕРИТЕ ЦЕЛЬ</div>
+                        <div class="slot-empty">🎯</div>
+                    </div>
+                    <div class="quick-chances" id="quickRight"></div>
+                </div>
+            </div>
+
+            <button class="upgrade-btn" id="upgradeBtn" disabled>⚡ ПРОКАЧАТЬ</button>
+            <div class="upgrade-info" id="upgradeInfo">Выберите предмет и цель</div>
+
+            <div class="bottombar">
+                <div class="inv-section">
+                    <div class="inv-header">
+                        <span>📦 Мой инвентарь</span>
+                        <span class="count" id="invCount">0 шт.</span>
+                    </div>
+                    <div class="inv-grid" id="invGrid"></div>
+                </div>
+                <div class="inv-section">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="shop">🛒 МАГАЗИН</div>
+                        <div class="tab" data-tab="target">🎯 ПРОКАЧАТЬ ДО</div>
+                    </div>
+                    <div class="search-bar">
+                        <div class="search-inputs">
+                            <div class="field">
+                                <input type="text" id="searchName" placeholder="Price">
+                            </div>
+                            <div class="divider"></div>
+                            <div class="field with-lbl">
+                                <span class="lbl">⭐от</span>
+                                <input type="number" id="priceMin" inputmode="numeric">
+                            </div>
+                            <div class="divider"></div>
+                            <div class="field with-lbl">
+                                <span class="lbl">⭐до</span>
+                                <input type="number" id="priceMax" inputmode="numeric">
+                            </div>
+                        </div>
+                        <button class="sort-btn" id="sortBtn">▲</button>
+                        <button class="search-btn" id="searchBtn">🔍</button>
+                    </div>
+                    <div class="inv-grid" id="rightGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="screen" id="screenReferral">
+            <div class="profile-card" style="text-align:left;">
+                <div style="text-align:center;margin-bottom:16px;">
+                    <div style="font-size:48px;margin-bottom:8px;">👥</div>
+                    <div style="font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--neon),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+                        ПРИГЛАШАЙ ДРУЗЕЙ
+                    </div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+                        +1 ⭐ за каждого приглашённого
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+                    <div class="stat-box">
+                        <div class="value" id="refInvitedCount">0</div>
+                        <div class="label">👥 Приглашено</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="refEarnedStars">0 ⭐</div>
+                        <div class="label">💰 Заработано</div>
+                    </div>
+                </div>
+
+                <div class="settings-section" style="margin-bottom:14px;">
+                    <div class="settings-section-title"><h3>🔗 Ваша ссылка</h3></div>
+                    <div style="background:#0f1525;border:1px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--cyan);word-break:break-all;user-select:text;" id="refLink">
+                        Загрузка...
+                    </div>
+                </div>
+
+                <button class="upgrade-btn" id="refInviteBtn" style="margin-bottom:10px;">
+                    📤 ПРИГЛАСИТЬ ДРУГА
+                </button>
+
+                <div class="settings-section" style="margin-top:16px;">
+                    <div class="settings-section-title">
+                        <h3>📋 Приглашённые</h3>
+                        <span class="default-label" id="refListCount">0</span>
+                    </div>
+                    <div id="refList" style="max-height:240px;overflow-y:auto;">
+                        <div class="history-empty">Пока никого нет</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="screen" id="screenProfile">
+            <div class="profile-card">
+                <div class="profile-avatar" id="profileAvatar">👤</div>
+                <div class="profile-name" id="profileName">Загрузка...</div>
+                <div class="profile-username" id="profileUsername"></div>
+                <div class="profile-id" id="profileId">ID: —</div>
+                <div class="profile-stats">
+                    <div class="stat-box">
+                        <div class="value" id="statNFT">0</div>
+                        <div class="label">🎁 Подарки</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="statBalance">0 ⭐</div>
+                        <div class="label">Звёзды</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="screen" id="screenHistory">
+            <div class="inv-section" style="min-height:auto;">
+                <div class="inv-header">
+                    <span>📜 История операций</span>
+                    <span class="count" id="historyCount">0</span>
+                </div>
+                <div class="tabs" style="margin:8px 0 10px;">
+                    <div class="tab active" data-htab="all">ВСЕ</div>
+                    <div class="tab" data-htab="topup">💎 ПОПОЛНЕНИЯ</div>
+                    <div class="tab" data-htab="withdraw">💸 ВЫВОДЫ</div>
+                    <div class="tab" data-htab="game">⚡ ИГРА</div>
+                </div>
+                <div id="historyList" style="margin-top:8px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-center">
+        <div class="nav-btn active" data-screen="screenUpgrade"><span class="icon">⚡</span> АПГРЕЙД</div>
+        <div class="nav-btn" data-screen="screenReferral"><span class="icon">👥</span> ДРУЗЬЯ</div>
+        <div class="nav-btn" data-screen="screenProfile"><span class="icon">👤</span> ПРОФИЛЬ</div>
+        <div class="nav-btn" data-screen="screenHistory"><span class="icon">📜</span> ИСТОРИЯ</div>
+    </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+const API_BASE = 'https://lab-nft-jude.mia0.amvera.tech';
+const RELAYER_USERNAME = 'labrelayer';
+const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
+const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
+const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
+
+const REQUIRED_CHANNEL = 'labupgrader';
+const REQUIRED_CHANNEL_URL = 'https://t.me/labupgrader';
+
+const BOT_LINK = 'https://t.me/lab_game_bot';
+
+const RELAYER_BLOCKED = ['Кольцо', 'Кубок', 'Мишка', 'Роза', 'Сердце'];
+const WITHDRAW_FEE = 25;
+
+const urlParams = new URLSearchParams(window.location.search);
+const DEV_USER_ID = parseInt(urlParams.get('user_id') || '0', 10);
+
+const REF_CODE_FROM_URL = urlParams.get('ref') || urlParams.get('start') || null;
+
+const DEPOSIT_PACKAGES = [
+    { stars: 100,  ton: 1.1  },
+    { stars: 250,  ton: 2.7  },
+    { stars: 500,  ton: 5.5  },
+    { stars: 1000, ton: 11   },
+    { stars: 5000, ton: 54.7 },
+];
+
+let tonConnectUI = null;
+let selectedAmount = null;
+let sdkLoadingPromise = null;
+let tg = null;
+let user = { id:0, first_name:'Аноним', last_name:'', username:null, photo_url:null };
+let referralInfo = { code: null, invited_count: 0, earned_stars: 0, has_referrer: false };
+
+function initTelegram(callback){
+    let attempts = 0;
+    const MAX = 50;
+    const check = () => {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData !== undefined){
+            tg = window.Telegram.WebApp;
+            try { tg.ready(); tg.expand(); } catch(e){}
+            const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+            if (u){
+                user = {
+                    id: u.id || 0,
+                    first_name: u.first_name || 'Аноним',
+                    last_name: u.last_name || '',
+                    username: u.username || null,
+                    photo_url: u.photo_url || null,
+                };
+            }
+            if (DEV_USER_ID){
+                user.id = DEV_USER_ID;
+                user.first_name = user.first_name || 'Dev';
+                user.username = user.username || 'dev';
+            }
+            console.log('[TG] init OK', user);
+            callback();
+        } else if (attempts++ < MAX){
+            setTimeout(check, 100);
+        } else {
+            tg = window.__TG_FALLBACK__;
+            console.warn('[TG] SDK не загрузился, эмуляция');
+            if (DEV_USER_ID){
+                user = { id: DEV_USER_ID, first_name: 'Dev', last_name: '', username: 'dev', photo_url: null };
+            }
+            callback();
+        }
+    };
+    check();
+}
+
+const BASE = 'https://judepip.github.io/NFT-LAB';
+const GIFTS = [
+    { name:'B-Day Candle',     price:633,  image: BASE+'/images/B-Day%20Candle.gif' },
+    { name:'Berry Box',        price:859,  image: BASE+'/images/Berry%20Box.gif' },
+    { name:'Big Year',         price:448,  image: BASE+'/images/Big%20Year.gif' },
+    { name:'Bow Tie',          price:600,  image: BASE+'/images/Bow%20Tie.gif' },
+    { name:'Chill Flame',      price:499,  image: BASE+'/images/Chill%20Flame.gif' },
+    { name:'Crystal Ball',     price:1215, image: BASE+'/images/Crystal%20Ball.gif' },
+    { name:'Desk Calendar',    price:575,  image: BASE+'/images/Desk%20Calendar.gif' },
+    { name:'Durov\'s Glasses', price:9151, image: BASE+'/images/Durov%27s%20Glasses.gif' },
+    { name:'Diamond Ring',     price:2969, image: BASE+'/images/Diamond%20Ring.gif' },
+    { name:'Durov Cap',        price:42229,image: BASE+'/images/Durov%20Cap.gif' },
+    { name:'Electric Skull',   price:2490, image: BASE+'/images/Electric%20Skull.gif' },
+    { name:'Eternal Candle',   price:630,  image: BASE+'/images/Eternal%20Candle.gif' },
+    { name:'Evil Eye',         price:759,  image: BASE+'/images/Evil%20Eye.gif' },
+    { name:'Fine Pen',         price:895,  image: BASE+'/images/Fine%20Pen.gif' },
+    { name:'Flying Broom',     price:1163, image: BASE+'/images/Flying%20Broom.gif' },
+    { name:'Hanging Star',     price:974,  image: BASE+'/images/Hanging%20Star.gif' },
+    { name:'Hex Pot',          price:550,  image: BASE+'/images/Hex%20Pot.gif' },
+    { name:'Homemade Cake',    price:630,  image: BASE+'/images/Homemade%20Cake.gif' },
+    { name:'Ion Gem',          price:7889, image: BASE+'/images/Ion%20Gem.gif' },
+    { name:'Jack-In-The-Box',  price:500,  image: BASE+'/images/Jack-In-The-Box.gif' },
+    { name:'Kissed Frog',      price:3865, image: BASE+'/images/Kissed%20Frog.gif' },
+    { name:'Liberty Figure',   price:512,  image: BASE+'/images/Liberty%20Figure.gif' },
+    { name:'Light Sword',      price:665,  image: BASE+'/images/Light%20Sword.gif' },
+    { name:'Lol Pop',          price:490,  image: BASE+'/images/Lol%20Pop.gif' },
+    { name:'Love Candle',      price:963,  image: BASE+'/images/Love%20Candle.gif' },
+    { name:'Low Rider',        price:5388, image: BASE+'/images/Low%20Rider.gif' },
+    { name:'Mad Pumpkin',      price:1259, image: BASE+'/images/Mad%20Pumpkin.gif' },
+    { name:'Mood Pak',         price:513,  image: BASE+'/images/Mood%20Pak.gif' },
+    { name:'Neko Helmet',      price:3775, image: BASE+'/images/Neko%20Helmet.gif' },
+    { name:'Party Sparkler',   price:545,  image: BASE+'/images/Party%20Sparkler.gif' },
+    { name:'Plush Pepe',       price:553220,image: BASE+'/images/Plush%20Pepe.gif' },
+    { name:'Sakura Flower',    price:1025, image: BASE+'/images/Sakura%20Flower.gif' },
+    { name:'Scared Cat',       price:22489,image: BASE+'/images/Scared%20Cat.gif' },
+    { name:'Signet Ring',      price:3239, image: BASE+'/images/Signet%20Ring.gif' },
+    { name:'Skull Flower',     price:1125, image: BASE+'/images/Skull%20Flower.gif' },
+    { name:'Snoop Cigar',      price:1430, image: BASE+'/images/Snoop%20Cigar.gif' },
+    { name:'Snoop Dogg',       price:630,  image: BASE+'/images/Snoop%20Dogg.gif' },
+    { name:'Spy Agaric',       price:630,  image: BASE+'/images/Spy%20Agaric.gif' },
+    { name:'StarNotepad',      price:550,  image: BASE+'/images/StarNotepad.gif' },
+    { name:'Top Hat',          price:1077, image: BASE+'/images/Top%20Hat.gif' },
+    { name:'Toy Bear',         price:3626, image: BASE+'/images/Toy%20Bear.gif' },
+    { name:'Vintage Cigar',    price:3687, image: BASE+'/images/Vintage%20Cigar.gif' },
+    { name:'Witch Hat',        price:629,  image: BASE+'/images/Witch%20Hat.gif' },
     { name:'Букет',            price:50,   image: BASE+'/images/%D0%91%D1%83%D0%BA%D0%B5%D1%82.gif' },
     { name:'Кольцо',           price:100,  image: BASE+'/images/%D0%9A%D0%BE%D0%BB%D1%8C%D1%86%D0%BE.gif' },
     { name:'Кубок',            price:100,  image: BASE+'/images/%D0%9A%D1%83%D0%B1%D0%BE%D0%BA.gif' },
