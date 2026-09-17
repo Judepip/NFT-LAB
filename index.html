@@ -467,6 +467,7 @@ const RELAYER_USERNAME = 'labrelayer';
 const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
 const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
 const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
+const CARD_PAYMENT_USERNAME = 'judepip';
 
 const REQUIRED_CHANNEL = 'labupgrader';
 const REQUIRED_CHANNEL_URL = 'https://t.me/labupgrader';
@@ -482,11 +483,11 @@ const DEV_USER_ID = parseInt(urlParams.get('user_id') || '0', 10);
 const REF_CODE_FROM_URL = urlParams.get('ref') || urlParams.get('start') || null;
 
 const DEPOSIT_PACKAGES = [
-    { stars: 100,  ton: 1.1  },
-    { stars: 250,  ton: 2.7  },
-    { stars: 500,  ton: 5.5  },
-    { stars: 1000, ton: 11   },
-    { stars: 5000, ton: 54.7 },
+    { stars: 100,  ton: 1.1,  rub: 115   },
+    { stars: 250,  ton: 2.7,  rub: 285   },
+    { stars: 500,  ton: 5.5,  rub: 575   },
+    { stars: 1000, ton: 11,   rub: 1150  },
+    { stars: 5000, ton: 54.7, rub: 5750  },
 ];
 
 let tonConnectUI = null;
@@ -1927,7 +1928,6 @@ async function showWithdrawModal(){
     let inventory = await apiRefreshInventory();
     if (!inventory.length) inventory = state.inventory || [];
     inventory = inventory.filter(it => !RELAYER_BLOCKED.includes(it.name));
-    // Помечаем недоступные
     inventory = inventory.map(it => {
         const av = isAvailable(it);
         return { ...it, _locked: !av.ok, _lockMsg: av.msg };
@@ -2082,6 +2082,8 @@ function showDepositModal(defaultTab) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
 
+    let selectedCardAmount = null;
+
     function renderContent() {
         let body = '';
         if (activeTab === 'ton') {
@@ -2104,6 +2106,28 @@ function showDepositModal(defaultTab) {
                 </button>
                 <div id="payInfo" style="text-align:center;font-size:10px;color:var(--muted);margin-top:8px;min-height:14px;">
                     Подключите кошелёк
+                </div>`;
+        } else if (activeTab === 'card') {
+            body = `
+                <div class="deposit-note" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.25);">
+                    Для пополнения банковской картой напишите
+                    <b style="color:var(--gold);">@${CARD_PAYMENT_USERNAME}</b>.
+                    Выберите сумму — текст сообщения подставится автоматически.
+                </div>
+                <div class="deposit-packages">
+                    ${DEPOSIT_PACKAGES.map(p => `
+                        <div class="deposit-pkg deposit-pkg-card" data-stars="${p.stars}" data-rub="${p.rub}">
+                            <div class="pkg-stars">⭐ ${p.stars}</div>
+                            <div class="pkg-arrow">→</div>
+                            <div class="pkg-ton">${p.rub} ₽</div>
+                        </div>`).join('')}
+                </div>
+                <button class="volume-test-btn" id="cardWriteBtn" disabled
+                        style="margin-top:14px;background:linear-gradient(135deg,var(--gold),#ffb700);color:#0a0e1a;border:none;font-weight:700;opacity:.4;">
+                    ✍️ НАПИСАТЬ @${CARD_PAYMENT_USERNAME}
+                </button>
+                <div id="cardPayInfo" style="text-align:center;font-size:10px;color:var(--muted);margin-top:8px;min-height:14px;">
+                    Выберите сумму
                 </div>`;
         } else {
             body = `
@@ -2137,13 +2161,20 @@ function showDepositModal(defaultTab) {
                     <button class="settings-close" data-action="close">✕</button>
                 </div>
                 <div class="deposit-tabs">
-                    <div class="deposit-tab ${activeTab==='ton'?'active':''}" data-tab="ton">💎 TONCOIN</div>
-                    <div class="deposit-tab ${activeTab==='nft'?'active':''}" data-tab="nft">🎁 NFT-ПОДАРКИ</div>
+                    <div class="deposit-tab ${activeTab==='ton'?'active':''}"  data-tab="ton">💎 TONCOIN</div>
+                    <div class="deposit-tab ${activeTab==='card'?'active':''}" data-tab="card">💳 КАРТА</div>
+                    <div class="deposit-tab ${activeTab==='nft'?'active':''}"  data-tab="nft">🎁 NFT-ПОДАРКИ</div>
                 </div>
                 ${body}
             </div>`;
         overlay.querySelectorAll('.deposit-tab').forEach(t => {
-            t.addEventListener('click', () => { activeTab = t.dataset.tab; Sound.click(); renderContent(); });
+            t.addEventListener('click', () => {
+                activeTab = t.dataset.tab;
+                selectedAmount = null;
+                selectedCardAmount = null;
+                Sound.click();
+                renderContent();
+            });
         });
         overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
 
@@ -2194,10 +2225,47 @@ function showDepositModal(defaultTab) {
                 });
             });
         }
+
+        if (activeTab === 'card') {
+            const writeBtn = overlay.querySelector('#cardWriteBtn');
+            const infoEl = overlay.querySelector('#cardPayInfo');
+
+            overlay.querySelectorAll('.deposit-pkg-card').forEach(pkg => {
+                pkg.addEventListener('click', () => {
+                    overlay.querySelectorAll('.deposit-pkg-card').forEach(p => {
+                        p.style.borderColor = '';
+                        p.style.background = '';
+                    });
+                    pkg.style.borderColor = 'var(--gold)';
+                    pkg.style.background = 'rgba(255,215,0,.08)';
+
+                    const stars = parseInt(pkg.dataset.stars, 10);
+                    const rub = parseInt(pkg.dataset.rub, 10);
+                    selectedCardAmount = { stars, rub };
+
+                    if (writeBtn) { writeBtn.disabled = false; writeBtn.style.opacity = '1'; }
+                    if (infoEl) infoEl.textContent = `Выбрано: ⭐${stars} за ${rub} ₽`;
+                    Sound.click();
+                });
+            });
+
+            if (writeBtn) {
+                writeBtn.addEventListener('click', () => {
+                    if (!selectedCardAmount) return;
+                    Sound.click();
+                    const text = `Хочу пополнить на ${selectedCardAmount.stars} звёзд (${selectedCardAmount.rub} руб.)`;
+                    const url = `https://t.me/${CARD_PAYMENT_USERNAME}?text=${encodeURIComponent(text)}`;
+                    if (tg && typeof tg.openTelegramLink === 'function') {
+                        try { tg.openTelegramLink(url); return; } catch(e){}
+                    }
+                    window.open(url, '_blank');
+                });
+            }
+        }
     }
     renderContent();
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', e => { if (e.target === overlay) { selectedAmount = null; overlay.remove(); } });
+    overlay.addEventListener('click', e => { if (e.target === overlay) { selectedAmount = null; selectedCardAmount = null; overlay.remove(); } });
     overlay.addEventListener('click', async (e) => {
         const payBtn = e.target.closest('#payBtn');
         if (!payBtn) return;
