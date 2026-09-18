@@ -232,8 +232,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .withdraw-gifts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-height: 260px; overflow-y: auto; padding: 4px; margin-bottom: 10px; }
 .withdraw-gift { background: radial-gradient(circle at 30% 30%, #1a2a4a, #0d1428); border: 1px solid rgba(255,215,0,.2); border-radius: 8px; padding: 6px 4px; text-align: center; cursor: pointer; transition: .15s; }
 .withdraw-gift.active { border-color: var(--gold); box-shadow: 0 0 12px rgba(255,215,0,.5); background: radial-gradient(circle at 30% 30%, #2a3a5a, #1d2248); }
-.withdraw-gift.locked { opacity: 0.55; cursor: not-allowed; border-color: rgba(255,68,102,.35); }
-.withdraw-gift.locked:active { transform: none; }
+.withdraw-gift.locked { opacity: 0.55; border-color: rgba(255,68,102,.35); }
 .withdraw-gift img { width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto 4px; }
 .withdraw-gift .wg-name { font-size: 9px; line-height: 1.1; margin-bottom: 2px; }
 .withdraw-gift .wg-price { font-size: 9px; color: var(--gold); font-weight: 600; }
@@ -641,7 +640,6 @@ const ACCEPTED_GIFTS = [
     { name: 'Toy Bear',       price: 3626  },
     { name: 'Vintage Cigar',  price: 3687  },
     { name: 'Witch Hat',      price: 629   },
-    // --- НОВЫЕ ---
     { name: 'Input Key',        price: 681   },
     { name: 'Happy Brownie',    price: 540   },
     { name: 'Instant Ramen',    price: 532   },
@@ -677,7 +675,6 @@ if (!state.settings.presets) state.settings.presets = { x:[2,4,8], percent:[5,25
 if (state.settings.presets.percent.length !== 4) state.settings.presets.percent = [5,25,50,75];
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
-// ================== ХЕЛПЕР: доступность подарка ==================
 function isAvailable(item) {
     if (!item || !item.available_at) return { ok: true };
     const now = new Date();
@@ -759,7 +756,6 @@ async function apiHistory(type){
     return [];
 }
 
-/* ===== РЕФЕРАЛЬНАЯ СИСТЕМА ===== */
 async function loadReferralInfo(){
     if (!user.id) return;
     try {
@@ -856,7 +852,6 @@ function setupInviteButton(){
     });
 }
 
-/* ===== ПОДПИСКА ===== */
 let subscriptionVerified = false;
 let onSubscribeSuccess = null;
 
@@ -945,7 +940,6 @@ async function requireSubscription(action){
     showSubscribeModal();
 }
 
-/* ===== БУСТ ===== */
 async function refreshBoostBanner(){
     if (!user.id) return;
     try {
@@ -970,7 +964,6 @@ async function refreshBoostBanner(){
     } catch(e){ /* ignore */ }
 }
 
-/* ===== ПРОМОКОДЫ ===== */
 async function activatePromo(code){
     if (!code || !code.trim()) return;
     const cleaned = code.trim().toUpperCase();
@@ -1419,17 +1412,13 @@ tabs.forEach(tab => {
     });
 });
 
+// ⬇⬇⬇ БЕЗ блокировки по КД — клик по любому подарку открывает продажу
 invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
     const id = Number(el.dataset.id);
     const item = state.inventory.find(x => Number(x.id) === id);
-    const av = isAvailable(item);
-    if (!av.ok){
-        Sound.lose();
-        tg.showAlert('⏳ Подарок ещё недоступен.\n' + av.msg);
-        return;
-    }
+    if (!item) return;
     Sound.click();
     state.selectedLeft = id;
     render();
@@ -1835,7 +1824,6 @@ function showVolumeModal(){
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-/* ===== TON CONNECT ===== */
 function buildCommentPayload(comment) {
     if (!window.TonCore || !window.TonCore.beginCell) { console.error('[TON] @ton/core не загружен'); return null; }
     try {
@@ -1952,7 +1940,7 @@ async function showWithdrawModal(){
                 </div>
                 <div class="withdraw-gifts">
                     ${inventory.map(it => `
-                        <div class="withdraw-gift ${it._locked ? 'locked' : ''}" data-inv-id="${it.id}" ${it._locked ? 'data-locked="1"' : ''}>
+                        <div class="withdraw-gift ${it._locked ? 'locked' : ''}" data-inv-id="${it.id}">
                             <img src="${it.image || ''}" onerror="this.style.display='none'">
                             <div class="wg-name">${it.name}</div>
                             <div class="wg-price">⭐${it.price}</div>
@@ -1983,13 +1971,9 @@ async function showWithdrawModal(){
         overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
 
         let selectedId = null;
+        // Без блокировки по КД — можно кликнуть и создать заявку, релеер откажет
         overlay.querySelectorAll('.withdraw-gift').forEach(el => {
             el.addEventListener('click', () => {
-                if (el.dataset.locked === '1'){
-                    Sound.lose();
-                    tg.showAlert('⏳ Подарок ещё недоступен для вывода.');
-                    return;
-                }
                 overlay.querySelectorAll('.withdraw-gift').forEach(x => x.classList.remove('active'));
                 el.classList.add('active');
                 selectedId = parseInt(el.dataset.invId, 10);
@@ -2022,12 +2006,7 @@ async function showWithdrawModal(){
                     });
 
                     if (!d.ok){
-                        if (d.code === 'NOT_AVAILABLE_YET') {
-                            Sound.lose();
-                            tg.showAlert('⏳ ' + (d.error || 'Подарок ещё недоступен'));
-                        } else {
-                            tg.showAlert('❌ ' + (d.error || 'Ошибка вывода'));
-                        }
+                        tg.showAlert('❌ ' + (d.error || 'Ошибка вывода'));
                         if (typeof d.balance === 'number') state.balance = d.balance;
                         renderBalance();
                         btn.disabled = false;
