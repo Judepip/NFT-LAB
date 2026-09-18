@@ -466,7 +466,7 @@ const RELAYER_USERNAME = 'labrelayer';
 const RECIPIENT_ADDRESS = 'UQBhNenZ50ac9WskDqQGeajDC62-RoRwqO961LGRdu3Dml3i';
 const MANIFEST_URL = 'https://judepip.github.io/tonconnect-manifest.json';
 const BRIDGE_URL = 'https://bridge.tonapi.io/bridge';
-const CARD_PAYMENT_USERNAME = 'judepip';
+const CARD_PAYMENT_USERNAME = 'labrelayer';
 
 const REQUIRED_CHANNEL = 'labupgrader';
 const REQUIRED_CHANNEL_URL = 'https://t.me/labupgrader';
@@ -579,7 +579,6 @@ const GIFTS = [
     { name:'Toy Bear',         price:3626, image: BASE+'/images/Toy%20Bear.gif' },
     { name:'Vintage Cigar',    price:3687, image: BASE+'/images/Vintage%20Cigar.gif' },
     { name:'Witch Hat',        price:629,  image: BASE+'/images/Witch%20Hat.gif' },
-    // --- НОВЫЕ ПОДАРКИ ---
     { name:'Input Key',        price:681,  image: BASE+'/images/Input%20Key.gif' },
     { name:'Happy Brownie',    price:540,  image: BASE+'/images/Happy%20Brownie.gif' },
     { name:'Instant Ramen',    price:532,  image: BASE+'/images/Instant%20Ramen.gif' },
@@ -587,7 +586,6 @@ const GIFTS = [
     { name:'Khabib\'s Papakha',price:2449, image: BASE+'/images/Khabib%27s%20Papakha.gif' },
     { name:'Swag Bag',         price:610,  image: BASE+'/images/Swag%20Bag.gif' },
     { name:'UFC Strike',       price:1564, image: BASE+'/images/UFC%20Strike.gif' },
-    // --- Русские подарки ---
     { name:'Букет',            price:50,   image: BASE+'/images/%D0%91%D1%83%D0%BA%D0%B5%D1%82.gif' },
     { name:'Кольцо',           price:100,  image: BASE+'/images/%D0%9A%D0%BE%D0%BB%D1%8C%D1%86%D0%BE.gif' },
     { name:'Кубок',            price:100,  image: BASE+'/images/%D0%9A%D1%83%D0%B1%D0%BE%D0%BA.gif' },
@@ -1412,7 +1410,6 @@ tabs.forEach(tab => {
     });
 });
 
-// ⬇⬇⬇ БЕЗ блокировки по КД — клик по любому подарку открывает продажу
 invGrid.addEventListener('click', e => {
     const el = e.target.closest('.inv-item');
     if (!el) return;
@@ -1971,7 +1968,6 @@ async function showWithdrawModal(){
         overlay.querySelector('[data-action="close"]').addEventListener('click', () => { Sound.click(); overlay.remove(); });
 
         let selectedId = null;
-        // Без блокировки по КД — можно кликнуть и создать заявку, релеер откажет
         overlay.querySelectorAll('.withdraw-gift').forEach(el => {
             el.addEventListener('click', () => {
                 overlay.querySelectorAll('.withdraw-gift').forEach(x => x.classList.remove('active'));
